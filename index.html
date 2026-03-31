@@ -1,0 +1,567 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="theme-color" content="#0066ff">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="재고스캐너">
+<link rel="manifest" href="./manifest.json">
+<link rel="apple-touch-icon" href="./icon-192.png">
+<title>재고관리 스캐너</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/quagga/0.12.1/quagga.min.js"></script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;900&family=JetBrains+Mono:wght@400;700&display=swap');
+  :root {
+    --bg:#0a0e1a; --surface:#111827; --surface2:#1a2235; --border:#1e2d45;
+    --accent:#00d4ff; --accent2:#0066ff; --success:#00e676;
+    --warn:#ff6b35; --danger:#ff3b5c; --text:#e8f0fe; --text2:#8899bb;
+    --green:#00ff88; --orange:#ffaa00;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;display:flex;justify-content:center;overscroll-behavior:none}
+  .wrap{width:100%;max-width:430px;min-height:100vh;display:flex;flex-direction:column;position:relative}
+
+  /* Header */
+  .hdr{display:flex;align-items:center;gap:10px;padding:14px 18px 11px;background:var(--surface);border-bottom:1px solid var(--border);position:sticky;top:0;z-index:100}
+  .hdr-title{flex:1;font-size:18px;font-weight:700}
+  .hdr-badge{background:linear-gradient(135deg,var(--accent2),var(--accent));color:#fff;font-size:11px;font-weight:700;padding:4px 12px;border-radius:20px;font-family:monospace}
+
+  /* Install Banner */
+  .install-banner{display:none;align-items:center;gap:10px;padding:10px 16px;background:linear-gradient(135deg,rgba(0,102,255,0.15),rgba(0,212,255,0.1));border-bottom:1px solid rgba(0,212,255,0.2)}
+  .install-banner.show{display:flex}
+  .install-banner p{flex:1;font-size:12px;color:var(--accent)}
+  .btn-install{background:var(--accent2);border:none;border-radius:8px;color:#fff;font-size:12px;font-weight:700;padding:7px 14px;cursor:pointer;white-space:nowrap;font-family:'Noto Sans KR',sans-serif}
+
+  /* Camera */
+  .cam-wrap{position:relative;background:#000;height:230px;overflow:hidden;cursor:pointer;flex-shrink:0}
+  .cam-wrap video{width:100%;height:100%;object-fit:cover;display:block}
+  .cam-placeholder{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;background:#080d18}
+  .cam-placeholder span{font-size:13px;color:var(--text2)}
+
+  .scan-overlay{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none}
+  .sf{width:210px;height:115px;position:relative}
+  .sf-corner{position:absolute;width:26px;height:26px;border-color:var(--green);border-style:solid}
+  .sf-corner.tl{top:0;left:0;border-width:3px 0 0 3px;border-radius:4px 0 0 0}
+  .sf-corner.tr{top:0;right:0;border-width:3px 3px 0 0;border-radius:0 4px 0 0}
+  .sf-corner.bl{bottom:0;left:0;border-width:0 0 3px 3px;border-radius:0 0 0 4px}
+  .sf-corner.br{bottom:0;right:0;border-width:0 3px 3px 0;border-radius:0 0 4px 0}
+  .sf-line{position:absolute;left:4px;right:4px;height:2px;background:linear-gradient(90deg,transparent,var(--green),transparent);animation:scanMove 2s ease-in-out infinite;box-shadow:0 0 8px var(--green)}
+  @keyframes scanMove{0%,100%{top:8px}50%{top:100px}}
+
+  .ocr-frame-wrap{width:270px;height:72px;position:relative}
+  .ocr-corner{position:absolute;width:24px;height:24px;border-color:var(--orange);border-style:solid}
+  .ocr-corner.tl{top:0;left:0;border-width:3px 0 0 3px;border-radius:4px 0 0 0}
+  .ocr-corner.tr{top:0;right:0;border-width:3px 3px 0 0;border-radius:0 4px 0 0}
+  .ocr-corner.bl{bottom:0;left:0;border-width:0 0 3px 3px;border-radius:0 0 0 4px}
+  .ocr-corner.br{bottom:0;right:0;border-width:0 3px 3px 0;border-radius:0 0 4px 0}
+  .ocr-line{position:absolute;left:4px;right:4px;height:2px;background:linear-gradient(90deg,transparent,var(--orange),transparent);animation:ocrMove 1.5s ease-in-out infinite;box-shadow:0 0 8px var(--orange)}
+  @keyframes ocrMove{0%,100%{top:6px}50%{top:60px}}
+  .ocr-tip{position:absolute;bottom:-22px;left:50%;transform:translateX(-50%);color:var(--orange);font-size:11px;font-weight:700;background:rgba(0,0,0,.65);padding:2px 10px;border-radius:8px;white-space:nowrap;font-family:monospace}
+
+  .status-bar{position:absolute;top:10px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,.75);backdrop-filter:blur(8px);border:1px solid rgba(255,255,255,.1);border-radius:20px;padding:5px 14px;font-size:12px;font-weight:500;display:flex;align-items:center;gap:7px;white-space:nowrap}
+  .dot{width:7px;height:7px;border-radius:50%;animation:pulse 1.2s infinite}
+  @keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.4;transform:scale(.7)}}
+
+  /* Mode Bar */
+  .mode-bar{display:flex;gap:8px;padding:9px 14px;background:var(--surface);border-bottom:1px solid var(--border)}
+  .mode-btn{flex:1;padding:9px 0;border-radius:9px;border:1.5px solid var(--border);background:var(--surface2);color:var(--text2);font-size:12px;font-weight:700;cursor:pointer;font-family:'Noto Sans KR',sans-serif;transition:all .2s}
+  .mode-btn.active-bar{background:var(--accent2);border-color:var(--accent2);color:#fff}
+  .mode-btn.active-ocr{background:var(--orange);border-color:var(--orange);color:#000}
+
+  /* OCR Result */
+  .ocr-result{display:none;gap:10px;padding:9px 14px;background:rgba(255,170,0,.07);border-bottom:1px solid rgba(255,170,0,.2);align-items:center}
+  .ocr-result.show{display:flex}
+  .ocr-apply{background:var(--orange);border:none;border-radius:9px;color:#000;font-size:12px;font-weight:700;padding:7px 12px;cursor:pointer;font-family:'Noto Sans KR',sans-serif}
+  .ocr-dismiss{background:none;border:none;color:var(--text2);font-size:18px;cursor:pointer;padding:4px}
+
+  /* Manual */
+  .manual-bar{display:flex;gap:8px;padding:9px 14px;background:var(--surface);border-bottom:1px solid var(--border)}
+  .manual-input{flex:1;background:var(--surface2);border:1px solid var(--border);border-radius:9px;color:var(--text);font-family:monospace;font-size:13px;padding:9px 12px;outline:none;transition:border-color .2s}
+  .manual-input:focus{border-color:var(--accent)}
+  .manual-input::placeholder{color:var(--text2)}
+  .btn-add{background:var(--accent2);border:none;border-radius:9px;color:#fff;font-size:13px;font-weight:700;padding:9px 14px;cursor:pointer;font-family:'Noto Sans KR',sans-serif}
+
+  /* List */
+  .list-wrap{flex:1;overflow-y:auto;padding-bottom:130px}
+  .list-hdr{display:flex;align-items:center;justify-content:space-between;padding:11px 18px 9px;background:var(--bg);border-bottom:1px solid var(--border);position:sticky;top:0;z-index:10}
+  .list-title{font-size:14px;font-weight:700}
+  .list-count{color:var(--accent);font-family:monospace;margin-left:5px}
+  .btn-clear{background:none;border:1px solid var(--border);border-radius:7px;color:var(--text2);font-size:11px;padding:5px 9px;cursor:pointer;font-family:'Noto Sans KR',sans-serif}
+
+  .empty{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;padding:60px 20px;color:var(--text2)}
+  .empty .ei{font-size:44px;opacity:.2}
+
+  .card{padding:12px 16px;border-bottom:1px solid var(--border);animation:slideIn .25s ease}
+  @keyframes slideIn{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:translateY(0)}}
+  .card-top{display:flex;align-items:center;gap:11px;margin-bottom:8px}
+  .card-img{width:44px;height:44px;border-radius:10px;background:var(--surface2);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:21px;flex-shrink:0}
+  .card-info{flex:1;min-width:0}
+  .card-name{font-size:14px;font-weight:700;margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .card-bc{font-family:monospace;font-size:10px;color:var(--text2)}
+  .qty-wrap{display:flex;align-items:center;gap:6px;flex-shrink:0}
+  .qty-btn{width:27px;height:27px;border-radius:7px;border:1.5px solid var(--border);background:var(--surface2);color:var(--text);font-size:15px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .15s}
+  .qty-btn:active{background:var(--accent2);border-color:var(--accent2)}
+  .qty-val{font-family:monospace;font-size:15px;font-weight:700;min-width:30px;text-align:center;background:var(--surface);border:1px solid var(--border);border-radius:7px;padding:2px 0;color:var(--accent)}
+  .del-btn{width:25px;height:25px;border:none;background:none;color:var(--text2);font-size:14px;cursor:pointer;border-radius:6px;flex-shrink:0;display:flex;align-items:center;justify-content:center}
+
+  .date-row{display:flex;gap:7px}
+  .date-chip{flex:1;border-radius:9px;padding:6px 10px;cursor:pointer}
+  .date-chip.exp{background:rgba(255,170,0,.07);border:1px solid rgba(255,170,0,.25)}
+  .date-chip.dis{background:rgba(255,59,92,.06);border:1px solid rgba(255,59,92,.2)}
+  .date-chip.safe{background:rgba(0,230,118,.06);border:1px solid rgba(0,230,118,.2)}
+  .dc-label{font-size:10px;font-weight:700;letter-spacing:.5px;margin-bottom:2px}
+  .exp .dc-label{color:var(--orange)}
+  .dis .dc-label{color:var(--danger)}
+  .safe .dc-label{color:var(--success)}
+  .dc-val{font-family:monospace;font-size:12px;font-weight:700}
+  .dc-empty{font-size:11px;color:var(--text2)}
+  .dc-dday{font-family:monospace;font-size:10px;font-weight:700;margin-top:1px}
+
+  /* Bottom */
+  .bottom{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:430px;padding:11px 14px 28px;background:var(--surface);border-top:1px solid var(--border);z-index:50}
+  .btn-row{display:flex;gap:8px;margin-bottom:7px}
+  .btn-pos{flex:1;background:linear-gradient(135deg,var(--accent2),var(--accent));border:none;border-radius:13px;color:#fff;font-size:14px;font-weight:700;padding:13px;cursor:pointer;font-family:'Noto Sans KR',sans-serif}
+  .btn-csv{background:var(--surface2);border:1px solid var(--border);border-radius:13px;color:var(--text);font-size:12px;font-weight:600;padding:13px 14px;cursor:pointer;font-family:'Noto Sans KR',sans-serif;white-space:nowrap}
+  .hint{text-align:center;font-size:11px;color:var(--text2)}
+
+  /* Toast */
+  .toast{position:fixed;top:76px;left:50%;transform:translateX(-50%);background:var(--surface);border-radius:12px;padding:9px 16px;font-size:13px;font-weight:600;z-index:600;white-space:nowrap;pointer-events:none;transition:opacity .25s}
+  .toast.hide{opacity:0}
+
+  /* Modal */
+  .modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.75);backdrop-filter:blur(4px);z-index:300;display:flex;align-items:flex-end;justify-content:center}
+  .modal{background:var(--surface);border-radius:22px 22px 0 0;padding:22px 18px 36px;width:100%;max-width:430px;animation:modalUp .3s ease}
+  @keyframes modalUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
+  .modal-title{font-size:17px;font-weight:700;margin-bottom:5px}
+  .modal-sub{font-size:13px;color:var(--text2);margin-bottom:14px;line-height:1.6}
+  .modal-table{background:var(--surface2);border-radius:11px;padding:12px;margin-bottom:16px;max-height:180px;overflow-y:auto}
+  .mtr{display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid var(--border);font-size:13px}
+  .mtr:last-child{border-bottom:none}
+  .mtr-r{display:flex;gap:10px;align-items:center}
+  .modal-actions{display:flex;gap:9px}
+  .btn-mc{flex:1;padding:12px;border:1px solid var(--border);border-radius:11px;background:none;color:var(--text2);font-size:13px;cursor:pointer;font-family:'Noto Sans KR',sans-serif}
+  .btn-mok{flex:2;padding:12px;border:none;border-radius:11px;background:linear-gradient(135deg,var(--accent2),var(--accent));color:#fff;font-size:13px;font-weight:700;cursor:pointer;font-family:'Noto Sans KR',sans-serif}
+  .date-input{width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:9px;color:var(--text);font-family:monospace;font-size:14px;padding:10px 13px;outline:none;margin-top:5px;margin-bottom:14px}
+  .date-input:focus{border-color:var(--orange)}
+  input[type=date]::-webkit-calendar-picker-indicator{filter:invert(1)}
+  label.dl{font-size:12px;color:var(--text2);font-weight:600}
+
+  ::-webkit-scrollbar{width:4px}
+  ::-webkit-scrollbar-thumb{background:var(--border);border-radius:4px}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <!-- Header -->
+  <div class="hdr">
+    <div style="font-size:22px">📦</div>
+    <div class="hdr-title">재고관리 스캐너</div>
+    <div class="hdr-badge" id="badge">READY</div>
+  </div>
+
+  <!-- Install Banner -->
+  <div class="install-banner" id="installBanner">
+    <span style="font-size:18px">📲</span>
+    <p>홈화면에 앱으로 설치하기</p>
+    <button class="btn-install" id="installBtn">설치</button>
+  </div>
+
+  <!-- Camera -->
+  <div class="cam-wrap" id="camWrap">
+    <video id="video" muted playsinline style="display:none"></video>
+    <div class="cam-placeholder" id="camPlaceholder">
+      <span style="font-size:44px;opacity:.25">📷</span>
+      <span id="camHint">탭하여 바코드 스캔 시작</span>
+    </div>
+    <div class="scan-overlay" id="scanOverlay" style="display:none">
+      <div class="sf">
+        <div class="sf-corner tl"></div><div class="sf-corner tr"></div>
+        <div class="sf-corner bl"></div><div class="sf-corner br"></div>
+        <div class="sf-line"></div>
+      </div>
+    </div>
+    <div class="scan-overlay" id="ocrOverlay" style="display:none">
+      <div class="ocr-frame-wrap">
+        <div class="ocr-corner tl"></div><div class="ocr-corner tr"></div>
+        <div class="ocr-corner bl"></div><div class="ocr-corner br"></div>
+        <div class="ocr-line"></div>
+        <div class="ocr-tip">날짜를 프레임 안에</div>
+      </div>
+    </div>
+    <div class="status-bar">
+      <div class="dot" id="dot" style="background:var(--green)"></div>
+      <span id="statusTxt">탭하여 시작</span>
+    </div>
+  </div>
+
+  <!-- Mode -->
+  <div class="mode-bar">
+    <button class="mode-btn active-bar" id="modeBar" onclick="setMode('barcode')">🔲 바코드 스캔</button>
+    <button class="mode-btn" id="modeOcr" onclick="setMode('ocr')">📅 유통기한 OCR</button>
+  </div>
+
+  <!-- OCR Result -->
+  <div class="ocr-result" id="ocrResult">
+    <span style="font-size:18px">📅</span>
+    <div style="flex:1">
+      <div style="font-size:10px;color:var(--orange);font-weight:700;margin-bottom:2px">OCR 인식 결과</div>
+      <div style="font-family:monospace;font-size:15px;font-weight:700" id="ocrDate">-</div>
+    </div>
+    <button class="ocr-apply" onclick="applyOcr()">적용</button>
+    <button class="ocr-dismiss" onclick="dismissOcr()">✕</button>
+  </div>
+
+  <!-- OCR Loading -->
+  <div id="ocrLoading" style="display:none;padding:10px 14px;background:rgba(255,170,0,.05);border-bottom:1px solid rgba(255,170,0,.15);text-align:center;font-size:13px;color:var(--orange);font-weight:600">
+    🔍 AI가 날짜 인식 중...
+  </div>
+
+  <!-- Manual -->
+  <div class="manual-bar">
+    <input class="manual-input" id="manualInput" type="text" placeholder="바코드 번호 직접 입력..." inputmode="numeric">
+    <button class="btn-add" onclick="addManual()">추가</button>
+  </div>
+
+  <!-- List -->
+  <div class="list-wrap">
+    <div class="list-hdr">
+      <div class="list-title">스캔 목록 <span class="list-count" id="listCount">(0)</span></div>
+      <button class="btn-clear" onclick="clearAll()">전체 삭제</button>
+    </div>
+    <div id="itemList">
+      <div class="empty"><div class="ei">📦</div><span style="font-size:13px">스캔한 상품이 없습니다</span></div>
+    </div>
+  </div>
+
+  <!-- Bottom -->
+  <div class="bottom">
+    <div class="btn-row">
+      <button class="btn-pos" onclick="showPos()">⚡ POS로 전송</button>
+      <button class="btn-csv" onclick="exportCSV()">📊 CSV</button>
+    </div>
+    <div class="hint">ℹ 바코드 탭 → 스캔 / OCR 탭 → 날짜 촬영</div>
+  </div>
+</div>
+
+<!-- OCR input -->
+<input type="file" id="ocrInput" accept="image/*" capture="environment" style="display:none">
+
+<!-- POS Modal -->
+<div class="modal-bg" id="posModal" style="display:none" onclick="if(event.target===this)document.getElementById('posModal').style.display='none'">
+  <div class="modal">
+    <div class="modal-title">📡 POS 전송</div>
+    <div class="modal-sub">아래 재고 목록을 POS로 전송합니다.</div>
+    <div class="modal-table" id="posTable"></div>
+    <div class="modal-actions">
+      <button class="btn-mc" onclick="document.getElementById('posModal').style.display='none'">취소</button>
+      <button class="btn-mok" onclick="sendPos()">전송 확인</button>
+    </div>
+  </div>
+</div>
+
+<!-- Date Modal -->
+<div class="modal-bg" id="dateModal" style="display:none" onclick="if(event.target===this)document.getElementById('dateModal').style.display='none'">
+  <div class="modal">
+    <div class="modal-title">📅 날짜 수정</div>
+    <label class="dl">유통기한</label>
+    <input type="date" class="date-input" id="dExp">
+    <label class="dl">폐기일 (자동계산, 수정 가능)</label>
+    <input type="date" class="date-input" id="dDis" style="margin-bottom:4px">
+    <div class="modal-actions">
+      <button class="btn-mc" onclick="document.getElementById('dateModal').style.display='none'">취소</button>
+      <button class="btn-mok" onclick="saveDate()">저장</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── Data ──
+let items = JSON.parse(localStorage.getItem('inv_v4')||'[]');
+let mode = 'barcode';
+let scanning = false;
+let quaggaOn = false;
+let streamRef = null;
+let lastCode = {c:'',t:0};
+let pendingOcr = null;
+let editIdx = null;
+
+const DB = {
+  '8801043064668':{name:'새우깡',emoji:'🍿'},
+  '8801043211033':{name:'오리온 초코파이',emoji:'🍫'},
+  '8801234567890':{name:'코카콜라 250ml',emoji:'🥤'},
+  '8800112233445':{name:'삼각김밥 참치',emoji:'🍙'},
+  '8801072236316':{name:'신라면 120g',emoji:'🍜'},
+  '8801068309001':{name:'포카칩 오리지널',emoji:'🥔'},
+};
+
+function calcDis(exp){
+  if(!exp) return '';
+  const d=new Date(exp); d.setDate(d.getDate()-1); return d.toISOString().slice(0,10);
+}
+function dday(ds){
+  if(!ds) return null;
+  const t=new Date(); t.setHours(0,0,0,0);
+  const diff=Math.round((new Date(ds)-t)/86400000);
+  if(diff<0) return {t:`D+${Math.abs(diff)}`,c:'#ff3b5c'};
+  if(diff===0) return {t:'D-DAY',c:'#ff3b5c'};
+  if(diff<=3) return {t:`D-${diff}`,c:'#ffaa00'};
+  return {t:`D-${diff}`,c:'#00e676'};
+}
+function save(){ localStorage.setItem('inv_v4',JSON.stringify(items)); }
+
+// ── Render ──
+function render(){
+  document.getElementById('listCount').textContent=`(${items.length})`;
+  const el=document.getElementById('itemList');
+  if(!items.length){
+    el.innerHTML=`<div class="empty"><div class="ei">📦</div><span style="font-size:13px">스캔한 상품이 없습니다</span></div>`;
+    return;
+  }
+  el.innerHTML=items.map((it,i)=>{
+    const dd=it.disposalDate?dday(it.disposalDate):null;
+    const safe=dd&&dd.c==='#00e676';
+    return `<div class="card">
+      <div class="card-top">
+        <div class="card-img">${it.emoji||'📦'}</div>
+        <div class="card-info">
+          <div class="card-name">${it.name}</div>
+          <div class="card-bc">Barcode: ${it.barcode}</div>
+        </div>
+        <div class="qty-wrap">
+          <button class="qty-btn" onclick="chgQty(${i},-1)">−</button>
+          <div class="qty-val">${it.qty}</div>
+          <button class="qty-btn" onclick="chgQty(${i},1)">+</button>
+        </div>
+        <button class="del-btn" onclick="delItem(${i})">✕</button>
+      </div>
+      <div class="date-row">
+        <div class="date-chip exp" onclick="openDate(${i})">
+          <div class="dc-label">유통기한</div>
+          ${it.expiryDate?`<div class="dc-val">${it.expiryDate}</div>`:`<div class="dc-empty">탭하여 입력</div>`}
+        </div>
+        <div class="date-chip ${safe?'safe':'dis'}" onclick="openDate(${i})">
+          <div class="dc-label">폐기일</div>
+          ${it.disposalDate
+            ?`<div class="dc-val">${it.disposalDate}</div>${dd?`<div class="dc-dday" style="color:${dd.c}">${dd.t}</div>`:''}`
+            :`<div class="dc-empty">자동계산</div>`}
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function chgQty(i,d){ items[i].qty=Math.max(1,items[i].qty+d); save(); render(); }
+function delItem(i){ items.splice(i,1); save(); render(); }
+function clearAll(){ if(items.length&&confirm('전체 삭제?')){ items=[]; save(); render(); }}
+
+// ── Add ──
+function addItem(bc){
+  const now=Date.now();
+  if(bc===lastCode.c&&now-lastCode.t<2000) return;
+  lastCode={c:bc,t:now};
+  const info=DB[bc]||{name:`상품 ${bc.slice(-4)}`,emoji:'📦'};
+  const idx=items.findIndex(it=>it.barcode===bc);
+  if(idx>=0){ items[idx].qty++; save(); render(); toast(`✚ ${items[idx].name} 수량 증가 (${items[idx].qty})`); }
+  else { items.unshift({barcode:bc,name:info.name,emoji:info.emoji,qty:1,expiryDate:'',disposalDate:''}); save(); render(); toast(`✅ ${info.name} 추가됨`); }
+}
+function addManual(){
+  const v=document.getElementById('manualInput').value.trim();
+  if(!v) return;
+  addItem(v); document.getElementById('manualInput').value='';
+}
+document.getElementById('manualInput').addEventListener('keydown',e=>{ if(e.key==='Enter') addManual(); });
+
+// ── Camera ──
+async function startCam(){
+  if(scanning) return;
+  try {
+    const stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:'environment',width:{ideal:1280},height:{ideal:720}}});
+    streamRef=stream;
+    const vid=document.getElementById('video');
+    vid.srcObject=stream; vid.style.display='block'; vid.play();
+    document.getElementById('camPlaceholder').style.display='none';
+    document.getElementById('scanOverlay').style.display='flex';
+    document.getElementById('badge').textContent='LIVE';
+    document.getElementById('statusTxt').textContent='바코드 스캔 중...';
+    scanning=true;
+
+    if(!window.Quagga){
+      await new Promise((r,j)=>{ const s=document.createElement('script'); s.src='https://cdnjs.cloudflare.com/ajax/libs/quagga/0.12.1/quagga.min.js'; s.onload=r; s.onerror=j; document.head.appendChild(s); });
+    }
+    Quagga.init({
+      inputStream:{name:'Live',type:'LiveStream',target:vid,constraints:{facingMode:'environment'}},
+      locator:{patchSize:'medium',halfSample:true},
+      numOfWorkers:2,frequency:10,
+      decoder:{readers:['ean_reader','ean_8_reader','upc_reader','code_128_reader']},
+      locate:true,
+    },err=>{ if(err){ toast('카메라 초기화 오류','#ff6b35'); return; } Quagga.start(); quaggaOn=true; });
+    Quagga.onDetected(r=>{ const c=r?.codeResult?.code; if(c) addItem(c); });
+  } catch(e){
+    toast('카메라 권한을 허용해주세요','#ff6b35');
+  }
+}
+
+function stopCam(){
+  if(!scanning) return;
+  if(quaggaOn){ try{Quagga.stop();}catch{} quaggaOn=false; }
+  if(streamRef){ streamRef.getTracks().forEach(t=>t.stop()); streamRef=null; }
+  const vid=document.getElementById('video');
+  vid.style.display='none'; vid.srcObject=null;
+  document.getElementById('camPlaceholder').style.display='flex';
+  document.getElementById('scanOverlay').style.display='none';
+  document.getElementById('ocrOverlay').style.display='none';
+  document.getElementById('badge').textContent='READY';
+  document.getElementById('statusTxt').textContent='탭하여 시작';
+  scanning=false;
+}
+
+document.getElementById('camWrap').addEventListener('click',()=>{
+  if(mode==='ocr'){ document.getElementById('ocrInput').click(); return; }
+  if(!scanning) startCam(); else stopCam();
+});
+
+// ── Mode ──
+function setMode(m){
+  mode=m;
+  document.getElementById('modeBar').className='mode-btn'+(m==='barcode'?' active-bar':'');
+  document.getElementById('modeOcr').className='mode-btn'+(m==='ocr'?' active-ocr':'');
+  document.getElementById('dot').style.background=m==='ocr'?'var(--orange)':'var(--green)';
+  document.getElementById('camHint').textContent=m==='barcode'?'탭하여 바코드 스캔 시작':'탭하여 유통기한 사진 촬영';
+  if(m==='ocr'&&scanning){
+    document.getElementById('scanOverlay').style.display='none';
+    document.getElementById('ocrOverlay').style.display='flex';
+    document.getElementById('statusTxt').textContent='사진 촬영 모드';
+  } else if(m==='barcode'&&scanning){
+    document.getElementById('scanOverlay').style.display='flex';
+    document.getElementById('ocrOverlay').style.display='none';
+    document.getElementById('statusTxt').textContent='바코드 스캔 중...';
+  }
+}
+
+// ── OCR ──
+document.getElementById('ocrInput').addEventListener('change',async function(){
+  const file=this.files[0]; if(!file) return; this.value='';
+  document.getElementById('ocrLoading').style.display='block';
+  try {
+    const b64=await new Promise((r,j)=>{ const rd=new FileReader(); rd.onload=()=>r(rd.result.split(',')[1]); rd.onerror=j; rd.readAsDataURL(file); });
+    const res=await fetch('https://api.anthropic.com/v1/messages',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({
+        model:'claude-sonnet-4-20250514',max_tokens:100,
+        messages:[{role:'user',content:[
+          {type:'image',source:{type:'base64',media_type:file.type,data:b64}},
+          {type:'text',text:'이 이미지에서 유통기한(소비기한) 날짜를 찾아 YYYY-MM-DD 형식으로만 답하세요. 없으면 NULL.'}
+        ]}]
+      })
+    });
+    const data=await res.json();
+    const txt=(data.content?.[0]?.text||'').trim();
+    if(txt==='NULL'||!txt){ toast('날짜 인식 실패. 직접 입력하세요','#ff6b35'); }
+    else {
+      const m=txt.match(/(\d{4})-(\d{2})-(\d{2})/);
+      if(m){ pendingOcr=txt; document.getElementById('ocrDate').textContent=txt; document.getElementById('ocrResult').classList.add('show'); toast(`📅 인식: ${txt}`,'#ffaa00'); }
+      else { toast('날짜 인식 실패','#ff6b35'); }
+    }
+  } catch{ toast('오류 발생','#ff6b35'); }
+  document.getElementById('ocrLoading').style.display='none';
+});
+
+function applyOcr(){
+  if(!pendingOcr||!items.length) return;
+  items[0].expiryDate=pendingOcr;
+  items[0].disposalDate=calcDis(pendingOcr);
+  save(); render();
+  toast(`✅ ${items[0].name} 폐기일 설정 완료`,'#00e676');
+  dismissOcr();
+}
+function dismissOcr(){ pendingOcr=null; document.getElementById('ocrResult').classList.remove('show'); }
+
+// ── Date Modal ──
+function openDate(i){
+  editIdx=i;
+  document.getElementById('dExp').value=items[i].expiryDate||'';
+  document.getElementById('dDis').value=items[i].disposalDate||'';
+  document.getElementById('dateModal').style.display='flex';
+}
+document.getElementById('dExp').addEventListener('change',function(){ if(this.value) document.getElementById('dDis').value=calcDis(this.value); });
+function saveDate(){
+  const exp=document.getElementById('dExp').value;
+  const dis=document.getElementById('dDis').value;
+  items[editIdx].expiryDate=exp;
+  items[editIdx].disposalDate=dis||calcDis(exp);
+  save(); render(); document.getElementById('dateModal').style.display='none';
+  toast('📅 날짜 저장','#00e676');
+}
+
+// ── POS ──
+function showPos(){
+  if(!items.length){ toast('전송할 상품 없음','#ff6b35'); return; }
+  document.getElementById('posTable').innerHTML=items.map((it,i)=>`
+    <div class="mtr" style="${i===items.length-1?'border-bottom:none':''}">
+      <span style="font-weight:600">${it.emoji} ${it.name}</span>
+      <div class="mtr-r">
+        ${it.disposalDate?`<span style="font-family:monospace;font-size:11px;color:var(--orange)">폐기 ${it.disposalDate}</span>`:''}
+        <span style="font-family:monospace;color:var(--accent);font-weight:700">×${it.qty}</span>
+      </div>
+    </div>`).join('');
+  document.getElementById('posModal').style.display='flex';
+}
+function sendPos(){
+  document.getElementById('posModal').style.display='none';
+  toast(`✅ POS 전송 완료 (${items.length}종)`);
+  setTimeout(()=>{ items=[]; save(); render(); },800);
+}
+
+// ── CSV ──
+function exportCSV(){
+  if(!items.length){ toast('내보낼 상품 없음','#ff6b35'); return; }
+  const rows=[['상품명','바코드','수량','유통기한','폐기일']];
+  items.forEach(it=>rows.push([it.name,it.barcode,it.qty,it.expiryDate,it.disposalDate]));
+  const csv='\uFEFF'+rows.map(r=>r.join(',')).join('\n');
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8'}));
+  a.download=`재고_${new Date().toISOString().slice(0,10)}.csv`;
+  a.click(); toast('📊 CSV 저장','#00e676');
+}
+
+// ── Toast ──
+let toastTimer;
+function toast(msg,color='#00ff88'){
+  let t=document.querySelector('.toast');
+  if(t) t.remove();
+  clearTimeout(toastTimer);
+  t=document.createElement('div');
+  t.className='toast';
+  t.textContent=msg;
+  t.style.cssText=`border:1px solid ${color};color:${color};box-shadow:0 4px 20px ${color}33`;
+  document.body.appendChild(t);
+  toastTimer=setTimeout(()=>{ t.classList.add('hide'); setTimeout(()=>t&&t.remove(),260); },2200);
+}
+
+// ── PWA Install ──
+let deferredPrompt;
+window.addEventListener('beforeinstallprompt',e=>{
+  e.preventDefault(); deferredPrompt=e;
+  document.getElementById('installBanner').classList.add('show');
+});
+document.getElementById('installBtn').addEventListener('click',async()=>{
+  if(!deferredPrompt) return;
+  deferredPrompt.prompt();
+  const {outcome}=await deferredPrompt.userChoice;
+  if(outcome==='accepted') document.getElementById('installBanner').classList.remove('show');
+  deferredPrompt=null;
+});
+
+// ── Service Worker ──
+if('serviceWorker' in navigator){
+  navigator.serviceWorker.register('./sw.js').catch(()=>{});
+}
+
+render();
+</script>
+</body>
+</html>
