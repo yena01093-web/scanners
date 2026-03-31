@@ -282,7 +282,7 @@ function loadZXing(){
   return new Promise(function(res,rej){
     if(window.ZXing){res();return;}
     var s=document.createElement('script');
-    s.src='https://unpkg.com/@zxing/library@latest/umd/index.min.js';
+    s.src='https://unpkg.com/@zxing/library@0.19.1/umd/index.min.js/library@latest/umd/index.min.js';
     s.onload=res;s.onerror=function(){rej(new Error('ZXing 로드 실패'));};
     document.head.appendChild(s);
   });
