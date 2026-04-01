@@ -1,9 +1,10 @@
-<!DOCTYPE html>
+
+ <!DOCTYPE html>
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<meta name="theme-color" content="#111318">
+<meta name="theme-color" content="#0d1117">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="재고스캐너">
@@ -28,7 +29,7 @@ body{font-family:var(--sans);background:var(--bg);color:var(--text);min-height:1
 .cam-wrap{position:relative;background:#000;height:220px;overflow:hidden;cursor:pointer;flex-shrink:0}
 .cam-wrap video{width:100%;height:100%;object-fit:cover;display:block}
 .cam-placeholder{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;background:#080c12}
-.cam-placeholder .icon{font-size:40px;opacity:.2}
+.cam-icon{font-size:40px;opacity:.2}
 .cam-placeholder span{font-size:13px;color:var(--text2);font-family:var(--mono)}
 .scan-overlay{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none}
 .scan-frame{width:200px;height:110px;position:relative}
@@ -137,8 +138,9 @@ label.dl{font-size:12px;color:var(--text2);font-weight:600;font-family:var(--mon
   </div>
   <div class="cam-wrap" id="camWrap">
     <video id="video" muted playsinline style="display:none"></video>
+    <canvas id="scanCanvas" style="display:none"></canvas>
     <div class="cam-placeholder" id="camPlaceholder">
-      <div class="icon">📷</div>
+      <div class="cam-icon">📷</div>
       <span id="camHint">탭하여 스캔 시작</span>
     </div>
     <div class="scan-overlay" id="scanOverlay" style="display:none">
@@ -212,251 +214,315 @@ label.dl{font-size:12px;color:var(--text2);font-weight:600;font-family:var(--mon
     </div>
   </div>
 </div>
-<script>
-var items=JSON.parse(localStorage.getItem('scanItems')||'[]');
-var mode='bar',scanning=false,stream=null,scanInterval=null,ocrInterval=null;
-var lastCode=null,lastCodeTime=0,editIdx=null,modalField=null,deferredPrompt=null;
 
-window.addEventListener('beforeinstallprompt',function(e){
-  e.preventDefault();deferredPrompt=e;
+<script>
+var items = JSON.parse(localStorage.getItem('scanItems') || '[]');
+var mode = 'bar', scanning = false, stream = null;
+var scanInterval = null, ocrInterval = null;
+var lastCode = null, lastCodeTime = 0;
+var editIdx = null, modalField = null, deferredPrompt = null;
+var barcodeDetector = null;
+
+// PWA
+window.addEventListener('beforeinstallprompt', function(e) {
+  e.preventDefault(); deferredPrompt = e;
   document.getElementById('installBanner').classList.add('show');
 });
-document.getElementById('installBtn').onclick=async function(){
-  if(!deferredPrompt)return;
+document.getElementById('installBtn').onclick = async function() {
+  if (!deferredPrompt) return;
   deferredPrompt.prompt();
-  var r=await deferredPrompt.userChoice;
-  if(r.outcome==='accepted')document.getElementById('installBanner').classList.remove('show');
-  deferredPrompt=null;
+  await deferredPrompt.userChoice;
+  document.getElementById('installBanner').classList.remove('show');
+  deferredPrompt = null;
 };
-if(navigator.serviceWorker)navigator.serviceWorker.register('./sw.js').catch(function(){});
+if (navigator.serviceWorker) navigator.serviceWorker.register('./sw.js').catch(function(){});
 
-function setMode(m){
-  mode=m;
-  document.getElementById('btnBar').className='mode-btn'+(m==='bar'?' active-bar':'');
-  document.getElementById('btnOcr').className='mode-btn'+(m==='ocr'?' active-ocr':'');
-  if(scanning){
-    stopBarScan();stopOcrScan();
-    document.getElementById('scanOverlay').style.display='none';
-    document.getElementById('ocrOverlay').style.display='none';
-    if(m==='bar')startBarScan();else startOcrScan();
+// Check BarcodeDetector support
+async function initBarcodeDetector() {
+  if ('BarcodeDetector' in window) {
+    try {
+      var formats = await BarcodeDetector.getSupportedFormats();
+      barcodeDetector = new BarcodeDetector({ formats: formats });
+      return true;
+    } catch(e) {}
+  }
+  return false;
+}
+
+function setMode(m) {
+  mode = m;
+  document.getElementById('btnBar').className = 'mode-btn' + (m === 'bar' ? ' active-bar' : '');
+  document.getElementById('btnOcr').className = 'mode-btn' + (m === 'ocr' ? ' active-ocr' : '');
+  if (scanning) {
+    stopBarScan(); stopOcrScan();
+    document.getElementById('scanOverlay').style.display = 'none';
+    document.getElementById('ocrOverlay').style.display = 'none';
+    if (m === 'bar') startBarScan(); else startOcrScan();
   }
 }
 
-document.getElementById('camWrap').onclick=function(){
-  if(!scanning)startCam();else stopCam();
+document.getElementById('camWrap').onclick = function() {
+  if (!scanning) startCam(); else stopCam();
 };
 
-async function startCam(){
-  try{
-    stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:'environment',width:{ideal:1920},height:{ideal:1080}}});
-    var video=document.getElementById('video');
-    video.srcObject=stream;
+async function startCam() {
+  try {
+    stream = await navigator.mediaDevices.getUserMedia({
+      video: { facingMode: 'environment', width: { ideal: 1280 }, height: { ideal: 720 } }
+    });
+    var video = document.getElementById('video');
+    video.srcObject = stream;
     await video.play();
-    video.style.display='block';
-    document.getElementById('camPlaceholder').style.display='none';
-    scanning=true;
-    document.getElementById('badge').textContent='LIVE';
-    document.getElementById('badge').className='hdr-badge live';
-    document.getElementById('dot').style.background='var(--green)';
-    document.getElementById('statusTxt').textContent=mode==='bar'?'바코드 스캔 중...':'OCR 스캔 중...';
-    if(mode==='bar')startBarScan();else startOcrScan();
-  }catch(e){toast('카메라 권한을 허용해주세요','var(--red)');}
+    video.style.display = 'block';
+    document.getElementById('camPlaceholder').style.display = 'none';
+    scanning = true;
+    document.getElementById('badge').textContent = 'LIVE';
+    document.getElementById('badge').className = 'hdr-badge live';
+    document.getElementById('dot').style.background = 'var(--green)';
+    document.getElementById('statusTxt').textContent = mode === 'bar' ? '바코드 스캔 중...' : 'OCR 스캔 중...';
+    if (mode === 'bar') startBarScan(); else startOcrScan();
+  } catch(e) {
+    toast('카메라 권한을 허용해주세요', 'var(--red)');
+  }
 }
 
-function stopCam(){
-  stopBarScan();stopOcrScan();
-  if(stream){stream.getTracks().forEach(function(t){t.stop();});stream=null;}
-  var video=document.getElementById('video');
-  video.style.display='none';video.srcObject=null;
-  document.getElementById('camPlaceholder').style.display='flex';
-  document.getElementById('scanOverlay').style.display='none';
-  document.getElementById('ocrOverlay').style.display='none';
-  scanning=false;
-  document.getElementById('badge').textContent='READY';
-  document.getElementById('badge').className='hdr-badge ready';
-  document.getElementById('dot').style.background='var(--text2)';
-  document.getElementById('statusTxt').textContent='탭하여 시작';
+function stopCam() {
+  stopBarScan(); stopOcrScan();
+  if (stream) { stream.getTracks().forEach(function(t) { t.stop(); }); stream = null; }
+  var video = document.getElementById('video');
+  video.style.display = 'none'; video.srcObject = null;
+  document.getElementById('camPlaceholder').style.display = 'flex';
+  document.getElementById('scanOverlay').style.display = 'none';
+  document.getElementById('ocrOverlay').style.display = 'none';
+  scanning = false;
+  document.getElementById('badge').textContent = 'READY';
+  document.getElementById('badge').className = 'hdr-badge ready';
+  document.getElementById('dot').style.background = 'var(--text2)';
+  document.getElementById('statusTxt').textContent = '탭하여 시작';
 }
 
-function loadZXing(){
-  return new Promise(function(res,rej){
-    if(window.ZXing){res();return;}
-    var s=document.createElement('script');
-    s.src='https://unpkg.com/@zxing/library@0.19.1/umd/index.min.js/library@latest/umd/index.min.js';
-    s.onload=res;s.onerror=function(){rej(new Error('ZXing 로드 실패'));};
-    document.head.appendChild(s);
-  });
-}
+async function startBarScan() {
+  document.getElementById('scanOverlay').style.display = 'flex';
+  document.getElementById('ocrOverlay').style.display = 'none';
 
-var zxingReader=null;
-async function startBarScan(){
-  document.getElementById('scanOverlay').style.display='flex';
-  document.getElementById('ocrOverlay').style.display='none';
-  try{
-    await loadZXing();
-    if(!zxingReader)zxingReader=new ZXing.BrowserMultiFormatReader();
-    var video=document.getElementById('video');
-    scanInterval=setInterval(function(){
-      if(!scanning||!video.videoWidth)return;
-      try{
-        var canvas=document.createElement('canvas');
-        canvas.width=video.videoWidth;canvas.height=video.videoHeight;
-        var ctx=canvas.getContext('2d');
-        ctx.drawImage(video,0,0);
-        var result=zxingReader.decodeFromCanvas(canvas);
-        if(result){
-          var code=result.getText();
-          var now=Date.now();
-          if(code!==lastCode||now-lastCodeTime>2000){
-            lastCode=code;lastCodeTime=now;
+  var hasBD = await initBarcodeDetector();
+  var video = document.getElementById('video');
+
+  if (hasBD) {
+    // Use native BarcodeDetector API
+    scanInterval = setInterval(async function() {
+      if (!scanning || !video.videoWidth) return;
+      try {
+        var barcodes = await barcodeDetector.detect(video);
+        if (barcodes && barcodes.length > 0) {
+          var code = barcodes[0].rawValue;
+          var now = Date.now();
+          if (code !== lastCode || now - lastCodeTime > 2000) {
+            lastCode = code; lastCodeTime = now;
             addItem(code);
-            if(navigator.vibrate)navigator.vibrate(50);
+            if (navigator.vibrate) navigator.vibrate(50);
           }
         }
-      }catch(e){}
-    },300);
-  }catch(e){toast('스캐너: '+e.message,'var(--red)');}
+      } catch(e) {}
+    }, 200);
+  } else {
+    // Fallback: load ZXing dynamically
+    toast('스캐너 초기화 중...', 'var(--accent)');
+    var script = document.createElement('script');
+    script.src = 'https://cdn.jsdelivr.net/npm/@zxing/library@0.19.1/umd/index.min.js';
+    script.onload = function() {
+      try {
+        var reader = new ZXing.BrowserMultiFormatReader();
+        scanInterval = setInterval(function() {
+          if (!scanning || !video.videoWidth) return;
+          try {
+            var canvas = document.createElement('canvas');
+            canvas.width = video.videoWidth; canvas.height = video.videoHeight;
+            canvas.getContext('2d').drawImage(video, 0, 0);
+            var result = reader.decodeFromCanvas(canvas);
+            if (result) {
+              var code = result.getText();
+              var now = Date.now();
+              if (code !== lastCode || now - lastCodeTime > 2000) {
+                lastCode = code; lastCodeTime = now;
+                addItem(code);
+                if (navigator.vibrate) navigator.vibrate(50);
+              }
+            }
+          } catch(e) {}
+        }, 300);
+        toast('스캐너 준비됨', 'var(--green)');
+      } catch(e) {
+        toast('스캐너 오류: ' + e.message, 'var(--red)');
+      }
+    };
+    script.onerror = function() {
+      // Last fallback: try Quagga
+      var s2 = document.createElement('script');
+      s2.src = 'https://cdn.jsdelivr.net/npm/quagga@0.12.1/dist/quagga.min.js';
+      s2.onload = function() {
+        Quagga.init({
+          inputStream: { type: 'LiveStream', target: video, constraints: { facingMode: 'environment' } },
+          locator: { patchSize: 'medium', halfSample: true },
+          numOfWorkers: 2, frequency: 10,
+          decoder: { readers: ['ean_reader','ean_8_reader','upc_reader','code_128_reader'] },
+          locate: true
+        }, function(err) {
+          if (err) { toast('카메라 초기화 오류', 'var(--red)'); return; }
+          Quagga.start();
+          Quagga.onDetected(function(r) {
+            var code = r && r.codeResult && r.codeResult.code;
+            if (!code) return;
+            var now = Date.now();
+            if (code !== lastCode || now - lastCodeTime > 2000) {
+              lastCode = code; lastCodeTime = now;
+              addItem(code);
+              if (navigator.vibrate) navigator.vibrate(50);
+            }
+          });
+        });
+      };
+      s2.onerror = function() { toast('라이브러리 로드 실패', 'var(--red)'); };
+      document.head.appendChild(s2);
+    };
+    document.head.appendChild(script);
+  }
 }
 
-function stopBarScan(){if(scanInterval){clearInterval(scanInterval);scanInterval=null;}}
+function stopBarScan() {
+  if (scanInterval) { clearInterval(scanInterval); scanInterval = null; }
+  try { if (window.Quagga) Quagga.stop(); } catch(e) {}
+}
 
-function startOcrScan(){
-  document.getElementById('scanOverlay').style.display='none';
-  document.getElementById('ocrOverlay').style.display='flex';
-  document.getElementById('statusTxt').textContent='OCR 스캔 중...';
-  ocrInterval=setInterval(function(){
-    if(!scanning)return;
-    var video=document.getElementById('video');
-    if(!video.videoWidth)return;
-    var canvas=document.createElement('canvas');
-    var vw=video.videoWidth,vh=video.videoHeight;
-    var fw=Math.floor(vw*.65),fh=Math.floor(vh*.22);
-    var fx=Math.floor((vw-fw)/2),fy=Math.floor((vh-fh)/2);
-    canvas.width=fw;canvas.height=fh;
-    var ctx=canvas.getContext('2d');
-    ctx.drawImage(video,fx,fy,fw,fh,0,0,fw,fh);
-    canvas.toBlob(function(blob){
-      if(!blob)return;
-      var reader=new FileReader();
-      reader.onload=async function(){
-        var b64=reader.result.split(',')[1];
-        try{
-          var res=await fetch('https://api.anthropic.com/v1/messages',{
-            method:'POST',
-            headers:{'Content-Type':'application/json'},
-            body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:100,messages:[{role:'user',content:[
-              {type:'image',source:{type:'base64',media_type:'image/jpeg',data:b64}},
-              {type:'text',text:'이 이미지에서 날짜(유통기한)만 찾아서 YYYY-MM-DD 형식으로만 답해. 날짜가 없으면 "없음"이라고만 답해.'}
-            ]}]})
+function startOcrScan() {
+  document.getElementById('scanOverlay').style.display = 'none';
+  document.getElementById('ocrOverlay').style.display = 'flex';
+  document.getElementById('statusTxt').textContent = 'OCR 스캔 중...';
+  var video = document.getElementById('video');
+  ocrInterval = setInterval(function() {
+    if (!scanning || !video.videoWidth) return;
+    var canvas = document.createElement('canvas');
+    var vw = video.videoWidth, vh = video.videoHeight;
+    var fw = Math.floor(vw * .65), fh = Math.floor(vh * .22);
+    canvas.width = fw; canvas.height = fh;
+    canvas.getContext('2d').drawImage(video, Math.floor((vw-fw)/2), Math.floor((vh-fh)/2), fw, fh, 0, 0, fw, fh);
+    canvas.toBlob(function(blob) {
+      if (!blob) return;
+      var fr = new FileReader();
+      fr.onload = async function() {
+        var b64 = fr.result.split(',')[1];
+        try {
+          var res = await fetch('https://api.anthropic.com/v1/messages', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              model: 'claude-sonnet-4-20250514', max_tokens: 100,
+              messages: [{ role: 'user', content: [
+                { type: 'image', source: { type: 'base64', media_type: 'image/jpeg', data: b64 } },
+                { type: 'text', text: '이 이미지에서 날짜(유통기한)만 찾아서 YYYY-MM-DD 형식으로만 답해. 날짜가 없으면 "없음"이라고만 답해.' }
+              ]}]
+            })
           });
-          var data=await res.json();
-          var txt=data.content&&data.content[0]&&data.content[0].text?data.content[0].text.trim():'';
-          if(txt&&txt!=='없음'&&/\d{4}-\d{2}-\d{2}/.test(txt)){
-            var date=txt.match(/\d{4}-\d{2}-\d{2}/)[0];
+          var data = await res.json();
+          var txt = data.content && data.content[0] ? data.content[0].text.trim() : '';
+          if (txt && txt !== '없음' && /\d{4}-\d{2}-\d{2}/.test(txt)) {
+            var date = txt.match(/\d{4}-\d{2}-\d{2}/)[0];
             stopOcrScan();
-            document.getElementById('ocrTxt').textContent='📅 '+date;
+            document.getElementById('ocrTxt').textContent = '📅 ' + date;
             document.getElementById('ocrResult').classList.add('show');
-            document.getElementById('ocrApply').onclick=function(){
-              if(items.length>0)openDateModal(items.length-1,'exp',date);
+            document.getElementById('ocrApply').onclick = function() {
+              if (items.length > 0) openDateModal(items.length - 1, 'exp', date);
               document.getElementById('ocrResult').classList.remove('show');
             };
-            if(navigator.vibrate)navigator.vibrate(100);
+            if (navigator.vibrate) navigator.vibrate(100);
           }
-        }catch(e){}
+        } catch(e) {}
       };
-      reader.readAsDataURL(blob);
-    },'image/jpeg',.8);
-  },2500);
+      fr.readAsDataURL(blob);
+    }, 'image/jpeg', .8);
+  }, 2500);
 }
 
-function stopOcrScan(){if(ocrInterval){clearInterval(ocrInterval);ocrInterval=null;}}
+function stopOcrScan() { if (ocrInterval) { clearInterval(ocrInterval); ocrInterval = null; } }
 
-function addItem(code){
-  if(!code)return;
-  var existing=items.findIndex(function(i){return i.code===code;});
-  if(existing>=0){items[existing].qty++;saveAndRender();toast('수량 +1: '+code,'var(--green)');return;}
-  items.unshift({code:code,qty:1,exp:'',dis:'',safe:'',ts:Date.now()});
-  document.getElementById('manualInput').value='';
-  saveAndRender();toast('스캔: '+code,'var(--green)');
+function addItem(code) {
+  if (!code) return;
+  var idx = items.findIndex(function(i) { return i.code === code; });
+  if (idx >= 0) { items[idx].qty++; saveAndRender(); toast('수량 +1: ' + code, 'var(--green)'); return; }
+  items.unshift({ code: code, qty: 1, exp: '', dis: '', safe: '', ts: Date.now() });
+  document.getElementById('manualInput').value = '';
+  saveAndRender(); toast('스캔: ' + code, 'var(--green)');
 }
 
-function saveAndRender(){
-  localStorage.setItem('scanItems',JSON.stringify(items));
-  renderList();
+function saveAndRender() { localStorage.setItem('scanItems', JSON.stringify(items)); renderList(); }
+
+var EMOJIS = ['📦','🧴','🥤','🍫','🧃','🍕','🥛','🧆','🫙','🍱'];
+function getEmoji(code) { return EMOJIS[parseInt(code.slice(-1) || 0) % EMOJIS.length]; }
+
+function dday(d) {
+  if (!d) return '';
+  var diff = Math.ceil((new Date(d) - new Date()) / 86400000);
+  if (diff < 0) return '<span style="color:var(--red)">D+' + Math.abs(diff) + '</span>';
+  if (diff === 0) return '<span style="color:var(--red)">D-Day</span>';
+  if (diff <= 3) return '<span style="color:var(--orange)">D-' + diff + '</span>';
+  return '<span style="color:var(--green)">D-' + diff + '</span>';
 }
 
-var EMOJIS=['📦','🧴','🥤','🍫','🧃','🍕','🥛','🧆','🫙','🍱'];
-function getEmoji(code){return EMOJIS[parseInt(code.slice(-1)||0)%EMOJIS.length];}
-
-function dday(d){
-  if(!d)return'';
-  var diff=Math.ceil((new Date(d)-new Date())/86400000);
-  if(diff<0)return'<span style="color:var(--red)">D+'+Math.abs(diff)+'</span>';
-  if(diff===0)return'<span style="color:var(--red)">D-Day</span>';
-  if(diff<=3)return'<span style="color:var(--orange)">D-'+diff+'</span>';
-  return'<span style="color:var(--green)">D-'+diff+'</span>';
+function renderList() {
+  var body = document.getElementById('listBody');
+  document.getElementById('listCount').textContent = '(' + items.length + ')';
+  if (!items.length) { body.innerHTML = '<div class="empty"><div class="ei">📦</div><span>스캔한 상품이 없습니다</span></div>'; return; }
+  body.innerHTML = items.map(function(item, i) {
+    return '<div class="card"><div class="card-top"><div class="card-emoji">' + getEmoji(item.code) + '</div><div class="card-info"><div class="card-name">상품 ' + item.code.slice(-4).padStart(4,'0') + '</div><div class="card-bc">' + item.code + '</div></div><div class="qty-wrap"><button class="qty-btn" onclick="changeQty(' + i + ',-1)">−</button><div class="qty-val">' + item.qty + '</div><button class="qty-btn" onclick="changeQty(' + i + ',1)">+</button></div><button class="del-btn" onclick="deleteItem(' + i + ')">✕</button></div><div class="date-row"><div class="date-chip exp" onclick="openDateModal(' + i + ',\'exp\')"><div class="dc-label">유통기한</div>' + (item.exp ? '<div class="dc-val">' + item.exp + '</div><div class="dc-dday">' + dday(item.exp) + '</div>' : '<div class="dc-empty">탭하여 입력</div>') + '</div><div class="date-chip dis" onclick="openDateModal(' + i + ',\'dis\')"><div class="dc-label">진열기한</div>' + (item.dis ? '<div class="dc-val">' + item.dis + '</div><div class="dc-dday">' + dday(item.dis) + '</div>' : '<div class="dc-empty">탭하여 입력</div>') + '</div><div class="date-chip safe" onclick="openDateModal(' + i + ',\'safe\')"><div class="dc-label">안전기한</div>' + (item.safe ? '<div class="dc-val">' + item.safe + '</div><div class="dc-dday">' + dday(item.safe) + '</div>' : '<div class="dc-empty">탭하여 입력</div>') + '</div></div></div>';
+  }).join('');
 }
 
-function renderList(){
-  var body=document.getElementById('listBody');
-  document.getElementById('listCount').textContent='('+items.length+')';
-  if(!items.length){body.innerHTML='<div class="empty"><div class="ei">📦</div><span>스캔한 상품이 없습니다</span></div>';return;}
-  body.innerHTML=items.map(function(item,i){return'<div class="card"><div class="card-top"><div class="card-emoji">'+getEmoji(item.code)+'</div><div class="card-info"><div class="card-name">상품 '+item.code.slice(-4).padStart(4,'0')+'</div><div class="card-bc">'+item.code+'</div></div><div class="qty-wrap"><button class="qty-btn" onclick="changeQty('+i+',-1)">−</button><div class="qty-val">'+item.qty+'</div><button class="qty-btn" onclick="changeQty('+i+',1)">+</button></div><button class="del-btn" onclick="deleteItem('+i+')">✕</button></div><div class="date-row"><div class="date-chip exp" onclick="openDateModal('+i+',\'exp\')"><div class="dc-label">유통기한</div>'+(item.exp?'<div class="dc-val">'+item.exp+'</div><div class="dc-dday">'+dday(item.exp)+'</div>':'<div class="dc-empty">탭하여 입력</div>')+'</div><div class="date-chip dis" onclick="openDateModal('+i+',\'dis\')"><div class="dc-label">진열기한</div>'+(item.dis?'<div class="dc-val">'+item.dis+'</div><div class="dc-dday">'+dday(item.dis)+'</div>':'<div class="dc-empty">탭하여 입력</div>')+'</div><div class="date-chip safe" onclick="openDateModal('+i+',\'safe\')"><div class="dc-label">안전기한</div>'+(item.safe?'<div class="dc-val">'+item.safe+'</div><div class="dc-dday">'+dday(item.safe)+'</div>':'<div class="dc-empty">탭하여 입력</div>')+'</div></div></div>';}).join('');
-}
+function changeQty(i, d) { items[i].qty = Math.max(0, items[i].qty + d); if (items[i].qty === 0) { deleteItem(i); return; } saveAndRender(); }
+function deleteItem(i) { items.splice(i, 1); saveAndRender(); }
+function clearAll() { if (!items.length) return; if (confirm('목록을 모두 삭제하시겠습니까?')) { items = []; saveAndRender(); } }
 
-function changeQty(i,d){items[i].qty=Math.max(0,items[i].qty+d);if(items[i].qty===0){deleteItem(i);return;}saveAndRender();}
-function deleteItem(i){items.splice(i,1);saveAndRender();}
-function clearAll(){if(!items.length)return;if(confirm('목록을 모두 삭제하시겠습니까?')){items=[];saveAndRender();}}
-
-function openDateModal(idx,field,prefill){
-  editIdx=idx;modalField=field;
-  var labels={exp:'유통기한',dis:'진열기한',safe:'안전기한'};
-  var cur=prefill||items[idx][field]||'';
-  document.getElementById('modalTitle').textContent=labels[field]+' 입력';
-  document.getElementById('modalSub').textContent=items[idx].code;
-  document.getElementById('modalContent').innerHTML='<label class="dl">'+labels[field]+'</label><input class="date-input" type="date" id="dateInput" value="'+cur+'">';
-  document.getElementById('modalOk').onclick=function(){
-    var val=document.getElementById('dateInput').value;
-    items[editIdx][modalField]=val;
-    saveAndRender();toast('저장됨','var(--green)');closeModal();
+function openDateModal(idx, field, prefill) {
+  editIdx = idx; modalField = field;
+  var labels = { exp: '유통기한', dis: '진열기한', safe: '안전기한' };
+  var cur = prefill || items[idx][field] || '';
+  document.getElementById('modalTitle').textContent = labels[field] + ' 입력';
+  document.getElementById('modalSub').textContent = items[idx].code;
+  document.getElementById('modalContent').innerHTML = '<label class="dl">' + labels[field] + '</label><input class="date-input" type="date" id="dateInput" value="' + cur + '">';
+  document.getElementById('modalOk').onclick = function() {
+    items[editIdx][modalField] = document.getElementById('dateInput').value;
+    saveAndRender(); toast('저장됨', 'var(--green)'); closeModal();
   };
-  document.getElementById('modalBg').style.display='flex';
+  document.getElementById('modalBg').style.display = 'flex';
 }
 
-function closeModal(){document.getElementById('modalBg').style.display='none';}
-
-function sendPos(){
-  if(!items.length){toast('스캔된 상품이 없습니다','var(--orange)');return;}
-  document.getElementById('posTable').innerHTML=items.map(function(item){return'<div class="mtr"><span>'+item.code+'</span><span style="color:var(--accent)">× '+item.qty+'</span></div>';}).join('');
-  document.getElementById('posModalBg').style.display='flex';
+function closeModal() { document.getElementById('modalBg').style.display = 'none'; }
+function sendPos() {
+  if (!items.length) { toast('스캔된 상품이 없습니다', 'var(--orange)'); return; }
+  document.getElementById('posTable').innerHTML = items.map(function(item) { return '<div class="mtr"><span>' + item.code + '</span><span style="color:var(--accent)">× ' + item.qty + '</span></div>'; }).join('');
+  document.getElementById('posModalBg').style.display = 'flex';
 }
-
-function closePosModal(){document.getElementById('posModalBg').style.display='none';}
-function confirmPos(){toast('POS 전송 완료 ✓','var(--green)');closePosModal();}
-
-function exportCsv(){
-  if(!items.length){toast('데이터가 없습니다','var(--orange)');return;}
-  var rows=['바코드,수량,유통기한,진열기한,안전기한,스캔시간'];
-  items.forEach(function(item){rows.push([item.code,item.qty,item.exp||'',item.dis||'',item.safe||'',new Date(item.ts).toLocaleString('ko-KR')].join(','));});
-  var blob=new Blob(['\uFEFF'+rows.join('\n')],{type:'text/csv;charset=utf-8;'});
-  var url=URL.createObjectURL(blob);
-  var a=document.createElement('a');a.href=url;a.download='재고_'+new Date().toISOString().slice(0,10)+'.csv';
-  a.click();URL.revokeObjectURL(url);
-  toast('CSV 저장됨','var(--green)');
+function closePosModal() { document.getElementById('posModalBg').style.display = 'none'; }
+function confirmPos() { toast('POS 전송 완료 ✓', 'var(--green)'); closePosModal(); }
+function exportCsv() {
+  if (!items.length) { toast('데이터가 없습니다', 'var(--orange)'); return; }
+  var rows = ['바코드,수량,유통기한,진열기한,안전기한,스캔시간'];
+  items.forEach(function(item) { rows.push([item.code, item.qty, item.exp||'', item.dis||'', item.safe||'', new Date(item.ts).toLocaleString('ko-KR')].join(',')); });
+  var blob = new Blob(['\uFEFF' + rows.join('\n')], { type: 'text/csv;charset=utf-8;' });
+  var a = document.createElement('a'); a.href = URL.createObjectURL(blob);
+  a.download = '재고_' + new Date().toISOString().slice(0,10) + '.csv'; a.click();
+  toast('CSV 저장됨', 'var(--green)');
 }
 
 var toastTimer;
-function toast(msg,color){
-  color=color||'var(--text)';
-  var el=document.getElementById('toast');
-  el.textContent=msg;el.style.color=color;
-  el.classList.remove('hide');
-  clearTimeout(toastTimer);
-  toastTimer=setTimeout(function(){el.classList.add('hide');},2000);
+function toast(msg, color) {
+  var el = document.getElementById('toast');
+  el.textContent = msg; el.style.color = color || 'var(--text)';
+  el.classList.remove('hide'); clearTimeout(toastTimer);
+  toastTimer = setTimeout(function() { el.classList.add('hide'); }, 2500);
 }
 
-document.getElementById('manualInput').addEventListener('keydown',function(e){
-  if(e.key==='Enter')addItem(e.target.value.trim());
+document.getElementById('manualInput').addEventListener('keydown', function(e) {
+  if (e.key === 'Enter') addItem(e.target.value.trim());
 });
 
 renderList();
