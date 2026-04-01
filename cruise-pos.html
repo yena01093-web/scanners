@@ -1,0 +1,511 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>도담삼봉 유람선 매표소</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600;700&family=Noto+Sans+KR:wght@400;500;700;900&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#f0f4f8;--surface:#fff;--border:#e2e8f0;--blue:#2563eb;--green:#16a34a;--red:#dc2626;--orange:#ea580c;--text:#1e293b;--text2:#64748b;--navy:#1e3a5f}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
+
+/* Header */
+.hdr{background:var(--navy);color:#fff;padding:16px 20px;display:flex;align-items:center;justify-content:space-between}
+.hdr-left h1{font-size:18px;font-weight:900}
+.hdr-left p{font-size:11px;opacity:.7;margin-top:2px}
+.clock{font-family:'IBM Plex Mono',monospace;font-size:16px;font-weight:700}
+
+/* Tabs */
+.tabs{display:flex;background:var(--surface);border-bottom:2px solid var(--border)}
+.tab{flex:1;padding:14px;text-align:center;font-size:14px;font-weight:700;cursor:pointer;color:var(--text2);border-bottom:3px solid transparent;transition:all .15s}
+.tab.active{color:var(--blue);border-bottom-color:var(--blue)}
+
+/* POS Page */
+.pos-wrap{padding:16px;display:flex;flex-direction:column;gap:12px}
+
+/* Voyage selector */
+.voyage-card{background:var(--surface);border-radius:12px;padding:14px;border:1px solid var(--border)}
+.section-title{font-size:13px;font-weight:700;color:var(--text2);margin-bottom:10px;letter-spacing:.5px}
+.voyage-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.voyage-btn{padding:10px 6px;border-radius:8px;border:2px solid var(--border);background:#fff;font-size:13px;font-weight:700;cursor:pointer;text-align:center;transition:all .15s}
+.voyage-btn.active{background:var(--blue);border-color:var(--blue);color:#fff}
+.voyage-btn .v-time{font-size:15px;font-weight:900;display:block}
+.voyage-btn .v-remain{font-size:10px;color:var(--text2);margin-top:2px}
+.voyage-btn.active .v-remain{color:rgba(255,255,255,.8)}
+.voyage-btn.full{background:#fee2e2;border-color:var(--red);cursor:not-allowed}
+.voyage-btn.full .v-remain{color:var(--red)}
+
+/* Ticket types */
+.ticket-card{background:var(--surface);border-radius:12px;padding:14px;border:1px solid var(--border)}
+.ticket-row{display:flex;align-items:center;padding:10px 0;border-bottom:1px solid var(--border)}
+.ticket-row:last-child{border-bottom:none}
+.ticket-info{flex:1}
+.ticket-name{font-size:15px;font-weight:700}
+.ticket-price{font-size:13px;color:var(--text2);margin-top:2px}
+.ticket-discount{font-size:11px;color:var(--green);font-weight:700}
+.qty-wrap{display:flex;align-items:center;gap:8px}
+.qty-btn{width:32px;height:32px;border-radius:8px;border:2px solid var(--border);background:#fff;font-size:18px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--text)}
+.qty-btn:active{background:var(--blue);border-color:var(--blue);color:#fff}
+.qty-val{font-family:'IBM Plex Mono',monospace;font-size:16px;font-weight:700;min-width:24px;text-align:center}
+
+/* Summary */
+.summary-card{background:var(--navy);border-radius:12px;padding:16px;color:#fff}
+.summary-row{display:flex;justify-content:space-between;padding:5px 0;font-size:14px}
+.summary-total{display:flex;justify-content:space-between;padding:12px 0 0;border-top:1px solid rgba(255,255,255,.2);font-size:20px;font-weight:900;margin-top:8px}
+.summary-people{font-size:12px;opacity:.7;margin-top:4px}
+
+/* Payment */
+.pay-row{display:flex;gap:8px}
+.btn-pay{flex:1;padding:16px;border:none;border-radius:12px;font-size:16px;font-weight:700;cursor:pointer;font-family:'Noto Sans KR',sans-serif}
+.btn-cash{background:#f1f5f9;color:var(--text);border:2px solid var(--border)}
+.btn-card{background:var(--blue);color:#fff}
+.btn-card:disabled{background:#94a3b8;cursor:not-allowed}
+
+/* Stats Page */
+.stats-wrap{padding:16px;display:flex;flex-direction:column;gap:12px}
+.stat-card{background:var(--surface);border-radius:12px;padding:16px;border:1px solid var(--border)}
+.stat-card h3{font-size:14px;font-weight:700;color:var(--text2);margin-bottom:12px}
+.stat-row{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--border);font-size:14px}
+.stat-row:last-child{border-bottom:none}
+.stat-val{font-family:'IBM Plex Mono',monospace;font-weight:700;color:var(--blue)}
+.stat-total{font-size:18px;font-weight:900;color:var(--navy)}
+
+/* Settings Page */
+.settings-wrap{padding:16px;display:flex;flex-direction:column;gap:12px}
+.setting-card{background:var(--surface);border-radius:12px;padding:16px;border:1px solid var(--border)}
+.setting-card h3{font-size:14px;font-weight:700;color:var(--text2);margin-bottom:12px}
+.setting-row{display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border)}
+.setting-row:last-child{border-bottom:none}
+.setting-label{font-size:14px;font-weight:600}
+.setting-input{background:var(--bg);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:'IBM Plex Mono',monospace;font-size:15px;font-weight:700;padding:8px 12px;width:120px;text-align:right;outline:none}
+.setting-input:focus{border-color:var(--blue)}
+.btn-save{width:100%;background:var(--blue);border:none;border-radius:10px;color:#fff;font-size:15px;font-weight:700;padding:14px;cursor:pointer;font-family:'Noto Sans KR',sans-serif;margin-top:8px}
+
+/* Receipt Modal */
+.modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:300;display:flex;align-items:center;justify-content:center;padding:20px}
+.modal{background:#fff;border-radius:16px;padding:24px;width:100%;max-width:360px;text-align:center}
+.receipt-title{font-size:20px;font-weight:900;color:var(--navy);margin-bottom:4px}
+.receipt-sub{font-size:13px;color:var(--text2);margin-bottom:16px}
+.receipt-body{background:#f8fafc;border-radius:10px;padding:14px;margin-bottom:16px;text-align:left}
+.r-row{display:flex;justify-content:space-between;font-size:13px;padding:4px 0}
+.r-total{display:flex;justify-content:space-between;font-size:17px;font-weight:900;padding:10px 0 0;border-top:1px solid var(--border);margin-top:8px;color:var(--navy)}
+.ticket-no{font-family:'IBM Plex Mono',monospace;font-size:28px;font-weight:900;color:var(--blue);margin:12px 0}
+.btn-close{width:100%;background:var(--navy);border:none;border-radius:10px;color:#fff;font-size:15px;font-weight:700;padding:14px;cursor:pointer;font-family:'Noto Sans KR',sans-serif}
+
+.toast{position:fixed;top:80px;left:50%;transform:translateX(-50%);background:#333;color:#fff;border-radius:8px;padding:10px 20px;font-size:13px;font-weight:700;z-index:500;white-space:nowrap;pointer-events:none;transition:opacity .25s}
+.toast.hide{opacity:0}
+</style>
+</head>
+<body>
+
+<div class="hdr">
+  <div class="hdr-left">
+    <h1>⛵ 도담삼봉 유람선</h1>
+    <p>충북 단양군 매포읍 삼봉로 644-13</p>
+  </div>
+  <div class="clock" id="clock">00:00</div>
+</div>
+
+<div class="tabs">
+  <div class="tab active" onclick="showTab('pos')">🎫 매표</div>
+  <div class="tab" onclick="showTab('stats')">📊 통계</div>
+  <div class="tab" onclick="showTab('settings')">⚙️ 설정</div>
+</div>
+
+<!-- POS Tab -->
+<div id="tab-pos">
+<div class="pos-wrap">
+
+  <!-- Voyage -->
+  <div class="voyage-card">
+    <div class="section-title">운항 시간 선택</div>
+    <div class="voyage-grid" id="voyageGrid"></div>
+  </div>
+
+  <!-- Tickets -->
+  <div class="ticket-card">
+    <div class="section-title">티켓 선택</div>
+    <div id="ticketRows"></div>
+  </div>
+
+  <!-- Summary -->
+  <div class="summary-card">
+    <div class="summary-row">
+      <span>선택 운항</span>
+      <span id="summaryVoyage">-</span>
+    </div>
+    <div id="summaryItems"></div>
+    <div class="summary-total">
+      <span>합계</span>
+      <span id="summaryTotal">0원</span>
+    </div>
+    <div class="summary-people" id="summaryPeople">총 0명</div>
+  </div>
+
+  <!-- Payment -->
+  <div class="pay-row">
+    <button class="btn-pay btn-cash" onclick="pay('cash')">💵 현금</button>
+    <button class="btn-pay btn-card" id="btnCard" onclick="pay('card')">💳 카드</button>
+  </div>
+
+</div>
+</div>
+
+<!-- Stats Tab -->
+<div id="tab-stats" style="display:none">
+<div class="stats-wrap">
+  <div class="stat-card">
+    <h3>오늘 운항별 현황</h3>
+    <div id="voyageStats"></div>
+  </div>
+  <div class="stat-card">
+    <h3>티켓 종류별 판매</h3>
+    <div id="ticketStats"></div>
+  </div>
+  <div class="stat-card">
+    <h3>오늘 총 매출</h3>
+    <div style="font-family:'IBM Plex Mono',monospace;font-size:32px;font-weight:900;color:var(--navy);text-align:center;padding:16px 0" id="totalRevenue">0원</div>
+  </div>
+  <button class="btn-save" style="background:#dc2626" onclick="resetToday()">🔄 오늘 데이터 초기화</button>
+</div>
+</div>
+
+<!-- Settings Tab -->
+<div id="tab-settings" style="display:none">
+<div class="settings-wrap">
+  <div class="setting-card">
+    <h3>운항 시간 설정</h3>
+    <div id="voyageTimeSettings"></div>
+  </div>
+  <div class="setting-card">
+    <h3>티켓 가격 설정</h3>
+    <div id="priceSettings"></div>
+    <button class="btn-save" onclick="saveSettings()">💾 저장</button>
+  </div>
+  <div class="setting-card">
+    <h3>정원 설정</h3>
+    <div class="setting-row">
+      <div class="setting-label">최대 정원</div>
+      <input class="setting-input" type="number" id="maxCapacity" value="100">
+    </div>
+    <button class="btn-save" onclick="saveSettings()">💾 저장</button>
+  </div>
+</div>
+</div>
+
+<!-- Receipt Modal -->
+<div id="receiptModal" style="display:none" class="modal-bg">
+  <div class="modal">
+    <div class="receipt-title">⛵ 승선권</div>
+    <div class="receipt-sub">도담삼봉 유람선</div>
+    <div class="receipt-body" id="receiptBody"></div>
+    <div class="ticket-no" id="ticketNo">#0000</div>
+    <button class="btn-close" onclick="closeReceipt()">확인 (다음 손님)</button>
+  </div>
+</div>
+
+<div class="toast hide" id="toast"></div>
+
+<script>
+// Default settings
+var settings = JSON.parse(localStorage.getItem('cruiseSettings') || 'null') || {
+  voyageTimes: ['09:30', '11:00', '13:00', '15:00', '17:00'],
+  maxCapacity: 100,
+  prices: {
+    adult: 8000,
+    youth: 6000,
+    child: 4000,
+    disabled: 7200,
+    local: 7200
+  }
+};
+
+var ticketTypes = [
+  {key:'adult', name:'성인', discount:0},
+  {key:'youth', name:'청소년', discount:0},
+  {key:'child', name:'어린이', discount:0},
+  {key:'disabled', name:'장애인', discount:10},
+  {key:'local', name:'단양군민', discount:10},
+];
+
+// Sales data
+var salesData = JSON.parse(localStorage.getItem('cruiseSales') || '{}');
+var todayKey = new Date().toISOString().slice(0,10);
+if(!salesData[todayKey]) salesData[todayKey] = {voyages:{}, tickets:{}, total:0, count:0};
+
+// Current selection
+var selectedVoyage = null;
+var qty = {adult:0, youth:0, child:0, disabled:0, local:0};
+var ticketCounter = parseInt(localStorage.getItem('ticketCounter')||'1000');
+
+function saveData() {
+  localStorage.setItem('cruiseSales', JSON.stringify(salesData));
+  localStorage.setItem('cruiseSettings', JSON.stringify(settings));
+  localStorage.setItem('ticketCounter', ticketCounter);
+}
+
+// Voyage sold counts
+function getVoyageSold(time) {
+  return (salesData[todayKey].voyages[time] || 0);
+}
+
+function renderVoyages() {
+  var grid = document.getElementById('voyageGrid');
+  grid.innerHTML = settings.voyageTimes.map(function(t) {
+    var sold = getVoyageSold(t);
+    var remain = settings.maxCapacity - sold;
+    var full = remain <= 0;
+    var active = selectedVoyage === t;
+    return '<button class="voyage-btn'+(active?' active':'')+(full?' full':'')+'" onclick="selectVoyage(\''+t+'\')" '+(full?'disabled':'')+'>'+
+      '<span class="v-time">'+t+'</span>'+
+      '<span class="v-remain">'+(full?'마감':'여유 '+remain+'명')+'</span>'+
+      '</button>';
+  }).join('');
+}
+
+function selectVoyage(t) {
+  var sold = getVoyageSold(t);
+  if(sold >= settings.maxCapacity) return;
+  selectedVoyage = t;
+  renderVoyages();
+  updateSummary();
+}
+
+function renderTickets() {
+  var rows = document.getElementById('ticketRows');
+  rows.innerHTML = ticketTypes.map(function(tt) {
+    var basePrice = settings.prices[tt.key];
+    var finalPrice = Math.round(basePrice * (1 - tt.discount/100));
+    return '<div class="ticket-row">'+
+      '<div class="ticket-info">'+
+        '<div class="ticket-name">'+tt.name+'</div>'+
+        '<div class="ticket-price">'+finalPrice.toLocaleString()+'원'+
+          (tt.discount?'<span class="ticket-discount"> ('+tt.discount+'% 할인)</span>':'')+
+        '</div>'+
+      '</div>'+
+      '<div class="qty-wrap">'+
+        '<button class="qty-btn" onclick="changeQty(\''+tt.key+'\',-1)">−</button>'+
+        '<div class="qty-val" id="qty-'+tt.key+'">0</div>'+
+        '<button class="qty-btn" onclick="changeQty(\''+tt.key+'\',1)">+</button>'+
+      '</div>'+
+    '</div>';
+  }).join('');
+}
+
+function changeQty(key, d) {
+  qty[key] = Math.max(0, qty[key] + d);
+  
+  // Check capacity
+  var totalPeople = getTotalPeople();
+  if(selectedVoyage) {
+    var sold = getVoyageSold(selectedVoyage);
+    if(sold + totalPeople > settings.maxCapacity) {
+      qty[key] -= d;
+      toast('⚠️ 정원 초과! 예약 불가합니다.');
+      return;
+    }
+  }
+  
+  document.getElementById('qty-'+key).textContent = qty[key];
+  updateSummary();
+}
+
+function getTotalPeople() {
+  return Object.values(qty).reduce(function(a,b){return a+b;}, 0);
+}
+
+function getTotalPrice() {
+  var total = 0;
+  ticketTypes.forEach(function(tt) {
+    var basePrice = settings.prices[tt.key];
+    var finalPrice = Math.round(basePrice * (1 - tt.discount/100));
+    total += finalPrice * qty[tt.key];
+  });
+  return total;
+}
+
+function updateSummary() {
+  document.getElementById('summaryVoyage').textContent = selectedVoyage || '-';
+  
+  var items = '';
+  ticketTypes.forEach(function(tt) {
+    if(qty[tt.key] > 0) {
+      var basePrice = settings.prices[tt.key];
+      var finalPrice = Math.round(basePrice * (1 - tt.discount/100));
+      items += '<div class="summary-row"><span>'+tt.name+' × '+qty[tt.key]+'</span><span>'+(finalPrice*qty[tt.key]).toLocaleString()+'원</span></div>';
+    }
+  });
+  document.getElementById('summaryItems').innerHTML = items;
+  
+  var total = getTotalPrice();
+  var people = getTotalPeople();
+  document.getElementById('summaryTotal').textContent = total.toLocaleString() + '원';
+  document.getElementById('summaryPeople').textContent = '총 ' + people + '명';
+  
+  var btnCard = document.getElementById('btnCard');
+  btnCard.disabled = !selectedVoyage || people === 0;
+}
+
+function pay(method) {
+  if(!selectedVoyage) { toast('운항 시간을 선택해주세요'); return; }
+  var people = getTotalPeople();
+  if(people === 0) { toast('티켓을 선택해주세요'); return; }
+  
+  var total = getTotalPrice();
+  
+  // Save to sales data
+  if(!salesData[todayKey].voyages[selectedVoyage]) salesData[todayKey].voyages[selectedVoyage] = 0;
+  salesData[todayKey].voyages[selectedVoyage] += people;
+  salesData[todayKey].total += total;
+  salesData[todayKey].count += people;
+  
+  ticketTypes.forEach(function(tt) {
+    if(qty[tt.key] > 0) {
+      if(!salesData[todayKey].tickets[tt.key]) salesData[todayKey].tickets[tt.key] = 0;
+      salesData[todayKey].tickets[tt.key] += qty[tt.key];
+    }
+  });
+  
+  ticketCounter++;
+  saveData();
+  
+  // Show receipt
+  showReceipt(method, total, people);
+  
+  // Reset
+  qty = {adult:0, youth:0, child:0, disabled:0, local:0};
+  renderTickets();
+  renderVoyages();
+  updateSummary();
+}
+
+function showReceipt(method, total, people) {
+  var items = '';
+  ticketTypes.forEach(function(tt) {
+    // need to capture before reset
+  });
+  
+  var now = new Date();
+  var timeStr = now.getHours().toString().padStart(2,'0')+':'+now.getMinutes().toString().padStart(2,'0');
+  
+  var body = '<div class="r-row"><span>운항</span><span>'+selectedVoyage+'</span></div>'+
+    '<div class="r-row"><span>결제방법</span><span>'+(method==='cash'?'현금':'카드')+'</span></div>'+
+    '<div class="r-row"><span>인원</span><span>'+people+'명</span></div>'+
+    '<div class="r-row"><span>발권시간</span><span>'+timeStr+'</span></div>'+
+    '<div class="r-total"><span>합계</span><span>'+total.toLocaleString()+'원</span></div>';
+  
+  document.getElementById('receiptBody').innerHTML = body;
+  document.getElementById('ticketNo').textContent = '#' + ticketCounter;
+  document.getElementById('receiptModal').style.display = 'flex';
+}
+
+function closeReceipt() {
+  document.getElementById('receiptModal').style.display = 'none';
+}
+
+function renderStats() {
+  var data = salesData[todayKey];
+  
+  // Voyage stats
+  var vStats = settings.voyageTimes.map(function(t) {
+    var sold = data.voyages[t] || 0;
+    return '<div class="stat-row"><span>'+t+'</span><span class="stat-val">'+sold+' / '+settings.maxCapacity+'명</span></div>';
+  }).join('');
+  document.getElementById('voyageStats').innerHTML = vStats;
+  
+  // Ticket stats
+  var tStats = ticketTypes.map(function(tt) {
+    var sold = data.tickets[tt.key] || 0;
+    return '<div class="stat-row"><span>'+tt.name+'</span><span class="stat-val">'+sold+'명</span></div>';
+  }).join('');
+  document.getElementById('ticketStats').innerHTML = tStats;
+  
+  document.getElementById('totalRevenue').textContent = data.total.toLocaleString() + '원';
+}
+
+function renderSettings() {
+  // Voyage times
+  var vtHTML = settings.voyageTimes.map(function(t, i) {
+    return '<div class="setting-row"><div class="setting-label">'+(i+1)+'회차</div>'+
+      '<input class="setting-input" type="time" id="vt'+i+'" value="'+t+'"></div>';
+  }).join('');
+  document.getElementById('voyageTimeSettings').innerHTML = vtHTML + 
+    '<button class="btn-save" onclick="saveSettings()" style="margin-top:8px">💾 저장</button>';
+  
+  // Prices
+  var pHTML = ticketTypes.map(function(tt) {
+    return '<div class="setting-row"><div class="setting-label">'+tt.name+(tt.discount?' ('+tt.discount+'% 할인)':'')+'</div>'+
+      '<input class="setting-input" type="number" id="price-'+tt.key+'" value="'+settings.prices[tt.key]+'"></div>';
+  }).join('');
+  document.getElementById('priceSettings').innerHTML = pHTML;
+  
+  document.getElementById('maxCapacity').value = settings.maxCapacity;
+}
+
+function saveSettings() {
+  // Voyage times
+  settings.voyageTimes = settings.voyageTimes.map(function(t, i) {
+    var el = document.getElementById('vt'+i);
+    return el ? el.value : t;
+  });
+  
+  // Prices
+  ticketTypes.forEach(function(tt) {
+    var el = document.getElementById('price-'+tt.key);
+    if(el) settings.prices[tt.key] = parseInt(el.value) || settings.prices[tt.key];
+  });
+  
+  // Capacity
+  var cap = parseInt(document.getElementById('maxCapacity').value);
+  if(cap > 0) settings.maxCapacity = cap;
+  
+  saveData();
+  toast('저장됐어요 ✓');
+  renderVoyages();
+  renderTickets();
+  updateSummary();
+}
+
+function resetToday() {
+  if(confirm('오늘 데이터를 초기화합니까?')) {
+    salesData[todayKey] = {voyages:{}, tickets:{}, total:0, count:0};
+    saveData();
+    renderStats();
+    toast('초기화 완료');
+  }
+}
+
+function showTab(tab) {
+  ['pos','stats','settings'].forEach(function(t) {
+    document.getElementById('tab-'+t).style.display = t===tab?'block':'none';
+  });
+  document.querySelectorAll('.tab').forEach(function(el,i) {
+    el.classList.toggle('active', ['pos','stats','settings'][i]===tab);
+  });
+  if(tab==='stats') renderStats();
+  if(tab==='settings') renderSettings();
+}
+
+var toastTimer;
+function toast(msg) {
+  var el = document.getElementById('toast');
+  el.textContent = msg; el.classList.remove('hide');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(function(){el.classList.add('hide');}, 2000);
+}
+
+function updateClock() {
+  var now = new Date();
+  document.getElementById('clock').textContent = 
+    now.getHours().toString().padStart(2,'0')+':'+now.getMinutes().toString().padStart(2,'0');
+}
+
+setInterval(updateClock, 1000);
+updateClock();
+renderVoyages();
+renderTickets();
+updateSummary();
+</script>
+</body>
+</html>
