@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>슈퍼크리스피 레시피</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;700;900&display=swap" rel="stylesheet">
+<style>
+:root{--red:#e8000d;--dark:#1a0000;--bg:#fff9f5;--surface:#fff;--border:#f0e0e0;--text:#1a0000;--text2:#888}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
+
+.hdr{background:var(--red);color:#fff;padding:14px 18px;text-align:center}
+.hdr h1{font-size:20px;font-weight:900}
+.hdr p{font-size:11px;opacity:.8;margin-top:2px}
+
+.menu-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;padding:14px}
+
+.menu-btn{background:var(--surface);border:2px solid var(--border);border-radius:14px;padding:14px 10px;text-align:center;cursor:pointer;transition:all .15s;active:transform:scale(.96)}
+.menu-btn:active{background:#fff0f0;border-color:var(--red)}
+.menu-emoji{font-size:32px;margin-bottom:6px}
+.menu-name{font-size:14px;font-weight:700;line-height:1.3}
+
+/* Modal */
+.modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:300;display:flex;align-items:flex-end;justify-content:center}
+.modal{background:#fff;border-radius:20px 20px 0 0;padding:24px 20px 40px;width:100%;max-width:480px;animation:up .25s ease;max-height:85vh;overflow-y:auto}
+@keyframes up{from{transform:translateY(100%)}to{transform:translateY(0)}}
+.modal-title{font-size:20px;font-weight:900;color:var(--red);margin-bottom:4px}
+.modal-sub{font-size:13px;color:var(--text2);margin-bottom:16px}
+
+.recipe-steps{display:flex;flex-direction:column;gap:8px}
+.step{display:flex;align-items:center;gap:12px;background:#fff9f5;border-radius:10px;padding:12px 14px;border:1px solid var(--border)}
+.step-num{width:28px;height:28px;background:var(--red);color:#fff;border-radius:50%;font-size:13px;font-weight:900;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.step-info{flex:1}
+.step-name{font-size:15px;font-weight:700}
+.step-amount{font-size:13px;color:var(--red);font-weight:700;margin-top:2px}
+.step-note{font-size:11px;color:var(--text2);margin-top:2px}
+
+.btn-close{width:100%;background:var(--red);border:none;border-radius:12px;color:#fff;font-size:16px;font-weight:700;padding:16px;cursor:pointer;font-family:'Noto Sans KR',sans-serif;margin-top:16px}
+</style>
+</head>
+<body>
+
+<div class="hdr">
+  <h1>🍔 슈퍼크리스피 레시피</h1>
+  <p>메뉴를 눌러서 레시피를 확인하세요</p>
+</div>
+
+<div class="menu-grid" id="menuGrid"></div>
+
+<!-- Modal -->
+<div id="modalBg" style="display:none" class="modal-bg" onclick="if(event.target===this)closeModal()">
+  <div class="modal">
+    <div class="modal-title" id="modalTitle"></div>
+    <div class="modal-sub" id="modalSub"></div>
+    <div class="recipe-steps" id="recipeSteps"></div>
+    <button class="btn-close" onclick="closeModal()">닫기</button>
+  </div>
+</div>
+
+<script>
+var recipes = [
+  {
+    name:'치킨버거', emoji:'🍔',
+    sub:'기본 치킨버거',
+    steps:[
+      {name:'번 (아래)', amount:'1개'},
+      {name:'마요네즈', amount:'20g'},
+      {name:'피클', amount:'3장'},
+      {name:'치킨패티', amount:'1장'},
+      {name:'그레이비 소스', amount:'15g'},
+      {name:'번 (위)', amount:'1개'},
+    ]
+  },
+  {
+    name:'더블치킨버거', emoji:'🍔',
+    sub:'패티 2장',
+    steps:[
+      {name:'번 (아래)', amount:'1개'},
+      {name:'마요네즈', amount:'20g'},
+      {name:'피클', amount:'3장'},
+      {name:'치킨패티', amount:'1장'},
+      {name:'그레이비 소스', amount:'15g'},
+      {name:'치킨패티', amount:'1장'},
+      {name:'그레이비 소스', amount:'15g'},
+      {name:'번 (위)', amount:'1개'},
+    ]
+  },
+  {
+    name:'치즈치킨버거', emoji:'🧀',
+    sub:'치즈 추가',
+    steps:[
+      {name:'번 (아래)', amount:'1개'},
+      {name:'마요네즈', amount:'20g'},
+      {name:'피클', amount:'3장'},
+      {name:'치킨패티', amount:'1장'},
+      {name:'그레이비 소스', amount:'15g'},
+      {name:'치즈', amount:'1장'},
+      {name:'번 (위)', amount:'1개'},
+    ]
+  },
+  {
+    name:'트러플머쉬룸버거', emoji:'🍄',
+    sub:'트러플 버섯 버거',
+    steps:[
+      {name:'번 (아래)', amount:'1개'},
+      {name:'올리브트러플', amount:'35g'},
+      {name:'트러플버섯', amount:'20g'},
+      {name:'치킨패티', amount:'1장'},
+      {name:'베이컨', amount:'1장'},
+      {name:'올리브트러플', amount:'35g'},
+      {name:'번 (위)', amount:'1개'},
+    ]
+  },
+  {
+    name:'핫스파이시버거', emoji:'🌶️',
+    sub:'매운 치킨버거',
+    steps:[
+      {name:'번 (아래)', amount:'1개'},
+      {name:'매코마요소스', amount:'15g'},
+      {name:'할라피뇨', amount:'5조각'},
+      {name:'치킨패티(핫치킨소스침지)', amount:'1장', note:'핫치킨소스에 침지된 패티 사용'},
+      {name:'나초치즈소스', amount:'5g'},
+      {name:'번 (위)', amount:'1개'},
+    ]
+  },
+  {
+    name:'골든포테이토버거', emoji:'🥔',
+    sub:'해쉬브라운 추가',
+    steps:[
+      {name:'번 (아래)', amount:'1개'},
+      {name:'마요네즈', amount:'20g'},
+      {name:'피클', amount:'3장'},
+      {name:'치킨패티', amount:'1장'},
+      {name:'그레이비 소스', amount:'15g'},
+      {name:'베이컨', amount:'1장'},
+      {name:'한폭면 케이크시럽 해쉬브라운', amount:'1장'},
+      {name:'매코마요소스', amount:'15g'},
+      {name:'번 (위)', amount:'1개'},
+    ]
+  },
+  {
+    name:'슈퍼쉬림프버거', emoji:'🍤',
+    sub:'새우패티 버거',
+    steps:[
+      {name:'번 (아래)', amount:'1개'},
+      {name:'타르타르소스', amount:'20g'},
+      {name:'피클', amount:'3장'},
+      {name:'새우패티', amount:'1장'},
+      {name:'양상추', amount:'10g'},
+      {name:'타르타르소스', amount:'20g'},
+      {name:'번 (위)', amount:'1개'},
+    ]
+  },
+  {
+    name:'디럭스치킨버거', emoji:'🥗',
+    sub:'야채 듬뿍',
+    steps:[
+      {name:'번 (아래)', amount:'1개'},
+      {name:'마요네즈', amount:'20g'},
+      {name:'피클', amount:'3장'},
+      {name:'치킨패티', amount:'1장'},
+      {name:'그레이비 소스', amount:'15g'},
+      {name:'디럭스치즈(슬라이스)', amount:'1장'},
+      {name:'토마토', amount:'2조각'},
+      {name:'양상추', amount:'10g'},
+      {name:'마요네즈', amount:'10g'},
+      {name:'번 (위)', amount:'1개'},
+    ]
+  },
+];
+
+// Render menu grid
+var grid = document.getElementById('menuGrid');
+grid.innerHTML = recipes.map(function(r, i) {
+  return '<div class="menu-btn" onclick="showRecipe('+i+')">' +
+    '<div class="menu-emoji">'+r.emoji+'</div>' +
+    '<div class="menu-name">'+r.name+'</div>' +
+    '</div>';
+}).join('');
+
+function showRecipe(i) {
+  var r = recipes[i];
+  document.getElementById('modalTitle').textContent = r.emoji + ' ' + r.name;
+  document.getElementById('modalSub').textContent = r.sub;
+  document.getElementById('recipeSteps').innerHTML = r.steps.map(function(s, idx) {
+    return '<div class="step">' +
+      '<div class="step-num">'+(idx+1)+'</div>' +
+      '<div class="step-info">' +
+        '<div class="step-name">'+s.name+'</div>' +
+        '<div class="step-amount">'+s.amount+'</div>' +
+        (s.note?'<div class="step-note">⚠️ '+s.note+'</div>':'') +
+      '</div></div>';
+  }).join('');
+  document.getElementById('modalBg').style.display = 'flex';
+}
+
+function closeModal() {
+  document.getElementById('modalBg').style.display = 'none';
+}
+</script>
+</body>
+</html>
