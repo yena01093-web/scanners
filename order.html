@@ -1,0 +1,697 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="theme-color" content="#e8000d">
+<title>슈퍼크리스피 주문</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;900&display=swap" rel="stylesheet">
+<style>
+:root{--red:#e8000d;--dark:#1a0000;--orange:#ff6b00;--bg:#fff9f5;--text:#1a0000;--text2:#888}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;padding-bottom:140px}
+
+/* Header */
+.hdr{background:var(--red);color:#fff;padding:16px;text-align:center;position:sticky;top:0;z-index:100}
+.hdr h1{font-size:20px;font-weight:900;letter-spacing:-0.5px}
+.hdr p{font-size:12px;opacity:.85;margin-top:2px}
+.table-badge{display:inline-block;background:rgba(255,255,255,.2);border-radius:20px;padding:3px 12px;font-size:11px;margin-top:4px}
+
+/* Category tabs */
+.cats{display:flex;gap:6px;padding:12px 14px;overflow-x:auto;background:#fff;border-bottom:1px solid #f0e8e8;position:sticky;top:61px;z-index:90}
+.cats::-webkit-scrollbar{display:none}
+.cat-btn{flex-shrink:0;padding:7px 14px;border-radius:20px;border:1.5px solid #ddd;background:#fff;color:var(--text2);font-size:12px;font-weight:700;cursor:pointer;font-family:'Noto Sans KR',sans-serif;transition:all .15s}
+.cat-btn.active{background:var(--red);border-color:var(--red);color:#fff}
+
+/* Menu items */
+.section{padding:14px}
+.section-title{font-size:16px;font-weight:900;color:var(--red);margin-bottom:10px;padding-bottom:6px;border-bottom:2px solid var(--red)}
+
+.item{display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid #f5eded}
+.item-emoji{width:52px;height:52px;border-radius:10px;background:linear-gradient(135deg,#fff3e0,#ffe0b2);display:flex;align-items:center;justify-content:center;font-size:26px;flex-shrink:0}
+.item-info{flex:1;min-width:0}
+.item-name{font-size:14px;font-weight:700;margin-bottom:2px}
+.item-sub{font-size:11px;color:var(--text2);margin-bottom:4px}
+.item-price{font-size:13px;font-weight:700;color:var(--red)}
+.item-price span{font-size:11px;color:var(--text2);font-weight:400}
+.badge-best{display:inline-block;background:#ff6b00;color:#fff;font-size:9px;font-weight:700;padding:1px 5px;border-radius:3px;margin-left:4px;vertical-align:middle}
+.badge-new{display:inline-block;background:#00a851;color:#fff;font-size:9px;font-weight:700;padding:1px 5px;border-radius:3px;margin-left:4px;vertical-align:middle}
+
+.qty-wrap{display:flex;align-items:center;gap:6px;flex-shrink:0}
+.qty-btn{width:28px;height:28px;border-radius:50%;border:2px solid var(--red);background:#fff;color:var(--red);font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-weight:700}
+.qty-btn:active{background:var(--red);color:#fff}
+.qty-val{font-size:15px;font-weight:700;min-width:20px;text-align:center;color:var(--text)}
+
+/* Cart */
+.cart-bar{position:fixed;bottom:0;left:0;right:0;background:#fff;border-top:1px solid #f0e8e8;padding:12px 16px 28px;z-index:200}
+.cart-summary{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+.cart-count{font-size:13px;color:var(--text2)}
+.cart-total{font-size:16px;font-weight:900;color:var(--red)}
+.btn-order{width:100%;background:var(--red);border:none;border-radius:12px;color:#fff;font-size:16px;font-weight:700;padding:15px;cursor:pointer;font-family:'Noto Sans KR',sans-serif}
+.btn-order:disabled{background:#ccc}
+
+/* Modal */
+.modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:300;display:flex;align-items:flex-end;justify-content:center}
+.modal{background:#fff;border-radius:20px 20px 0 0;padding:24px 20px 36px;width:100%;max-width:480px;animation:modalUp .25s ease}
+@keyframes modalUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
+.modal h2{font-size:18px;font-weight:900;margin-bottom:4px}
+.modal-sub{font-size:13px;color:var(--text2);margin-bottom:16px}
+.order-list{background:#fff9f5;border-radius:10px;padding:12px;margin-bottom:16px;max-height:200px;overflow-y:auto}
+.ol-item{display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid #f5eded;font-size:13px}
+.ol-item:last-child{border-bottom:none}
+.ol-total{display:flex;justify-content:space-between;padding:10px 0 0;font-size:15px;font-weight:700;color:var(--red)}
+.modal-actions{display:flex;gap:8px}
+.btn-cancel{flex:1;padding:13px;border:1.5px solid #ddd;border-radius:10px;background:#fff;color:var(--text2);font-size:14px;cursor:pointer;font-family:'Noto Sans KR',sans-serif}
+.btn-confirm{flex:2;padding:13px;border:none;border-radius:10px;background:var(--red);color:#fff;font-size:14px;font-weight:700;cursor:pointer;font-family:'Noto Sans KR',sans-serif}
+
+/* Complete */
+.complete{position:fixed;inset:0;background:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;z-index:400;padding:30px}
+.complete-icon{font-size:70px}
+.complete h2{font-size:22px;font-weight:900;color:var(--red)}
+.complete p{font-size:14px;color:var(--text2);text-align:center;line-height:1.7}
+.complete .order-no{font-size:28px;font-weight:900;color:var(--dark);margin:8px 0}
+.btn-back{margin-top:16px;background:var(--red);border:none;border-radius:12px;color:#fff;font-size:15px;font-weight:700;padding:14px 40px;cursor:pointer;font-family:'Noto Sans KR',sans-serif}
+
+.toast{position:fixed;top:80px;left:50%;transform:translateX(-50%);background:#333;color:#fff;border-radius:8px;padding:8px 16px;font-size:13px;z-index:500;white-space:nowrap;pointer-events:none;transition:opacity .25s}
+.toast.hide{opacity:0}
+</style>
+</head>
+<body>
+
+<div class="hdr">
+  <h1>🍗 슈퍼크리스피</h1>
+  <p>EVERYONE IS HAPPY BECAUSE CRISPY AND CHEAP</p>
+  <div class="table-badge" id="tableBadge">테이블 주문</div>
+</div>
+
+<div class="cats" id="cats">
+  <button class="cat-btn active" onclick="scrollTo('burger')">치킨버거</button>
+  <button class="cat-btn" onclick="scrollTo('chicken')">순살/한마리</button>
+  <button class="cat-btn" onclick="scrollTo('side')">사이드</button>
+  <button class="cat-btn" onclick="scrollTo('drink')">음료</button>
+</div>
+
+<div id="burger" class="section">
+  <div class="section-title">🍔 치킨버거</div>
+
+  <div class="item">
+    <div class="item-emoji">🍔</div>
+    <div class="item-info">
+      <div class="item-name">치킨버거 <span class="badge-best">BEST</span></div>
+      <div class="item-sub">바삭한 치킨 단품</div>
+      <div class="item-price">2,900원 <span>/ 세트 5,900원</span></div>
+    </div>
+    <div class="qty-wrap">
+      <button class="qty-btn" onclick="changeQty(this,-1)">−</button>
+      <div class="qty-val">0</div>
+      <button class="qty-btn" onclick="changeQty(this,1)">+</button>
+    </div>
+  </div>
+
+  <div class="item" data-price="3700" data-name="치즈 치킨버거">
+    <div class="item-emoji">🧀</div>
+    <div class="item-info">
+      <div class="item-name">치즈 치킨버거 <span class="badge-best">BEST</span></div>
+      <div class="item-sub">치즈 추가 +800원</div>
+      <div class="item-price">3,700원 <span>/ 세트 6,700원</span></div>
+    </div>
+    <div class="qty-wrap">
+      <button class="qty-btn" onclick="changeQty(this,-1)">−</button>
+      <div class="qty-val">0</div>
+      <button class="qty-btn" onclick="changeQty(this,1)">+</button>
+    </div>
+  </div>
+
+  <div class="item">
+    <div class="item-emoji">🍔</div>
+    <div class="item-info">
+      <div class="item-name">디럭스 치킨버거</div>
+      <div class="item-sub">양상추+토마토 추가 +1,000원</div>
+      <div class="item-price">3,900원 <span>/ 세트 6,900원</span></div>
+    </div>
+    <div class="qty-wrap">
+      <button class="qty-btn" onclick="changeQty(this,-1)">−</button>
+      <div class="qty-val">0</div>
+      <button class="qty-btn" onclick="changeQty(this,1)">+</button>
+    </div>
+  </div>
+
+  <div class="item">
+    <div class="item-emoji">🧀</div>
+    <div class="item-info">
+      <div class="item-name">더블 치즈치킨버거</div>
+      <div class="item-price">4,700원 <span>/ 세트 7,700원</span></div>
+    </div>
+    <div class="qty-wrap">
+      <button class="qty-btn" onclick="changeQty(this,-1)">−</button>
+      <div class="qty-val">0</div>
+      <button class="qty-btn" onclick="changeQty(this,1)">+</button>
+    </div>
+  </div>
+
+  <div class="item">
+    <div class="item-emoji">🌶️</div>
+    <div class="item-info">
+      <div class="item-name">핫스파이시 치킨버거</div>
+      <div class="item-price">3,700원 <span>/ 세트 6,700원</span></div>
+    </div>
+    <div class="qty-wrap">
+      <button class="qty-btn" onclick="changeQty(this,-1)">−</button>
+      <div class="qty-val">0</div>
+      <button class="qty-btn" onclick="changeQty(this,1)">+</button>
+    </div>
+  </div>
+
+  <div class="item">
+    <div class="item-emoji">🍔</div>
+    <div class="item-info">
+      <div class="item-name">슈퍼쉬림프 버거 <span class="badge-new">NEW</span></div>
+      <div class="item-price">5,400원 <span>/ 세트 8,400원</span></div>
+    </div>
+    <div class="qty-wrap">
+      <button class="qty-btn" onclick="changeQty(this,-1)">−</button>
+      <div class="qty-val">0</div>
+      <button class="qty-btn" onclick="changeQty(this,1)">+</button>
+    </div>
+  </div>
+
+  <div class="item">
+    <div class="item-emoji">🍔</div>
+    <div class="item-info">
+      <div class="item-name">더블 치킨버거 <span class="badge-best">BEST</span></div>
+      <div class="item-price">5,400원 <span>/ 세트 8,400원</span></div>
+    </div>
+    <div class="qty-wrap">
+      <button class="qty-btn" onclick="changeQty(this,-1)">−</button>
+      <div class="qty-val">0</div>
+      <button class="qty-btn" onclick="changeQty(this,1)">+</button>
+    </div>
+  </div>
+
+  <div class="item">
+    <div class="item-emoji">🥔</div>
+    <div class="item-info">
+      <div class="item-name">콜론포테이토 치킨버거</div>
+      <div class="item-price">5,400원 <span>/ 세트 8,400원</span></div>
+    </div>
+    <div class="qty-wrap">
+      <button class="qty-btn" onclick="changeQty(this,-1)">−</button>
+      <div class="qty-val">0</div>
+      <button class="qty-btn" onclick="changeQty(this,1)">+</button>
+    </div>
+  </div>
+
+  <div class="item">
+    <div class="item-emoji">🍔</div>
+    <div class="item-info">
+      <div class="item-name">트리플아쉬폼 치킨버거</div>
+      <div class="item-price">5,400원 <span>/ 세트 8,400원</span></div>
+    </div>
+    <div class="qty-wrap">
+      <button class="qty-btn" onclick="changeQty(this,-1)">−</button>
+      <div class="qty-val">0</div>
+      <button class="qty-btn" onclick="changeQty(this,1)">+</button>
+    </div>
+  </div>
+</div>
+
+<div id="chicken" class="section">
+  <div class="section-title">🍗 순살 / 한마리</div>
+
+  <div class="item">
+    <div class="item-emoji">🍗</div>
+    <div class="item-info">
+      <div class="item-name">슈퍼크리스피 (한마리)</div>
+      <div class="item-price">9,900원</div>
+    </div>
+    <div class="qty-wrap">
+      <button class="qty-btn" onclick="changeQty(this,-1)">−</button>
+      <div class="qty-val">0</div>
+      <button class="qty-btn" onclick="changeQty(this,1)">+</button>
+    </div>
+  </div>
+
+  <div class="item">
+    <div class="item-emoji">🌶️</div>
+    <div class="item-info">
+      <div class="item-name">핫 슈퍼크리스피 (한마리)</div>
+      <div class="item-price">11,500원</div>
+    </div>
+    <div class="qty-wrap">
+      <button class="qty-btn" onclick="changeQty(this,-1)">−</button>
+      <div class="qty-val">0</div>
+      <button class="qty-btn" onclick="changeQty(this,1)">+</button>
+    </div>
+  </div>
+
+  <div class="item">
+    <div class="item-emoji">🍗</div>
+    <div class="item-info">
+      <div class="item-name">땅남 슈퍼크리스피 (한마리)</div>
+      <div class="item-price">12,500원</div>
+    </div>
+    <div class="qty-wrap">
+      <button class="qty-btn" onclick="changeQty(this,-1)">−</button>
+      <div class="qty-val">0</div>
+      <button class="qty-btn" onclick="changeQty(this,1)">+</button>
+    </div>
+  </div>
+
+  <div class="item">
+    <div class="item-emoji">🍗</div>
+    <div class="item-info">
+      <div class="item-name">소이 슈퍼크리스피 (한마리)</div>
+      <div class="item-price">12,500원</div>
+    </div>
+    <div class="qty-wrap">
+      <button class="qty-btn" onclick="changeQty(this,-1)">−</button>
+      <div class="qty-val">0</div>
+      <button class="qty-btn" onclick="changeQty(this,1)">+</button>
+    </div>
+  </div>
+
+  <div class="item">
+    <div class="item-emoji">🧀</div>
+    <div class="item-info">
+      <div class="item-name">치즈 슈퍼크리스피 (한마리)</div>
+      <div class="item-price">12,500원</div>
+    </div>
+    <div class="qty-wrap">
+      <button class="qty-btn" onclick="changeQty(this,-1)">−</button>
+      <div class="qty-val">0</div>
+      <button class="qty-btn" onclick="changeQty(this,1)">+</button>
+    </div>
+  </div>
+
+  <div class="item">
+    <div class="item-emoji">🍗</div>
+    <div class="item-info">
+      <div class="item-name">슈퍼크리스피 순살</div>
+      <div class="item-price">11,900원</div>
+    </div>
+    <div class="qty-wrap">
+      <button class="qty-btn" onclick="changeQty(this,-1)">−</button>
+      <div class="qty-val">0</div>
+      <button class="qty-btn" onclick="changeQty(this,1)">+</button>
+    </div>
+  </div>
+
+  <div class="item">
+    <div class="item-emoji">🌶️</div>
+    <div class="item-info">
+      <div class="item-name">핫 슈퍼크리스피 순살</div>
+      <div class="item-price">13,500원</div>
+    </div>
+    <div class="qty-wrap">
+      <button class="qty-btn" onclick="changeQty(this,-1)">−</button>
+      <div class="qty-val">0</div>
+      <button class="qty-btn" onclick="changeQty(this,1)">+</button>
+    </div>
+  </div>
+
+  <div class="item">
+    <div class="item-emoji">🍗</div>
+    <div class="item-info">
+      <div class="item-name">땅남 슈퍼크리스피 순살</div>
+      <div class="item-price">14,500원</div>
+    </div>
+    <div class="qty-wrap">
+      <button class="qty-btn" onclick="changeQty(this,-1)">−</button>
+      <div class="qty-val">0</div>
+      <button class="qty-btn" onclick="changeQty(this,1)">+</button>
+    </div>
+  </div>
+
+  <div class="item">
+    <div class="item-emoji">🍗</div>
+    <div class="item-info">
+      <div class="item-name">소이 슈퍼크리스피 순살</div>
+      <div class="item-price">14,500원</div>
+    </div>
+    <div class="qty-wrap">
+      <button class="qty-btn" onclick="changeQty(this,-1)">−</button>
+      <div class="qty-val">0</div>
+      <button class="qty-btn" onclick="changeQty(this,1)">+</button>
+    </div>
+  </div>
+
+  <div class="item">
+    <div class="item-emoji">🧀</div>
+    <div class="item-info">
+      <div class="item-name">치즈 슈퍼크리스피 순살</div>
+      <div class="item-price">14,500원</div>
+    </div>
+    <div class="qty-wrap">
+      <button class="qty-btn" onclick="changeQty(this,-1)">−</button>
+      <div class="qty-val">0</div>
+      <button class="qty-btn" onclick="changeQty(this,1)">+</button>
+    </div>
+  </div>
+</div>
+
+<div id="side" class="section">
+  <div class="section-title">🍟 사이드 메뉴</div>
+
+  <div class="item">
+    <div class="item-emoji">🍟</div>
+    <div class="item-info">
+      <div class="item-name">양념감자 (치즈/어니언)</div>
+      <div class="item-price">3,100원</div>
+    </div>
+    <div class="qty-wrap">
+      <button class="qty-btn" onclick="changeQty(this,-1)">−</button>
+      <div class="qty-val">0</div>
+      <button class="qty-btn" onclick="changeQty(this,1)">+</button>
+    </div>
+  </div>
+
+  <div class="item">
+    <div class="item-emoji">🌭</div>
+    <div class="item-info">
+      <div class="item-name">해피 치즈스틱 2개</div>
+      <div class="item-price">2,300원</div>
+    </div>
+    <div class="qty-wrap">
+      <button class="qty-btn" onclick="changeQty(this,-1)">−</button>
+      <div class="qty-val">0</div>
+      <button class="qty-btn" onclick="changeQty(this,1)">+</button>
+    </div>
+  </div>
+
+  <div class="item">
+    <div class="item-emoji">🧄</div>
+    <div class="item-info">
+      <div class="item-name">문턱 꿀마 치즈볼 3개</div>
+      <div class="item-price">2,900원</div>
+    </div>
+    <div class="qty-wrap">
+      <button class="qty-btn" onclick="changeQty(this,-1)">−</button>
+      <div class="qty-val">0</div>
+      <button class="qty-btn" onclick="changeQty(this,1)">+</button>
+    </div>
+  </div>
+
+  <div class="item">
+    <div class="item-emoji">🥗</div>
+    <div class="item-info">
+      <div class="item-name">달다리스피 치킨샐러드</div>
+      <div class="item-price">3,900원</div>
+    </div>
+    <div class="qty-wrap">
+      <button class="qty-btn" onclick="changeQty(this,-1)">−</button>
+      <div class="qty-val">0</div>
+      <button class="qty-btn" onclick="changeQty(this,1)">+</button>
+    </div>
+  </div>
+
+  <div class="item">
+    <div class="item-emoji">🍟</div>
+    <div class="item-info">
+      <div class="item-name">슈퍼크린시 감자튀김</div>
+      <div class="item-price">2,500원</div>
+    </div>
+    <div class="qty-wrap">
+      <button class="qty-btn" onclick="changeQty(this,-1)">−</button>
+      <div class="qty-val">0</div>
+      <button class="qty-btn" onclick="changeQty(this,1)">+</button>
+    </div>
+  </div>
+
+  <div class="item">
+    <div class="item-emoji">🍗</div>
+    <div class="item-info">
+      <div class="item-name">치킨텐더 2개 <span class="badge-new">NEW</span></div>
+      <div class="item-price">2,900원</div>
+    </div>
+    <div class="qty-wrap">
+      <button class="qty-btn" onclick="changeQty(this,-1)">−</button>
+      <div class="qty-val">0</div>
+      <button class="qty-btn" onclick="changeQty(this,1)">+</button>
+    </div>
+  </div>
+
+  <div class="item">
+    <div class="item-emoji">🥧</div>
+    <div class="item-info">
+      <div class="item-name">치킨파이</div>
+      <div class="item-price">2,500원</div>
+    </div>
+    <div class="qty-wrap">
+      <button class="qty-btn" onclick="changeQty(this,-1)">−</button>
+      <div class="qty-val">0</div>
+      <button class="qty-btn" onclick="changeQty(this,1)">+</button>
+    </div>
+  </div>
+
+  <div class="item">
+    <div class="item-emoji">🍗</div>
+    <div class="item-info">
+      <div class="item-name">크링치너겟 3개</div>
+      <div class="item-price">1,800원</div>
+    </div>
+    <div class="qty-wrap">
+      <button class="qty-btn" onclick="changeQty(this,-1)">−</button>
+      <div class="qty-val">0</div>
+      <button class="qty-btn" onclick="changeQty(this,1)">+</button>
+    </div>
+  </div>
+
+  <div class="item">
+    <div class="item-emoji">🍗</div>
+    <div class="item-info">
+      <div class="item-name">크리스피 찰 링 1개</div>
+      <div class="item-price">1,300원</div>
+    </div>
+    <div class="qty-wrap">
+      <button class="qty-btn" onclick="changeQty(this,-1)">−</button>
+      <div class="qty-val">0</div>
+      <button class="qty-btn" onclick="changeQty(this,1)">+</button>
+    </div>
+  </div>
+</div>
+
+<div id="drink" class="section">
+  <div class="section-title">🥤 음료</div>
+
+  <div class="item">
+    <div class="item-emoji">🥤</div>
+    <div class="item-info">
+      <div class="item-name">코카콜라 245ml</div>
+      <div class="item-price">1,300원</div>
+    </div>
+    <div class="qty-wrap">
+      <button class="qty-btn" onclick="changeQty(this,-1)">−</button>
+      <div class="qty-val">0</div>
+      <button class="qty-btn" onclick="changeQty(this,1)">+</button>
+    </div>
+  </div>
+
+  <div class="item">
+    <div class="item-emoji">🥤</div>
+    <div class="item-info">
+      <div class="item-name">코카콜라 제로 245ml</div>
+      <div class="item-price">1,300원</div>
+    </div>
+    <div class="qty-wrap">
+      <button class="qty-btn" onclick="changeQty(this,-1)">−</button>
+      <div class="qty-val">0</div>
+      <button class="qty-btn" onclick="changeQty(this,1)">+</button>
+    </div>
+  </div>
+
+  <div class="item">
+    <div class="item-emoji">🥤</div>
+    <div class="item-info">
+      <div class="item-name">스프라이트 245ml</div>
+      <div class="item-price">1,300원</div>
+    </div>
+    <div class="qty-wrap">
+      <button class="qty-btn" onclick="changeQty(this,-1)">−</button>
+      <div class="qty-val">0</div>
+      <button class="qty-btn" onclick="changeQty(this,1)">+</button>
+    </div>
+  </div>
+
+  <div class="item">
+    <div class="item-emoji">🥤</div>
+    <div class="item-info">
+      <div class="item-name">코카콜라 500ml</div>
+      <div class="item-price">2,100원</div>
+    </div>
+    <div class="qty-wrap">
+      <button class="qty-btn" onclick="changeQty(this,-1)">−</button>
+      <div class="qty-val">0</div>
+      <button class="qty-btn" onclick="changeQty(this,1)">+</button>
+    </div>
+  </div>
+
+  <div class="item">
+    <div class="item-emoji">🥤</div>
+    <div class="item-info">
+      <div class="item-name">코카콜라 제로 500ml</div>
+      <div class="item-price">2,100원</div>
+    </div>
+    <div class="qty-wrap">
+      <button class="qty-btn" onclick="changeQty(this,-1)">−</button>
+      <div class="qty-val">0</div>
+      <button class="qty-btn" onclick="changeQty(this,1)">+</button>
+    </div>
+  </div>
+
+  <div class="item">
+    <div class="item-emoji">🥤</div>
+    <div class="item-info">
+      <div class="item-name">스프라이트 500ml</div>
+      <div class="item-price">2,100원</div>
+    </div>
+    <div class="qty-wrap">
+      <button class="qty-btn" onclick="changeQty(this,-1)">−</button>
+      <div class="qty-val">0</div>
+      <button class="qty-btn" onclick="changeQty(this,1)">+</button>
+    </div>
+  </div>
+</div>
+
+<!-- Cart bar -->
+<div class="cart-bar">
+  <div class="cart-summary">
+    <span class="cart-count" id="cartCount">담은 메뉴 0개</span>
+    <span class="cart-total" id="cartTotal">0원</span>
+  </div>
+  <button class="btn-order" id="btnOrder" onclick="openOrder()" disabled>주문하기</button>
+</div>
+
+<!-- Order Modal -->
+<div id="orderModal" style="display:none" class="modal-bg" onclick="if(event.target===this)closeOrder()">
+  <div class="modal">
+    <h2>주문 확인</h2>
+    <div class="modal-sub">아래 내용으로 주문하시겠습니까?</div>
+    <div class="order-list" id="orderList"></div>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeOrder()">취소</button>
+      <button class="btn-confirm" onclick="confirmOrder()">주문 완료</button>
+    </div>
+  </div>
+</div>
+
+<!-- Complete -->
+<div id="completePage" style="display:none" class="complete">
+  <div class="complete-icon">✅</div>
+  <h2>주문이 접수되었습니다!</h2>
+  <div class="order-no" id="orderNo">#0000</div>
+  <p>잠시 후 호명해 드리겠습니다.<br>카운터에서 결제해 주세요 🙏</p>
+  <button class="btn-back" onclick="resetOrder()">새 주문하기</button>
+</div>
+
+<div class="toast hide" id="toast"></div>
+
+<script>
+// Get table from URL params
+var params = new URLSearchParams(window.location.search);
+var table = params.get('t') || '';
+if(table) document.getElementById('tableBadge').textContent = table + '번 테이블';
+
+// Price map from item elements
+var prices = {
+  '치킨버거': 2900, '치즈 치킨버거': 3700, '디럭스 치킨버거': 3900,
+  '더블 치즈치킨버거': 4700, '핫스파이시 치킨버거': 3700,
+  '슈퍼쉬림프 버거': 5400, '더블 치킨버거': 5400,
+  '콜론포테이토 치킨버거': 5400, '트리플아쉬폼 치킨버거': 5400,
+  '슈퍼크리스피 (한마리)': 9900, '핫 슈퍼크리스피 (한마리)': 11500,
+  '땅남 슈퍼크리스피 (한마리)': 12500, '소이 슈퍼크리스피 (한마리)': 12500,
+  '치즈 슈퍼크리스피 (한마리)': 12500,
+  '슈퍼크리스피 순살': 11900, '핫 슈퍼크리스피 순살': 13500,
+  '땅남 슈퍼크리스피 순살': 14500, '소이 슈퍼크리스피 순살': 14500,
+  '치즈 슈퍼크리스피 순살': 14500,
+  '양념감자 (치즈/어니언)': 3100, '해피 치즈스틱 2개': 2300,
+  '문턱 꿀마 치즈볼 3개': 2900, '달다리스피 치킨샐러드': 3900,
+  '슈퍼크린시 감자튀김': 2500, '치킨텐더 2개': 2900,
+  '치킨파이': 2500, '크링치너겟 3개': 1800, '크리스피 찰 링 1개': 1300,
+  '코카콜라 245ml': 1300, '코카콜라 제로 245ml': 1300,
+  '스프라이트 245ml': 1300, '코카콜라 500ml': 2100,
+  '코카콜라 제로 500ml': 2100, '스프라이트 500ml': 2100
+};
+
+function getPrice(name) {
+  // strip badges
+  var clean = name.replace(/BEST|NEW/g,'').trim();
+  return prices[clean] || 0;
+}
+
+function changeQty(btn, d) {
+  var wrap = btn.parentElement;
+  var valEl = wrap.querySelector('.qty-val');
+  var v = Math.max(0, parseInt(valEl.textContent) + d);
+  valEl.textContent = v;
+  updateCart();
+  if(d > 0 && v === 1) toast('담겼어요 🍗');
+}
+
+function updateCart() {
+  var items = document.querySelectorAll('.item');
+  var total = 0, count = 0;
+  items.forEach(function(item) {
+    var qty = parseInt(item.querySelector('.qty-val').textContent);
+    if(qty > 0) {
+      var name = item.querySelector('.item-name').textContent;
+      var price = getPrice(name);
+      total += price * qty;
+      count += qty;
+    }
+  });
+  document.getElementById('cartCount').textContent = '담은 메뉴 ' + count + '개';
+  document.getElementById('cartTotal').textContent = total.toLocaleString() + '원';
+  document.getElementById('btnOrder').disabled = count === 0;
+}
+
+function openOrder() {
+  var items = document.querySelectorAll('.item');
+  var html = '';
+  var total = 0;
+  items.forEach(function(item) {
+    var qty = parseInt(item.querySelector('.qty-val').textContent);
+    if(qty > 0) {
+      var name = item.querySelector('.item-name').textContent.replace(/BEST|NEW/g,'').trim();
+      var price = getPrice(name);
+      var sub = price * qty;
+      total += sub;
+      html += '<div class="ol-item"><span>' + name + ' × ' + qty + '</span><span>' + sub.toLocaleString() + '원</span></div>';
+    }
+  });
+  html += '<div class="ol-total"><span>합계</span><span>' + total.toLocaleString() + '원</span></div>';
+  document.getElementById('orderList').innerHTML = html;
+  document.getElementById('orderModal').style.display = 'flex';
+}
+
+function closeOrder() { document.getElementById('orderModal').style.display = 'none'; }
+
+function confirmOrder() {
+  closeOrder();
+  var no = String(Math.floor(Math.random() * 9000) + 1000);
+  document.getElementById('orderNo').textContent = '#' + no;
+  document.getElementById('completePage').style.display = 'flex';
+}
+
+function resetOrder() {
+  document.querySelectorAll('.qty-val').forEach(function(el) { el.textContent = '0'; });
+  updateCart();
+  document.getElementById('completePage').style.display = 'none';
+  window.scrollTo(0,0);
+}
+
+function scrollTo(id) {
+  document.getElementById(id).scrollIntoView({behavior:'smooth'});
+  document.querySelectorAll('.cat-btn').forEach(function(b) { b.classList.remove('active'); });
+  event.target.classList.add('active');
+}
+
+var toastTimer;
+function toast(msg) {
+  var el = document.getElementById('toast');
+  el.textContent = msg; el.classList.remove('hide');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(function() { el.classList.add('hide'); }, 1500);
+}
+</script>
+</body>
+</html>
