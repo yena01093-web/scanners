@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>슈퍼크리스피 KDS</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;700;900&family=Noto+Sans+KR:wght@400;700;900&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#0a0a0a;--surface:#111;--border:#222;--green:#00ff88;--orange:#ffaa00;--red:#ff3b3b;--blue:#58a6ff;--text:#fff;--text2:#888}
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:var(--bg);color:var(--text);font-family:'Noto Sans KR',sans-serif;min-height:100vh;padding:16px}
+
+.hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;padding-bottom:12px;border-bottom:1px solid var(--border)}
+.hdr-title{font-family:'IBM Plex Mono',monospace;font-size:20px;font-weight:900;color:var(--green)}
+.clock{font-family:'IBM Plex Mono',monospace;font-size:18px;color:var(--text2)}
+
+/* New order panel */
+.new-order{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px;margin-bottom:16px}
+.new-order h3{font-size:14px;color:var(--text2);margin-bottom:12px;font-family:'IBM Plex Mono',monospace}
+.menu-grid{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px}
+.menu-tag{background:#1a1a1a;border:1px solid var(--border);border-radius:8px;padding:8px 12px;font-size:13px;cursor:pointer;transition:all .15s;display:flex;align-items:center;gap:6px}
+.menu-tag:active{background:var(--blue);border-color:var(--blue)}
+.menu-tag .time{font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--text2)}
+.btn-fire{width:100%;background:var(--red);border:none;border-radius:10px;color:#fff;font-size:16px;font-weight:700;padding:14px;cursor:pointer;font-family:'Noto Sans KR',sans-serif}
+.selected-items{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px;min-height:32px}
+.sel-tag{background:var(--blue);color:#000;border-radius:6px;padding:4px 10px;font-size:12px;font-weight:700;display:flex;align-items:center;gap:4px;cursor:pointer}
+
+/* Orders */
+.orders-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px}
+
+.order-card{background:var(--surface);border:2px solid var(--border);border-radius:12px;padding:14px;position:relative;overflow:hidden}
+.order-card.urgent{border-color:var(--orange);animation:urgentPulse 1s infinite}
+.order-card.done{border-color:var(--green);opacity:.6}
+@keyframes urgentPulse{0%,100%{border-color:var(--orange)}50%{border-color:var(--red)}}
+
+.order-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+.order-no{font-family:'IBM Plex Mono',monospace;font-size:18px;font-weight:900;color:var(--green)}
+.order-time{font-family:'IBM Plex Mono',monospace;font-size:12px;color:var(--text2)}
+.btn-done{background:var(--green);border:none;border-radius:6px;color:#000;font-size:12px;font-weight:700;padding:6px 12px;cursor:pointer;font-family:'Noto Sans KR',sans-serif}
+
+.steps{display:flex;flex-direction:column;gap:6px;margin-bottom:10px}
+.step{display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:8px;background:#1a1a1a}
+.step.active{background:rgba(255,170,0,.1);border:1px solid rgba(255,170,0,.3)}
+.step.waiting{opacity:.4}
+.step.completed{background:rgba(0,255,136,.08);border:1px solid rgba(0,255,136,.2)}
+.step-emoji{font-size:18px;flex-shrink:0}
+.step-info{flex:1}
+.step-name{font-size:13px;font-weight:700}
+.step-status{font-size:11px;font-family:'IBM Plex Mono',monospace;margin-top:1px}
+.step.active .step-status{color:var(--orange)}
+.step.waiting .step-status{color:var(--text2)}
+.step.completed .step-status{color:var(--green)}
+.step-timer{font-family:'IBM Plex Mono',monospace;font-size:16px;font-weight:900;flex-shrink:0}
+.step.active .step-timer{color:var(--orange)}
+.step.completed .step-timer{color:var(--green)}
+
+.total-bar{display:flex;align-items:center;justify-content:space-between;padding:8px 10px;background:#1a1a1a;border-radius:8px}
+.total-label{font-size:12px;color:var(--text2)}
+.total-timer{font-family:'IBM Plex Mono',monospace;font-size:20px;font-weight:900}
+
+.empty-state{text-align:center;padding:60px 20px;color:var(--text2)}
+.empty-state .ei{font-size:50px;opacity:.2;margin-bottom:10px}
+.empty-state p{font-family:'IBM Plex Mono',monospace;font-size:13px}
+
+.badge-row{display:flex;gap:6px;margin-bottom:8px}
+.badge{font-size:10px;font-weight:700;padding:2px 8px;border-radius:4px;font-family:'IBM Plex Mono',monospace}
+.badge.hall{background:rgba(88,166,255,.2);color:var(--blue)}
+.badge.delivery{background:rgba(255,170,0,.2);color:var(--orange)}
+.badge.takeout{background:rgba(0,255,136,.2);color:var(--green)}
+</style>
+</head>
+<body>
+
+<div class="hdr">
+  <div class="hdr-title">🍗 슈퍼크리스피 KDS</div>
+  <div class="clock" id="clock">00:00:00</div>
+</div>
+
+<!-- New Order Panel -->
+<div class="new-order">
+  <h3>▶ 주문 입력</h3>
+  <div class="menu-grid" id="menuGrid"></div>
+  <div class="selected-items" id="selectedItems"></div>
+  <div style="display:flex;gap:8px">
+    <select id="orderType" style="background:#1a1a1a;border:1px solid #333;border-radius:8px;color:#fff;padding:8px 12px;font-family:'Noto Sans KR',sans-serif;font-size:13px;flex:1">
+      <option value="hall">홀</option>
+      <option value="delivery">배달</option>
+      <option value="takeout">포장</option>
+    </select>
+    <button class="btn-fire" style="flex:2" onclick="fireOrder()">🔥 주문 접수</button>
+  </div>
+</div>
+
+<!-- Orders -->
+<div class="orders-grid" id="ordersGrid">
+  <div class="empty-state">
+    <div class="ei">📋</div>
+    <p>주문 대기 중...</p>
+  </div>
+</div>
+
+<script>
+var MENUS = [
+  {name:'치킨버거', emoji:'🍔', time:13, sub:'버거2+치킨11'},
+  {name:'치즈치킨버거', emoji:'🧀', time:13, sub:'버거2+치킨11'},
+  {name:'더블치킨버거', emoji:'🍔', time:13, sub:'버거2+치킨11'},
+  {name:'슈퍼크리스피(한마리)', emoji:'🍗', time:15, sub:'튀김15'},
+  {name:'핫크리스피(한마리)', emoji:'🌶️', time:15, sub:'튀김15'},
+  {name:'순살', emoji:'🍗', time:13, sub:'튀김13'},
+  {name:'양념감자', emoji:'🍟', time:4, sub:'감자4'},
+  {name:'치킨텐더', emoji:'🍗', time:5, sub:'튀김5'},
+  {name:'나초컵', emoji:'🌮', time:3, sub:'조립3'},
+  {name:'콜라', emoji:'🥤', time:1, sub:'음료1'},
+];
+
+// Cooking steps breakdown
+var STEPS = {
+  '치킨버거':    [{name:'치킨 튀기기', emoji:'🍗', time:11},{name:'버거 조립', emoji:'🍔', time:2}],
+  '치즈치킨버거':[{name:'치킨 튀기기', emoji:'🍗', time:11},{name:'버거 조립', emoji:'🧀', time:2}],
+  '더블치킨버거':[{name:'치킨 튀기기', emoji:'🍗', time:11},{name:'버거 조립', emoji:'🍔', time:2}],
+  '슈퍼크리스피(한마리)':[{name:'치킨 튀기기', emoji:'🍗', time:15}],
+  '핫크리스피(한마리)':[{name:'치킨 튀기기', emoji:'🌶️', time:15}],
+  '순살':[{name:'순살 튀기기', emoji:'🍗', time:13}],
+  '양념감자':[{name:'감자 튀기기', emoji:'🍟', time:3},{name:'양념 버무리기', emoji:'🧂', time:1}],
+  '치킨텐더':[{name:'텐더 튀기기', emoji:'🍗', time:5}],
+  '나초컵':[{name:'나초컵 조립', emoji:'🌮', time:3}],
+  '콜라':[{name:'음료 준비', emoji:'🥤', time:1}],
+};
+
+var selected = [];
+var orders = [];
+var orderCount = 1;
+
+// Render menu buttons
+var mg = document.getElementById('menuGrid');
+MENUS.forEach(function(m) {
+  var btn = document.createElement('div');
+  btn.className = 'menu-tag';
+  btn.innerHTML = m.emoji + ' ' + m.name + ' <span class="time">' + m.time + '분</span>';
+  btn.onclick = function() { addSelected(m); };
+  mg.appendChild(btn);
+});
+
+function addSelected(m) {
+  selected.push(m);
+  renderSelected();
+}
+
+function renderSelected() {
+  var el = document.getElementById('selectedItems');
+  el.innerHTML = selected.map(function(m, i) {
+    return '<div class="sel-tag" onclick="removeSelected(' + i + ')">' + m.emoji + ' ' + m.name + ' ✕</div>';
+  }).join('');
+}
+
+function removeSelected(i) {
+  selected.splice(i, 1);
+  renderSelected();
+}
+
+function fireOrder() {
+  if(!selected.length) { alert('메뉴를 선택해주세요'); return; }
+  var type = document.getElementById('orderType').value;
+  
+  // Build combined steps with reverse cooking logic
+  var allSteps = [];
+  selected.forEach(function(m) {
+    var steps = STEPS[m.name] || [{name:m.name, emoji:m.emoji, time:m.time}];
+    steps.forEach(function(s) { allSteps.push(Object.assign({},s)); });
+  });
+  
+  // Find max total time
+  var maxTime = selected.reduce(function(max, m) { return Math.max(max, m.time); }, 0) * 60;
+  
+  // Calculate start times (reverse logic)
+  var now = Date.now();
+  allSteps.forEach(function(s) {
+    s.startAt = now + (maxTime - s.time * 60) * 1000;
+    s.endAt = now + maxTime * 1000;
+    s.done = false;
+  });
+  
+  var order = {
+    id: orderCount++,
+    type: type,
+    items: selected.map(function(m){return m.name;}),
+    steps: allSteps,
+    totalTime: maxTime,
+    startAt: now,
+    endAt: now + maxTime * 1000,
+    done: false
+  };
+  
+  orders.unshift(order);
+  selected = [];
+  renderSelected();
+  renderOrders();
+  if(navigator.vibrate) navigator.vibrate(100);
+}
+
+function renderOrders() {
+  var grid = document.getElementById('ordersGrid');
+  if(!orders.length) {
+    grid.innerHTML = '<div class="empty-state"><div class="ei">📋</div><p>주문 대기 중...</p></div>';
+    return;
+  }
+  grid.innerHTML = orders.filter(function(o){return !o.done;}).map(function(o) {
+    var now = Date.now();
+    var remaining = Math.max(0, Math.ceil((o.endAt - now) / 1000));
+    var mins = Math.floor(remaining / 60);
+    var secs = remaining % 60;
+    var timeStr = (mins > 0 ? mins + '분 ' : '') + secs + '초';
+    var urgent = remaining <= 60 && remaining > 0;
+    var typeBadge = o.type === 'hall' ? '홀' : o.type === 'delivery' ? '배달' : '포장';
+    var typeClass = o.type;
+    
+    var stepsHtml = o.steps.map(function(s) {
+      var now2 = Date.now();
+      var stepRemaining = Math.max(0, Math.ceil((s.endAt - now2) / 1000));
+      var stepStart = s.startAt <= now2;
+      var stepDone = s.done;
+      var cls = stepDone ? 'completed' : (stepStart ? 'active' : 'waiting');
+      var statusTxt = stepDone ? '완료 ✓' : (stepStart ? '조리 중' : '대기 중');
+      var timerTxt = stepDone ? '✓' : (stepStart ? Math.floor(stepRemaining/60) + ':' + String(stepRemaining%60).padStart(2,'0') : s.time + '분');
+      return '<div class="step ' + cls + '" onclick="toggleStep('+o.id+',\''+s.name+'\')">' +
+        '<div class="step-emoji">' + s.emoji + '</div>' +
+        '<div class="step-info"><div class="step-name">' + s.name + '</div>' +
+        '<div class="step-status">' + statusTxt + '</div></div>' +
+        '<div class="step-timer">' + timerTxt + '</div></div>';
+    }).join('');
+
+    return '<div class="order-card' + (urgent?' urgent':'') + '" id="order'+o.id+'">' +
+      '<div class="order-top">' +
+        '<div class="order-no">#' + String(o.id).padStart(3,'0') + '</div>' +
+        '<button class="btn-done" onclick="completeOrder('+o.id+')">완료 ✓</button>' +
+      '</div>' +
+      '<div class="badge-row"><span class="badge '+typeClass+'">'+typeBadge+'</span></div>' +
+      '<div style="font-size:12px;color:#888;margin-bottom:8px">' + o.items.join(', ') + '</div>' +
+      '<div class="steps">' + stepsHtml + '</div>' +
+      '<div class="total-bar">' +
+        '<span class="total-label">남은 시간</span>' +
+        '<span class="total-timer" style="color:' + (urgent?'var(--red)':remaining===0?'var(--green)':'var(--orange)') + '">' + 
+        (remaining === 0 ? '완성!' : timeStr) + '</span>' +
+      '</div></div>';
+  }).join('');
+}
+
+function toggleStep(orderId, stepName) {
+  var order = orders.find(function(o){return o.id===orderId;});
+  if(!order) return;
+  var step = order.steps.find(function(s){return s.name===stepName;});
+  if(step) { step.done = !step.done; renderOrders(); }
+}
+
+function completeOrder(id) {
+  var order = orders.find(function(o){return o.id===id;});
+  if(order) { order.done = true; renderOrders(); }
+  if(navigator.vibrate) navigator.vibrate([100,50,100]);
+}
+
+// Clock
+function updateClock() {
+  var now = new Date();
+  var h = String(now.getHours()).padStart(2,'0');
+  var m = String(now.getMinutes()).padStart(2,'0');
+  var s = String(now.getSeconds()).padStart(2,'0');
+  document.getElementById('clock').textContent = h+':'+m+':'+s;
+}
+
+// Main loop
+setInterval(function() {
+  updateClock();
+  if(orders.some(function(o){return !o.done;})) renderOrders();
+}, 1000);
+
+updateClock();
+</script>
+</body>
+</html>
