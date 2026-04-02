@@ -9,6 +9,7 @@
 <meta name="apple-mobile-web-app-title" content="재고스캐너">
 <link rel="manifest" href="./manifest.json">
 <link rel="apple-touch-icon" href="./icon-192.png">
+<script src="./products.js"></script>
 <title>재고관리 스캐너</title>
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600;700&family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
 <style>
@@ -445,7 +446,12 @@ function startOcrScan() {
 function stopOcrScan() { if (ocrInterval) { clearInterval(ocrInterval); ocrInterval = null; } }
 
 async function lookupProduct(code) {
+  // 1. 슈퍼크리스피 로컬 DB 먼저 확인
+  if (typeof CRISPY_DB !== 'undefined' && CRISPY_DB[code]) {
+    return CRISPY_DB[code].name;
+  }
   try {
+    // 2. Open Food Facts API
     var res = await fetch('https://world.openfoodfacts.org/api/v0/product/' + code + '.json');
     var data = await res.json();
     if (data.status === 1 && data.product) {
