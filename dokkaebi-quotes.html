@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI 도깨비 어록</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@400;700;900&family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  background: #fff;
+  color: #111;
+  font-family: 'Noto Sans KR', sans-serif;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.container {
+  width: 100%;
+  max-width: 480px;
+  padding: 30px 20px;
+  text-align: center;
+}
+
+.header { margin-bottom: 24px; }
+
+.logo {
+  font-size: 13px;
+  color: #e02020;
+  letter-spacing: 3px;
+  font-weight: 700;
+  margin-bottom: 8px;
+}
+
+.date-badge {
+  display: inline-block;
+  background: #e02020;
+  border-radius: 20px;
+  padding: 6px 18px;
+  font-size: 13px;
+  color: #fff;
+  font-weight: 700;
+}
+
+.wand {
+  font-size: 52px;
+  display: block;
+  margin: 16px auto;
+  animation: float 3s ease-in-out infinite;
+  filter: drop-shadow(0 4px 8px rgba(224,32,32,0.3));
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0) rotate(-10deg); }
+  50% { transform: translateY(-8px) rotate(10deg); }
+}
+
+.quote-card {
+  background: #fff;
+  border: 3px solid #e02020;
+  border-radius: 20px;
+  padding: 32px 24px;
+  margin: 16px 0;
+  min-height: 220px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 6px 6px 0px #e02020;
+}
+
+.original {
+  font-size: 14px;
+  color: #555;
+  font-style: italic;
+  line-height: 1.6;
+}
+
+.original .source {
+  color: #888;
+  font-size: 12px;
+  display: block;
+  margin-top: 3px;
+}
+
+.divider {
+  width: 40px;
+  height: 2px;
+  background: #e02020;
+  margin: 14px auto;
+}
+
+.quote-text {
+  font-family: 'Noto Serif KR', serif;
+  font-size: 22px;
+  font-weight: 900;
+  line-height: 1.7;
+  color: #111;
+}
+
+.quote-text .hl { color: #e02020; }
+
+.quote-number {
+  margin-top: 16px;
+  font-size: 11px;
+  color: #ddd;
+  letter-spacing: 2px;
+}
+
+.nav {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  margin: 16px 0;
+}
+
+.nav-btn {
+  background: #e02020;
+  border: none;
+  border-radius: 50%;
+  width: 44px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 18px;
+  color: #fff;
+  font-weight: 700;
+  box-shadow: 3px 3px 0px #a00;
+  transition: all 0.15s;
+}
+
+.nav-btn:active { transform: scale(0.95); box-shadow: 1px 1px 0px #a00; }
+
+.nav-dots { display: flex; gap: 6px; }
+
+.dot {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  background: #ddd;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.dot.active { background: #e02020; transform: scale(1.3); }
+
+.signature {
+  margin-top: 20px;
+  padding-top: 16px;
+  border-top: 2px dashed #e02020;
+}
+
+.sig-text { font-size: 12px; color: #e02020; letter-spacing: 2px; font-weight: 700; }
+.sig-brand { margin-top: 6px; font-size: 15px; font-weight: 900; color: #111; }
+
+.fade-in { animation: fadeIn 0.35s ease; }
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="header">
+    <div class="logo">🪄 AI 도깨비 어록 🪄</div>
+    <div class="date-badge" id="date-badge"></div>
+  </div>
+
+  <span class="wand">🪄</span>
+
+  <div class="quote-card" id="quote-card">
+    <div class="original" id="orig"></div>
+    <div class="divider"></div>
+    <div class="quote-text" id="quote"></div>
+    <div class="quote-number" id="num"></div>
+  </div>
+
+  <div class="nav">
+    <button class="nav-btn" onclick="prev()">←</button>
+    <div class="nav-dots" id="dots"></div>
+    <button class="nav-btn" onclick="next()">→</button>
+  </div>
+
+  <div class="signature">
+    <div class="sig-text">— AI 도깨비 어록 —</div>
+    <div class="sig-brand">🍗 SUPER CRISPY</div>
+  </div>
+</div>
+
+<script>
+var Q = [
+  { o: "나는 생각한다, 고로 나는 존재한다 — 데카르트", p: "나는 <span class='hl'>치킨</span>을 먹는다,\n고로 나는 <span class='hl'>행복</span>하다" },
+  { o: "인생은 짧고 예술은 길다 — 히포크라테스", p: "인생은 짧고\n<span class='hl'>치킨</span>은 <span class='hl'>맛있다</span>" },
+  { o: "아는 것이 힘이다 — 베이컨", p: "<span class='hl'>먹는 것</span>이\n<span class='hl'>힘</span>이다" },
+  { o: "나를 파괴할 수 없는 것이 나를 강하게 만든다 — 니체", p: "나를 <span class='hl'>살찌게</span> 하는 것이\n나를 <span class='hl'>행복</span>하게 만든다" },
+  { o: "빠바바밤 — 베토벤", p: "빠바바밤 —\n<span class='hl'>치킨</span>이 왔다 🍗" },
+  { o: "길이 없으면 길을 만들어라 — 한니발", p: "<span class='hl'>치킨</span>이 없으면\n<span class='hl'>시켜라</span>" },
+  { o: "사랑하라, 한번도 상처받지 않은 것처럼 — 마크 트웨인", p: "<span class='hl'>먹어라</span>,\n한번도 살찐 적 없는 것처럼" },
+  { o: "신은 죽었다 — 니체", p: "<span class='hl'>치킨</span>은\n<span class='hl'>영원</span>하다" },
+  { o: "두드려라, 그러면 열릴 것이다 — 성경", p: "<span class='hl'>새벽 4시</span>에 AI 도깨비를 깨워라,\n그러면 <span class='hl'>세상을 얻을 것</span>이다" },
+  { o: "사람은 빵만으로 살 수 없다 — 성경", p: "사람은 <span class='hl'>치킨</span>과\n<span class='hl'>파니니</span>로도 산다" },
+  { o: "버려지면 쓰레기, 잘 훔치면 보석 — AI 도깨비", p: "버려지면 <span class='hl'>남은 치킨</span>,\n잘 훔치면 <span class='hl'>야식</span>" },
+  { o: "— AI 도깨비 어록", p: "사람은 떠나도\n<span class='hl'>치킨</span>은 남는다" },
+  { o: "— AI 도깨비 어록", p: "힘든 날엔\n<span class='hl'>치킨</span>이 답이다" },
+  { o: "— AI 도깨비 어록", p: "<span class='hl'>치킨</span> 앞에선\n모두가 평등하다" },
+  { o: "— AI 도깨비 어록", p: "오늘도 <span class='hl'>치킨</span>이\n나를 구했다" },
+  { o: "— AI 도깨비 어록", p: "당신 곁에 언제나\n— <span class='hl'>슈퍼크리스피</span>" }
+];
+
+var today = new Date();
+var cur = today.getDate() % Q.length;
+
+function setDate() {
+  var d = ['일','월','화','수','목','금','토'];
+  document.getElementById('date-badge').textContent =
+    today.getFullYear() + '년 ' + (today.getMonth()+1) + '월 ' + today.getDate() + '일 ' + d[today.getDay()] + '요일';
+}
+
+function render() {
+  var c = document.getElementById('quote-card');
+  c.classList.remove('fade-in');
+  void c.offsetWidth;
+  c.classList.add('fade-in');
+  document.getElementById('orig').innerHTML = Q[cur].o;
+  document.getElementById('quote').innerHTML = Q[cur].p.replace(/\n/g,'<br>');
+  document.getElementById('num').textContent = (cur+1) + ' / ' + Q.length;
+  document.getElementById('dots').innerHTML = Q.map((_,i) =>
+    '<div class="dot'+(i===cur?' active':'')+'" onclick="go('+i+')"></div>').join('');
+}
+
+function next() { cur = (cur+1) % Q.length; render(); }
+function prev() { cur = (cur-1+Q.length) % Q.length; render(); }
+function go(i) { cur = i; render(); }
+
+setDate();
+render();
+</script>
+</body>
+</html>
