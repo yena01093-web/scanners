@@ -1,0 +1,1082 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NXPOS 통합관리 시스템</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600;700&family=Noto+Sans+KR:wght@400;500;700;900&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #0a0a0f;
+  --surface: #12121a;
+  --surface2: #1a1a26;
+  --border: #2a2a3d;
+  --accent: #6c63ff;
+  --accent2: #ff6584;
+  --green: #00d4a0;
+  --orange: #ff9500;
+  --red: #ff4757;
+  --text: #e8e8f0;
+  --text2: #7a7a9a;
+  --mono: 'IBM Plex Mono', monospace;
+  --sans: 'Noto Sans KR', sans-serif;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  font-family: var(--sans);
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+}
+
+/* 헤더 */
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 24px;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+.logo {
+  font-family: var(--mono);
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--accent);
+  letter-spacing: 2px;
+}
+
+.logo span { color: var(--text2); font-size: 12px; margin-left: 8px; }
+
+.header-info {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+}
+
+.badge {
+  font-family: var(--mono);
+  font-size: 11px;
+  padding: 4px 10px;
+  border-radius: 4px;
+  border: 1px solid;
+}
+
+.badge.live { color: var(--green); border-color: var(--green); background: rgba(0,212,160,.1); }
+.badge.store { color: var(--accent); border-color: var(--accent); background: rgba(108,99,255,.1); }
+
+/* 탭 네비게이션 */
+.tabs {
+  display: flex;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  padding: 0 24px;
+  gap: 4px;
+}
+
+.tab {
+  padding: 12px 20px;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  border: none;
+  background: none;
+  color: var(--text2);
+  border-bottom: 2px solid transparent;
+  transition: all .2s;
+  font-family: var(--sans);
+}
+
+.tab.active { color: var(--accent); border-color: var(--accent); }
+.tab:hover { color: var(--text); }
+
+/* 콘텐츠 */
+.content { padding: 24px; display: none; }
+.content.active { display: block; }
+
+/* 카드 */
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 20px;
+  margin-bottom: 16px;
+}
+
+.card-title {
+  font-family: var(--mono);
+  font-size: 12px;
+  color: var(--text2);
+  margin-bottom: 12px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+/* 그리드 */
+.grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 16px; }
+.grid-2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; margin-bottom: 16px; }
+
+/* 통계 카드 */
+.stat-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 20px;
+}
+
+.stat-label { font-size: 12px; color: var(--text2); margin-bottom: 8px; }
+.stat-value { font-family: var(--mono); font-size: 24px; font-weight: 700; }
+.stat-value.green { color: var(--green); }
+.stat-value.orange { color: var(--orange); }
+.stat-value.accent { color: var(--accent); }
+.stat-value.red { color: var(--red); }
+.stat-sub { font-size: 11px; color: var(--text2); margin-top: 4px; }
+
+/* 포스 화면 */
+.pos-wrap { display: grid; grid-template-columns: 1fr 340px; gap: 16px; }
+
+.product-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+
+.product-btn {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 16px 10px;
+  cursor: pointer;
+  text-align: center;
+  transition: all .15s;
+  color: var(--text);
+  font-family: var(--sans);
+}
+
+.product-btn:hover { border-color: var(--accent); background: rgba(108,99,255,.1); }
+.product-btn .p-name { font-size: 13px; font-weight: 700; margin-bottom: 4px; }
+.product-btn .p-price { font-family: var(--mono); font-size: 12px; color: var(--accent); }
+
+/* 영수증 */
+.receipt {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.receipt-title {
+  font-family: var(--mono);
+  font-size: 12px;
+  color: var(--text2);
+  margin-bottom: 12px;
+  text-transform: uppercase;
+}
+
+.receipt-items { flex: 1; min-height: 200px; }
+
+.receipt-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--border);
+  font-size: 13px;
+}
+
+.receipt-item .item-name { flex: 1; }
+.receipt-item .item-qty { color: var(--text2); margin: 0 10px; font-family: var(--mono); }
+.receipt-item .item-price { font-family: var(--mono); color: var(--accent); }
+.receipt-item .item-del { color: var(--red); cursor: pointer; margin-left: 8px; background: none; border: none; font-size: 14px; }
+
+.receipt-total {
+  border-top: 2px solid var(--border);
+  padding-top: 12px;
+  margin-top: 12px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.total-label { font-weight: 700; }
+.total-value { font-family: var(--mono); font-size: 20px; font-weight: 700; color: var(--green); }
+
+.btn-pay {
+  width: 100%;
+  padding: 14px;
+  background: var(--accent);
+  border: none;
+  border-radius: 8px;
+  color: #fff;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+  margin-top: 12px;
+  font-family: var(--sans);
+  transition: opacity .15s;
+}
+
+.btn-pay:hover { opacity: .85; }
+
+.btn-clear {
+  width: 100%;
+  padding: 10px;
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--text2);
+  font-size: 13px;
+  cursor: pointer;
+  margin-top: 8px;
+  font-family: var(--sans);
+}
+
+/* 테이블 */
+.table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.table th {
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--text2);
+  text-transform: uppercase;
+  padding: 10px 12px;
+  text-align: left;
+  border-bottom: 1px solid var(--border);
+}
+
+.table td {
+  padding: 12px;
+  border-bottom: 1px solid var(--border);
+}
+
+.table tr:hover td { background: var(--surface2); }
+
+.status-badge {
+  font-size: 11px;
+  padding: 3px 8px;
+  border-radius: 4px;
+  font-family: var(--mono);
+}
+
+.status-badge.ok { background: rgba(0,212,160,.15); color: var(--green); }
+.status-badge.warn { background: rgba(255,149,0,.15); color: var(--orange); }
+.status-badge.danger { background: rgba(255,71,87,.15); color: var(--red); }
+
+/* 입력 */
+.input {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--text);
+  font-family: var(--mono);
+  font-size: 13px;
+  padding: 8px 12px;
+  outline: none;
+  width: 100%;
+  transition: border-color .15s;
+}
+
+.input:focus { border-color: var(--accent); }
+
+.btn {
+  padding: 8px 16px;
+  border-radius: 6px;
+  border: none;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 700;
+  font-family: var(--sans);
+  transition: opacity .15s;
+}
+
+.btn:hover { opacity: .85; }
+.btn-accent { background: var(--accent); color: #fff; }
+.btn-green { background: var(--green); color: #0a0a0f; }
+.btn-outline { background: none; border: 1px solid var(--border); color: var(--text2); }
+
+/* 알림 */
+.alert {
+  padding: 12px 16px;
+  border-radius: 8px;
+  font-size: 13px;
+  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.alert.warn { background: rgba(255,149,0,.1); border: 1px solid rgba(255,149,0,.3); color: var(--orange); }
+.alert.danger { background: rgba(255,71,87,.1); border: 1px solid rgba(255,71,87,.3); color: var(--red); }
+
+/* 연동 상태 */
+.sync-status {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--mono);
+  font-size: 12px;
+  color: var(--green);
+}
+
+.sync-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--green);
+  animation: blink 1.5s infinite;
+}
+
+@keyframes blink { 0%,100%{opacity:1} 50%{opacity:.3} }
+
+/* 반응형 */
+@media (max-width: 768px) {
+  .grid-3 { grid-template-columns: 1fr; }
+  .grid-2 { grid-template-columns: 1fr; }
+  .pos-wrap { grid-template-columns: 1fr; }
+  .product-grid { grid-template-columns: repeat(2, 1fr); }
+}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="logo">NXPOS <span>통합관리시스템 v1.0</span></div>
+  <div class="header-info">
+    <div class="sync-status"><div class="sync-dot"></div> 실시간 연동 중</div>
+    <div class="badge live">LIVE</div>
+    <div class="badge store">편의점 본점</div>
+  </div>
+</div>
+
+<div class="tabs">
+  <button class="tab active" onclick="showTab('dashboard')">📊 대시보드</button>
+  <button class="tab" onclick="showTab('pos')">🛒 포스</button>
+  <button class="tab" onclick="showTab('inventory')">📦 재고관리</button>
+  <button class="tab" onclick="showTab('wholesale')">🚚 도소매</button>
+  <button class="tab" onclick="showTab('customer')">🏪 거래처관리</button>
+  <button class="tab" onclick="showTab('erp')">🏢 ERP</button>
+</div>
+
+<!-- 대시보드 -->
+<div id="tab-dashboard" class="content active">
+  <div class="grid-3">
+    <div class="stat-card">
+      <div class="stat-label">오늘 매출</div>
+      <div class="stat-value green" id="today-sales">₩0</div>
+      <div class="stat-sub">전일 대비 <span style="color:var(--green)">+12.4%</span></div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">오늘 거래건수</div>
+      <div class="stat-value accent" id="today-count">0건</div>
+      <div class="stat-sub">평균 객단가 <span style="color:var(--accent)" id="avg-price">₩0</span></div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">재고 부족 상품</div>
+      <div class="stat-value orange">3개</div>
+      <div class="stat-sub" style="color:var(--orange)">즉시 발주 필요</div>
+    </div>
+  </div>
+
+  <div class="grid-2">
+    <div class="card">
+      <div class="card-title">⚠️ 재고 부족 알림</div>
+      <div class="alert warn">🟡 삼각김밥 참치마요 — 재고 5개 남음</div>
+      <div class="alert warn">🟡 바나나우유 — 재고 3개 남음</div>
+      <div class="alert danger">🔴 컵라면 신라면 — 재고 1개 남음 (긴급)</div>
+    </div>
+    <div class="card">
+      <div class="card-title">🔄 시스템 연동 상태</div>
+      <table class="table">
+        <tr>
+          <td>포스 ↔ 재고관리</td>
+          <td><span class="status-badge ok">연동 완료</span></td>
+        </tr>
+        <tr>
+          <td>재고 ↔ 도소매</td>
+          <td><span class="status-badge ok">연동 완료</span></td>
+        </tr>
+        <tr>
+          <td>도소매 ↔ ERP</td>
+          <td><span class="status-badge ok">연동 완료</span></td>
+        </tr>
+        <tr>
+          <td>ERP ↔ 회계</td>
+          <td><span class="status-badge warn">동기화 중</span></td>
+        </tr>
+      </table>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">📈 오늘 판매 내역</div>
+    <table class="table">
+      <thead>
+        <tr>
+          <th>시간</th>
+          <th>상품명</th>
+          <th>수량</th>
+          <th>금액</th>
+          <th>결제수단</th>
+        </tr>
+      </thead>
+      <tbody id="sales-history">
+        <tr><td colspan="5" style="text-align:center;color:var(--text2);padding:20px">판매 내역이 없습니다</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- 포스 -->
+<div id="tab-pos" class="content">
+
+  <!-- 바코드 스캐너 -->
+  <div class="card" style="margin-bottom:16px">
+    <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+      <div class="card-title" style="margin:0">📷 바코드 스캐너</div>
+      <button class="btn btn-accent" onclick="toggleScanner()" id="scan-btn">카메라 스캔 시작</button>
+      <div style="display:flex;gap:8px;flex:1;max-width:400px">
+        <input class="input" id="barcode-input" placeholder="바코드 직접 입력..." onkeydown="if(event.key==='Enter') scanBarcode(this.value)">
+        <button class="btn btn-green" onclick="scanBarcode(document.getElementById('barcode-input').value)">조회</button>
+      </div>
+      <div id="scan-result" style="font-family:var(--mono);font-size:12px;color:var(--green)"></div>
+    </div>
+    <div id="scanner-wrap" style="display:none;margin-top:12px;position:relative">
+      <video id="scan-video" style="width:100%;max-width:400px;border-radius:8px;background:#000" autoplay playsinline></video>
+      <div id="scan-overlay" style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:200px;height:80px;border:2px solid var(--green);border-radius:4px;pointer-events:none">
+        <div style="position:absolute;left:0;right:0;height:1px;background:var(--green);box-shadow:0 0 6px var(--green);animation:scanLine 1.5s ease-in-out infinite"></div>
+      </div>
+    </div>
+  </div>
+
+  <style>
+  @keyframes scanLine { 0%,100%{top:4px} 50%{top:74px} }
+  </style>
+
+  <div class="pos-wrap">
+    <div>
+      <div class="card-title" style="margin-bottom:12px">🛒 상품 선택</div>
+      <div class="product-grid" id="product-grid">
+        <!-- 상품 버튼 동적 생성 -->
+      </div>
+    </div>
+    <div class="receipt">
+      <div class="receipt-title">🧾 현재 주문</div>
+      <div class="receipt-items" id="receipt-items">
+        <div style="text-align:center;color:var(--text2);padding:40px 0;font-size:13px">상품을 선택해주세요</div>
+      </div>
+      <div class="receipt-total">
+        <div class="total-label">합계</div>
+        <div class="total-value" id="total-price">₩0</div>
+      </div>
+      <button class="btn-pay" onclick="processPay()">💳 결제하기</button>
+      <button class="btn-clear" onclick="clearOrder()">주문 취소</button>
+    </div>
+  </div>
+</div>
+
+<!-- 재고관리 -->
+<div id="tab-inventory" class="content">
+  <div style="display:flex;gap:10px;margin-bottom:16px;align-items:center">
+    <input class="input" placeholder="상품 검색..." style="max-width:300px" oninput="filterInventory(this.value)">
+    <button class="btn btn-accent" onclick="addInventoryItem()">+ 상품 추가</button>
+    <button class="btn btn-outline" onclick="autoOrder()">🔄 자동 발주</button>
+  </div>
+  <div class="card">
+    <table class="table">
+      <thead>
+        <tr>
+          <th>바코드</th>
+          <th>상품명</th>
+          <th>현재 재고</th>
+          <th>최소 재고</th>
+          <th>단가</th>
+          <th>상태</th>
+          <th>관리</th>
+        </tr>
+      </thead>
+      <tbody id="inventory-table">
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- 도소매 -->
+<div id="tab-wholesale" class="content">
+  <div class="grid-2">
+    <div class="card">
+      <div class="card-title">📥 매입 등록</div>
+      <div style="display:flex;flex-direction:column;gap:10px">
+        <input class="input" id="ws-supplier" placeholder="거래처명">
+        <input class="input" id="ws-product" placeholder="상품명">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+          <input class="input" id="ws-qty" placeholder="수량" type="number">
+          <input class="input" id="ws-price" placeholder="단가" type="number">
+        </div>
+        <button class="btn btn-green" onclick="addPurchase()">매입 등록</button>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title">📊 거래처 현황</div>
+      <table class="table">
+        <thead>
+          <tr><th>거래처</th><th>이번달 매입</th><th>미수금</th><th>상태</th></tr>
+        </thead>
+        <tbody id="supplier-table">
+          <tr><td>CJ제일제당</td><td class="mono">₩850,000</td><td class="mono" style="color:var(--orange)">₩120,000</td><td><span class="status-badge warn">미수있음</span></td></tr>
+          <tr><td>농심</td><td class="mono">₩620,000</td><td class="mono" style="color:var(--green)">₩0</td><td><span class="status-badge ok">정산완료</span></td></tr>
+          <tr><td>롯데칠성</td><td class="mono">₩430,000</td><td class="mono" style="color:var(--green)">₩0</td><td><span class="status-badge ok">정산완료</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-title">📋 매입 내역</div>
+    <table class="table">
+      <thead>
+        <tr><th>일자</th><th>거래처</th><th>상품명</th><th>수량</th><th>금액</th><th>상태</th></tr>
+      </thead>
+      <tbody id="purchase-table">
+        <tr><td colspan="6" style="text-align:center;color:var(--text2);padding:20px">매입 내역이 없습니다</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+
+<!-- 거래처 고객관리 -->
+<div id="tab-customer" class="content">
+  <div class="grid-2">
+    <div class="card">
+      <div class="card-title">➕ 거래처 등록</div>
+      <div style="display:flex;flex-direction:column;gap:10px">
+        <input class="input" id="cust-name" placeholder="거래처명 (예: 당구장, 식당)">
+        <input class="input" id="cust-phone" placeholder="연락처">
+        <input class="input" id="cust-item" placeholder="주요 주문 상품 (예: 맥주 3박스)">
+        <select class="input" id="cust-cycle"><option value="매주">매주 정기주문</option><option value="격주">격주</option><option value="매월">매월</option><option value="비정기">비정기</option></select>
+        <button class="btn btn-accent" onclick="addCustomer()">거래처 등록</button>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title">📦 배달 주문 등록</div>
+      <div style="display:flex;flex-direction:column;gap:10px">
+        <select class="input" id="order-customer"><option value="">거래처 선택...</option></select>
+        <input class="input" id="order-item" placeholder="상품명">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px"><input class="input" id="order-qty" placeholder="수량" type="number"><input class="input" id="order-price" placeholder="금액" type="number"></div>
+        <input class="input" id="order-note" placeholder="메모">
+        <button class="btn btn-green" onclick="addOrder()">주문 등록</button>
+      </div>
+    </div>
+  </div>
+  <div class="card"><div class="card-title">🏪 거래처 현황</div><table class="table"><thead><tr><th>거래처명</th><th>연락처</th><th>주요상품</th><th>주문주기</th><th>이번달매출</th><th>관리</th></tr></thead><tbody id="customer-table"><tr><td colspan="6" style="text-align:center;color:var(--text2);padding:20px">등록된 거래처가 없습니다</td></tr></tbody></table></div>
+  <div class="card"><div class="card-title">📋 배달 주문 내역</div><table class="table"><thead><tr><th>일자</th><th>거래처</th><th>상품</th><th>수량</th><th>금액</th><th>메모</th><th>상태</th></tr></thead><tbody id="order-table"><tr><td colspan="7" style="text-align:center;color:var(--text2);padding:20px">주문 내역이 없습니다</td></tr></tbody></table></div>
+</div>
+<!-- ERP -->
+<div id="tab-erp" class="content">
+  <div class="grid-3">
+    <div class="stat-card">
+      <div class="stat-label">이번달 매출</div>
+      <div class="stat-value green">₩12,450,000</div>
+      <div class="stat-sub">전월 대비 +8.2%</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">이번달 매입</div>
+      <div class="stat-value orange">₩8,320,000</div>
+      <div class="stat-sub">매출원가율 66.8%</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">순이익</div>
+      <div class="stat-value accent">₩4,130,000</div>
+      <div class="stat-sub">영업이익률 33.2%</div>
+    </div>
+  </div>
+
+  <div class="grid-2">
+    <div class="card">
+      <div class="card-title">📅 월별 손익 현황</div>
+      <table class="table">
+        <thead>
+          <tr><th>월</th><th>매출</th><th>매입</th><th>이익</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>1월</td><td class="mono" style="color:var(--green)">₩11,200,000</td><td class="mono" style="color:var(--orange)">₩7,500,000</td><td class="mono" style="color:var(--accent)">₩3,700,000</td></tr>
+          <tr><td>2월</td><td class="mono" style="color:var(--green)">₩10,800,000</td><td class="mono" style="color:var(--orange)">₩7,200,000</td><td class="mono" style="color:var(--accent)">₩3,600,000</td></tr>
+          <tr><td>3월</td><td class="mono" style="color:var(--green)">₩11,900,000</td><td class="mono" style="color:var(--orange)">₩7,900,000</td><td class="mono" style="color:var(--accent)">₩4,000,000</td></tr>
+          <tr><td>4월 (진행중)</td><td class="mono" style="color:var(--green)">₩12,450,000</td><td class="mono" style="color:var(--orange)">₩8,320,000</td><td class="mono" style="color:var(--accent)">₩4,130,000</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="card">
+      <div class="card-title">🏷️ 카테고리별 매출</div>
+      <table class="table">
+        <thead>
+          <tr><th>카테고리</th><th>매출</th><th>비율</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>음료/유제품</td><td class="mono">₩3,200,000</td><td><div style="background:var(--accent);height:6px;border-radius:3px;width:80%"></div></td></tr>
+          <tr><td>식품/즉석</td><td class="mono">₩2,800,000</td><td><div style="background:var(--green);height:6px;border-radius:3px;width:70%"></div></td></tr>
+          <tr><td>과자/빙과</td><td class="mono">₩2,100,000</td><td><div style="background:var(--orange);height:6px;border-radius:3px;width:53%"></div></td></tr>
+          <tr><td>생활용품</td><td class="mono">₩1,900,000</td><td><div style="background:var(--accent2);height:6px;border-radius:3px;width:48%"></div></td></tr>
+          <tr><td>기타</td><td class="mono">₩2,450,000</td><td><div style="background:var(--text2);height:6px;border-radius:3px;width:62%"></div></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<script>
+// ===== 데이터 =====
+var products = [
+  { id: 'P001', name: '삼각김밥 참치', price: 1200, stock: 5, minStock: 20, barcode: '8801234001' },
+  { id: 'P002', name: '바나나우유', price: 1500, stock: 3, minStock: 15, barcode: '8801234002' },
+  { id: 'P003', name: '신라면 컵', price: 1300, stock: 1, minStock: 30, barcode: '8801234003' },
+  { id: 'P004', name: '포카리스웨트', price: 1800, stock: 24, minStock: 20, barcode: '8801234004' },
+  { id: 'P005', name: '허쉬초콜릿', price: 1200, stock: 18, minStock: 15, barcode: '8801234005' },
+  { id: 'P006', name: '꼬깔콘', price: 1500, stock: 12, minStock: 10, barcode: '8801234006' },
+  { id: 'P007', name: '편의점 도시락', price: 4500, stock: 8, minStock: 10, barcode: '8801234007' },
+  { id: 'P008', name: '아메리카노', price: 1500, stock: 99, minStock: 0, barcode: '8801234008' },
+  { id: 'P009', name: '핫바', price: 1000, stock: 15, minStock: 10, barcode: '8801234009' },
+];
+
+var cart = [];
+var salesHistory = [];
+var purchases = [];
+var todaySales = 0;
+var todayCount = 0;
+
+// ===== 탭 전환 =====
+function showTab(name) {
+  document.querySelectorAll('.content').forEach(el => el.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(el => el.classList.remove('active'));
+  document.getElementById('tab-' + name).classList.add('active');
+  event.target.classList.add('active');
+
+  if (name === 'pos') renderProducts();
+  if (name === 'inventory') renderInventory();
+}
+
+// ===== 포스 =====
+function renderProducts() {
+  var grid = document.getElementById('product-grid');
+  grid.innerHTML = products.map(p => `
+    <button class="product-btn" onclick="addToCart('${p.id}')">
+      <div class="p-name">${p.name}</div>
+      <div class="p-price">₩${p.price.toLocaleString()}</div>
+      <div style="font-size:11px;color:var(--text2);margin-top:4px">재고 ${p.stock}</div>
+    </button>
+  `).join('');
+}
+
+function addToCart(id) {
+  var p = products.find(x => x.id === id);
+  if (!p) return;
+  if (p.stock <= 0) { alert('재고가 없습니다'); return; }
+  var idx = cart.findIndex(x => x.id === id);
+  if (idx >= 0) {
+    cart[idx].qty++;
+  } else {
+    cart.push({ id: p.id, name: p.name, price: p.price, qty: 1 });
+  }
+  renderCart();
+}
+
+function removeFromCart(id) {
+  cart = cart.filter(x => x.id !== id);
+  renderCart();
+}
+
+function renderCart() {
+  var items = document.getElementById('receipt-items');
+  var total = cart.reduce((s, x) => s + x.price * x.qty, 0);
+
+  if (!cart.length) {
+    items.innerHTML = '<div style="text-align:center;color:var(--text2);padding:40px 0;font-size:13px">상품을 선택해주세요</div>';
+  } else {
+    items.innerHTML = cart.map(x => `
+      <div class="receipt-item">
+        <div class="item-name">${x.name}</div>
+        <div class="item-qty">x${x.qty}</div>
+        <div class="item-price">₩${(x.price * x.qty).toLocaleString()}</div>
+        <button class="item-del" onclick="removeFromCart('${x.id}')">✕</button>
+      </div>
+    `).join('');
+  }
+  document.getElementById('total-price').textContent = '₩' + total.toLocaleString();
+}
+
+function processPay() {
+  if (!cart.length) { alert('상품을 선택해주세요'); return; }
+  var total = cart.reduce((s, x) => s + x.price * x.qty, 0);
+
+  // 재고 차감 (포스 → 재고 연동)
+  cart.forEach(item => {
+    var p = products.find(x => x.id === item.id);
+    if (p) p.stock -= item.qty;
+  });
+
+  // 매출 기록 (포스 → ERP 연동)
+  var now = new Date();
+  var timeStr = now.getHours().toString().padStart(2,'0') + ':' + now.getMinutes().toString().padStart(2,'0');
+  cart.forEach(item => {
+    salesHistory.unshift({
+      time: timeStr,
+      name: item.name,
+      qty: item.qty,
+      amount: item.price * item.qty,
+      method: '카드'
+    });
+  });
+
+  todaySales += total;
+  todayCount++;
+
+  // 대시보드 업데이트
+  document.getElementById('today-sales').textContent = '₩' + todaySales.toLocaleString();
+  document.getElementById('today-count').textContent = todayCount + '건';
+  document.getElementById('avg-price').textContent = '₩' + Math.floor(todaySales / todayCount).toLocaleString();
+
+  updateSalesHistory();
+  cart = [];
+  renderCart();
+  alert('✅ 결제 완료! ₩' + total.toLocaleString());
+}
+
+function clearOrder() {
+  cart = [];
+  renderCart();
+}
+
+function updateSalesHistory() {
+  var tbody = document.getElementById('sales-history');
+  if (!salesHistory.length) {
+    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:var(--text2);padding:20px">판매 내역이 없습니다</td></tr>';
+    return;
+  }
+  tbody.innerHTML = salesHistory.slice(0, 10).map(s => `
+    <tr>
+      <td style="font-family:var(--mono)">${s.time}</td>
+      <td>${s.name}</td>
+      <td>${s.qty}개</td>
+      <td style="font-family:var(--mono);color:var(--green)">₩${s.amount.toLocaleString()}</td>
+      <td><span class="status-badge ok">${s.method}</span></td>
+    </tr>
+  `).join('');
+}
+
+// ===== 재고관리 =====
+function renderInventory(filter) {
+  var list = filter ? products.filter(p => p.name.includes(filter)) : products;
+  var tbody = document.getElementById('inventory-table');
+  tbody.innerHTML = list.map(p => {
+    var status = p.stock <= 0 ? ['danger', '품절'] : p.stock <= p.minStock ? ['warn', '부족'] : ['ok', '정상'];
+    return `
+      <tr>
+        <td style="font-family:var(--mono);font-size:12px">${p.barcode}</td>
+        <td>${p.name}</td>
+        <td style="font-family:var(--mono)">${p.stock}</td>
+        <td style="font-family:var(--mono)">${p.minStock}</td>
+        <td style="font-family:var(--mono)">₩${p.price.toLocaleString()}</td>
+        <td><span class="status-badge ${status[0]}">${status[1]}</span></td>
+        <td>
+          <button class="btn btn-outline" style="padding:4px 8px;font-size:11px" onclick="addStock('${p.id}')">입고</button>
+        </td>
+      </tr>
+    `;
+  }).join('');
+}
+
+function filterInventory(val) { renderInventory(val); }
+
+function addStock(id) {
+  var qty = prompt('입고 수량 입력:');
+  if (!qty || isNaN(qty)) return;
+  var p = products.find(x => x.id === id);
+  if (p) {
+    p.stock += parseInt(qty);
+    renderInventory();
+    alert('✅ 입고 완료: ' + p.name + ' ' + qty + '개');
+  }
+}
+
+function addInventoryItem() {
+  var name = prompt('상품명:');
+  if (!name) return;
+  var price = prompt('단가:');
+  var stock = prompt('초기 재고:');
+  products.push({
+    id: 'P' + (products.length + 1).toString().padStart(3, '0'),
+    name: name,
+    price: parseInt(price) || 0,
+    stock: parseInt(stock) || 0,
+    minStock: 10,
+    barcode: '880' + Date.now().toString().slice(-7)
+  });
+  renderInventory();
+}
+
+function autoOrder() {
+  var lowStock = products.filter(p => p.stock <= p.minStock);
+  if (!lowStock.length) { alert('발주 필요한 상품이 없습니다'); return; }
+  alert('🚀 자동 발주 완료!\n\n' + lowStock.map(p => `• ${p.name}: ${p.minStock * 2 - p.stock}개`).join('\n'));
+}
+
+// ===== 도소매 =====
+function addPurchase() {
+  var supplier = document.getElementById('ws-supplier').value;
+  var product = document.getElementById('ws-product').value;
+  var qty = document.getElementById('ws-qty').value;
+  var price = document.getElementById('ws-price').value;
+
+  if (!supplier || !product || !qty || !price) { alert('모든 항목을 입력해주세요'); return; }
+
+  var now = new Date();
+  var dateStr = now.getFullYear() + '-' + (now.getMonth()+1).toString().padStart(2,'0') + '-' + now.getDate().toString().padStart(2,'0');
+
+  purchases.unshift({ date: dateStr, supplier, product, qty: parseInt(qty), amount: parseInt(qty) * parseInt(price) });
+
+  renderPurchases();
+  document.getElementById('ws-supplier').value = '';
+  document.getElementById('ws-product').value = '';
+  document.getElementById('ws-qty').value = '';
+  document.getElementById('ws-price').value = '';
+  alert('✅ 매입 등록 완료! ' + supplier + ' - ' + product);
+}
+
+function renderPurchases() {
+  var tbody = document.getElementById('purchase-table');
+  if (!purchases.length) {
+    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--text2);padding:20px">매입 내역이 없습니다</td></tr>';
+    return;
+  }
+  tbody.innerHTML = purchases.map(p => `
+    <tr>
+      <td style="font-family:var(--mono)">${p.date}</td>
+      <td>${p.supplier}</td>
+      <td>${p.product}</td>
+      <td>${p.qty}개</td>
+      <td style="font-family:var(--mono);color:var(--orange)">₩${p.amount.toLocaleString()}</td>
+      <td><span class="status-badge ok">완료</span></td>
+    </tr>
+  `).join('');
+}
+
+// ===== 바코드 스캐너 =====
+var scannerActive = false;
+var scanInterval = null;
+var lastCode = '';
+var lastCodeTime = 0;
+
+function scanBarcode(code) {
+  if (!code) return;
+  code = code.trim();
+  document.getElementById('barcode-input').value = '';
+
+  // 바코드로 상품 찾기
+  var p = products.find(x => x.barcode === code);
+  if (p) {
+    addToCart(p.id);
+    document.getElementById('scan-result').textContent = '✅ ' + p.name + ' 추가됨';
+    setTimeout(() => document.getElementById('scan-result').textContent = '', 2000);
+  } else {
+    document.getElementById('scan-result').style.color = 'var(--red)';
+    document.getElementById('scan-result').textContent = '❌ 등록되지 않은 상품: ' + code;
+    setTimeout(() => {
+      document.getElementById('scan-result').textContent = '';
+      document.getElementById('scan-result').style.color = 'var(--green)';
+    }, 3000);
+  }
+}
+
+function toggleScanner() {
+  var btn = document.getElementById('scan-btn');
+  var wrap = document.getElementById('scanner-wrap');
+
+  if (!scannerActive) {
+    startCameraScanner();
+    btn.textContent = '스캔 중지';
+    btn.style.background = 'var(--red)';
+    wrap.style.display = 'block';
+    scannerActive = true;
+  } else {
+    stopCameraScanner();
+    btn.textContent = '카메라 스캔 시작';
+    btn.style.background = '';
+    wrap.style.display = 'none';
+    scannerActive = false;
+  }
+}
+
+function startCameraScanner() {
+  var video = document.getElementById('scan-video');
+  navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } })
+    .then(stream => {
+      video.srcObject = stream;
+      video.play();
+
+      if ('BarcodeDetector' in window) {
+        var detector = new BarcodeDetector({ formats: ['ean_13', 'ean_8', 'code_128', 'qr_code', 'data_matrix'] });
+        scanInterval = setInterval(async () => {
+          if (!video.videoWidth) return;
+          try {
+            var codes = await detector.detect(video);
+            if (codes.length > 0) {
+              var code = codes[0].rawValue;
+              var now = Date.now();
+              if (code !== lastCode || now - lastCodeTime > 2000) {
+                lastCode = code;
+                lastCodeTime = now;
+                scanBarcode(code);
+                if (navigator.vibrate) navigator.vibrate(50);
+              }
+            }
+          } catch(e) {}
+        }, 200);
+      } else {
+        // ZXing 폴백
+        var script = document.createElement('script');
+        script.src = 'https://cdn.jsdelivr.net/npm/@zxing/library@0.19.1/umd/index.min.js';
+        script.onload = () => {
+          var reader = new ZXing.BrowserMultiFormatReader();
+          scanInterval = setInterval(() => {
+            if (!video.videoWidth) return;
+            var canvas = document.createElement('canvas');
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            canvas.getContext('2d').drawImage(video, 0, 0);
+            try {
+              var result = reader.decodeFromCanvas(canvas);
+              if (result) {
+                var code = result.getText();
+                var now = Date.now();
+                if (code !== lastCode || now - lastCodeTime > 2000) {
+                  lastCode = code;
+                  lastCodeTime = now;
+                  scanBarcode(code);
+                }
+              }
+            } catch(e) {}
+          }, 300);
+        };
+        document.head.appendChild(script);
+      }
+    })
+    .catch(err => {
+      alert('카메라 권한이 필요합니다: ' + err.message);
+      document.getElementById('scan-btn').textContent = '카메라 스캔 시작';
+      document.getElementById('scan-btn').style.background = '';
+      document.getElementById('scanner-wrap').style.display = 'none';
+      scannerActive = false;
+    });
+}
+
+function stopCameraScanner() {
+  if (scanInterval) { clearInterval(scanInterval); scanInterval = null; }
+  var video = document.getElementById('scan-video');
+  if (video.srcObject) {
+    video.srcObject.getTracks().forEach(t => t.stop());
+    video.srcObject = null;
+  }
+}
+
+
+// ===== 거래처 관리 =====
+var customers = [
+  { id: 'C001', name: '당구장', phone: '010-0000-0000', item: '맥주 3박스', cycle: '매주', monthlySales: 0 }
+];
+var deliveryOrders = [];
+
+function addCustomer() {
+  var name = document.getElementById('cust-name').value;
+  var phone = document.getElementById('cust-phone').value;
+  var item = document.getElementById('cust-item').value;
+  var cycle = document.getElementById('cust-cycle').value;
+  if (!name) { alert('거래처명을 입력해주세요'); return; }
+  customers.push({ id: 'C' + (customers.length+1).toString().padStart(3,'0'), name, phone, item, cycle, monthlySales: 0 });
+  renderCustomers();
+  updateCustomerSelect();
+  document.getElementById('cust-name').value = '';
+  document.getElementById('cust-phone').value = '';
+  document.getElementById('cust-item').value = '';
+  alert('✅ 거래처 등록 완료: ' + name);
+}
+
+function addOrder() {
+  var custName = document.getElementById('order-customer').value;
+  var item = document.getElementById('order-item').value;
+  var qty = document.getElementById('order-qty').value;
+  var price = document.getElementById('order-price').value;
+  var note = document.getElementById('order-note').value;
+  if (!custName || !item || !qty || !price) { alert('모든 항목을 입력해주세요'); return; }
+  var now = new Date();
+  var dateStr = now.getFullYear() + '-' + (now.getMonth()+1).toString().padStart(2,'0') + '-' + now.getDate().toString().padStart(2,'0');
+  var amount = parseInt(qty) * parseInt(price);
+  deliveryOrders.unshift({ date: dateStr, customer: custName, item, qty: parseInt(qty), amount, note });
+  var c = customers.find(x => x.name === custName);
+  if (c) c.monthlySales += amount;
+  todaySales += amount;
+  todayCount++;
+  document.getElementById('today-sales').textContent = '₩' + todaySales.toLocaleString();
+  document.getElementById('today-count').textContent = todayCount + '건';
+  renderCustomers();
+  renderOrders();
+  document.getElementById('order-item').value = '';
+  document.getElementById('order-qty').value = '';
+  document.getElementById('order-price').value = '';
+  document.getElementById('order-note').value = '';
+  alert('✅ 배달 주문 등록 완료! ₩' + amount.toLocaleString());
+}
+
+function renderCustomers() {
+  var tbody = document.getElementById('customer-table');
+  if (!customers.length) { tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--text2);padding:20px">등록된 거래처가 없습니다</td></tr>'; return; }
+  tbody.innerHTML = customers.map(c => `
+    <tr>
+      <td><strong>${c.name}</strong></td>
+      <td style="font-family:var(--mono);font-size:12px">${c.phone || '-'}</td>
+      <td>${c.item || '-'}</td>
+      <td><span class="status-badge ok">${c.cycle}</span></td>
+      <td style="font-family:var(--mono);color:var(--green)">₩${c.monthlySales.toLocaleString()}</td>
+      <td><button class="btn btn-outline" style="padding:4px 8px;font-size:11px" onclick="quickOrder('${c.name}','${c.item}')">빠른주문</button></td>
+    </tr>
+  `).join('');
+}
+
+function renderOrders() {
+  var tbody = document.getElementById('order-table');
+  if (!deliveryOrders.length) { tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:var(--text2);padding:20px">주문 내역이 없습니다</td></tr>'; return; }
+  tbody.innerHTML = deliveryOrders.map(o => `
+    <tr>
+      <td style="font-family:var(--mono)">${o.date}</td>
+      <td><strong>${o.customer}</strong></td>
+      <td>${o.item}</td>
+      <td>${o.qty}개</td>
+      <td style="font-family:var(--mono);color:var(--green)">₩${o.amount.toLocaleString()}</td>
+      <td style="color:var(--text2);font-size:12px">${o.note || '-'}</td>
+      <td><span class="status-badge ok">완료</span></td>
+    </tr>
+  `).join('');
+}
+
+function updateCustomerSelect() {
+  var sel = document.getElementById('order-customer');
+  sel.innerHTML = '<option value="">거래처 선택...</option>' + customers.map(c => `<option value="${c.name}">${c.name}</option>`).join('');
+}
+
+function quickOrder(name, item) {
+  document.getElementById('order-customer').value = name;
+  document.getElementById('order-item').value = item;
+  document.querySelector('.tab[onclick="showTab(\'customer\')"]').click();
+}
+
+
+// 초기화
+renderProducts();
+renderInventory();
+renderCustomers();
+updateCustomerSelect();
+</script>
+</body>
+</html>
