@@ -111,6 +111,7 @@ body { font-family: 'Apple SD Gothic Neo','Noto Sans KR',sans-serif; background:
 <div id="app"></div>
 <script>
 const MENUS=[
+  // 버거 단품
   {id:"b01",cat:"버거",name:"치킨버거",        price:2900,cost:1545},
   {id:"b02",cat:"버거",name:"치즈치킨버거",    price:3700,cost:1745},
   {id:"b03",cat:"버거",name:"디럭스치킨버거",  price:3900,cost:1784},
@@ -119,11 +120,22 @@ const MENUS=[
   {id:"b06",cat:"버거",name:"슈퍼쉬림프버거",  price:5400,cost:1682},
   {id:"b07",cat:"버거",name:"골든포테이토버거",price:5400,cost:2136},
   {id:"b08",cat:"버거",name:"트러플머쉬룸버거",price:5400,cost:2525},
-  {id:"c01",cat:"치킨",name:"슈퍼크리스피",        price:9900, cost:8103},
-  {id:"c02",cat:"치킨",name:"핫 슈퍼크리스피",     price:11500,cost:8427},
-  {id:"c03",cat:"치킨",name:"양념 슈퍼크리스피",   price:12500,cost:9853},
-  {id:"c04",cat:"치킨",name:"치즈 슈퍼크리스피",   price:12500,cost:8530},
-  {id:"c05",cat:"치킨",name:"소이 슈퍼크리스피",   price:12500,cost:9157},
+  // 버거 세트 (버거+감자+음료245ml)
+  {id:"bs01",cat:"세트",name:"치킨버거 세트",        price:5900,cost:3992},
+  {id:"bs02",cat:"세트",name:"치즈치킨버거 세트",    price:6700,cost:4192},
+  {id:"bs03",cat:"세트",name:"디럭스치킨버거 세트",  price:6900,cost:4231},
+  {id:"bs04",cat:"세트",name:"더블치킨버거 세트",    price:8400,cost:4790},
+  {id:"bs05",cat:"세트",name:"핫스파이시버거 세트",  price:6700,cost:4038},
+  {id:"bs06",cat:"세트",name:"슈퍼쉬림프버거 세트",  price:8400,cost:4129},
+  {id:"bs07",cat:"세트",name:"골든포테이토버거 세트",price:8400,cost:4583},
+  {id:"bs08",cat:"세트",name:"트러플머쉬룸버거 세트",price:8400,cost:4972},
+  // 치킨
+  {id:"c01",cat:"치킨",name:"슈퍼크리스피",        price:9900, cost:8107},
+  {id:"c02",cat:"치킨",name:"핫 슈퍼크리스피",     price:11500,cost:8431},
+  {id:"c03",cat:"치킨",name:"양념 슈퍼크리스피",   price:12500,cost:9857},
+  {id:"c04",cat:"치킨",name:"치즈 슈퍼크리스피",   price:12500,cost:8534},
+  {id:"c05",cat:"치킨",name:"소이 슈퍼크리스피",   price:12500,cost:9161},
+  // 사이드
   {id:"s01",cat:"사이드",name:"슈퍼크런치 감자튀김",price:2500,cost:1517},
   {id:"s02",cat:"사이드",name:"양념감자",            price:3100,cost:1517},
   {id:"s03",cat:"사이드",name:"해피 치즈스틱 2개",  price:2300,cost:702},
@@ -132,8 +144,8 @@ const MENUS=[
   {id:"s06",cat:"사이드",name:"크런치너겟 3개",      price:1800,cost:870},
   {id:"s07",cat:"사이드",name:"크리스피 핫 윙 1개", price:1300,cost:704},
 ];
-const CATS=["전체","버거","치킨","사이드"];
-const EMOJI={버거:"🍔",치킨:"🍗",사이드:"🍟"};
+const CATS=["전체","버거","세트","치킨","사이드"];
+const EMOJI={버거:"🍔",세트:"🍔✨",치킨:"🍗",사이드:"🍟"};
 const SK="sc_v3";
 let cfg=null, qty={}, cat="전체";
 try{cfg=JSON.parse(localStorage.getItem(SK)||"null");}catch(e){}
