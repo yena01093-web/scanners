@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>수퍼크리스피 수익 계산기</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  body { font-family: 'Apple SD Gothic Neo', 'Noto Sans KR', sans-serif; background: #0f0f12; color: #e8e8ec; min-height: 100vh; padding-bottom: 80px; }
+  input[type=number] { -moz-appearance: textfield; }
+  input[type=number]::-webkit-outer-spin-button,
+  input[type=number]::-webkit-inner-spin-button { -webkit-appearance: none; }
+
+  .header { background: linear-gradient(135deg,#C00000 0%,#7a0000 100%); padding: 18px 18px 16px; display: flex; justify-content: space-between; align-items: flex-start; }
+  .header-left .brand { font-size: 10px; color: rgba(255,255,255,0.5); letter-spacing: 2px; margin-bottom: 4px; }
+  .header-left .title { font-size: 20px; font-weight: 900; color: #fff; }
+  .gear-btn { background: rgba(255,255,255,0.15); border: none; border-radius: 8px; padding: 8px 12px; color: #fff; font-size: 16px; cursor: pointer; }
+
+  .card { background: #1a1a22; border-radius: 16px; margin: 14px 14px 0; padding: 16px; border: 1px solid #2a2a35; }
+  .card-title { font-size: 11px; color: #666; font-weight: 700; margin-bottom: 10px; }
+
+  .grid3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-bottom: 14px; }
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 14px; }
+  .stat-box { background: #13131a; border-radius: 10px; padding: 10px 8px; text-align: center; }
+  .stat-label { font-size: 9px; color: #555; margin-bottom: 3px; }
+  .stat-value { font-size: 13px; font-weight: 800; }
+
+  .profit-box { border-radius: 12px; padding: 14px 16px; }
+  .profit-box.positive { background: #0d1f14; border: 1px solid #1a3a22; }
+  .profit-box.negative { background: #1f0d0d; border: 1px solid #3a1a1a; }
+  .profit-row { display: flex; justify-content: space-between; align-items: center; }
+  .profit-label { font-size: 11px; color: #666; margin-bottom: 4px; }
+  .profit-amount { font-size: 28px; font-weight: 900; letter-spacing: -0.5px; }
+  .margin-badge { background: #0f0f12; border-radius: 10px; padding: 10px 14px; text-align: center; }
+  .margin-label { font-size: 10px; color: #555; margin-bottom: 2px; }
+  .margin-value { font-size: 22px; font-weight: 900; }
+
+  .margin-bar-wrap { margin-top: 12px; }
+  .margin-bar-bg { background: #2a2a35; border-radius: 6px; height: 8px; overflow: hidden; }
+  .margin-bar-fill { height: 100%; border-radius: 6px; transition: width 0.4s ease; }
+  .margin-bar-labels { display: flex; justify-content: space-between; margin-top: 6px; font-size: 10px; color: #444; }
+
+  .settings-summary { margin: 10px 14px 0; background: #13131a; border-radius: 10px; padding: 10px 14px; display: flex; justify-content: space-between; align-items: center; }
+  .settings-summary span { font-size: 11px; color: #555; }
+  .settings-summary button { font-size: 10px; color: #555; background: none; border: none; cursor: pointer; text-decoration: underline; }
+
+  .cat-scroll { display: flex; gap: 6px; padding: 12px 14px 8px; overflow-x: auto; scrollbar-width: none; }
+  .cat-scroll::-webkit-scrollbar { display: none; }
+  .cat-btn { padding: 7px 14px; border-radius: 20px; border: none; cursor: pointer; font-size: 12px; font-weight: 700; white-space: nowrap; transition: all 0.15s; }
+  .cat-btn.active { background: #C00000; color: #fff; }
+  .cat-btn.inactive { background: #1a1a22; color: #777; }
+
+  .menu-section { padding: 0 14px; }
+  .cat-header { font-size: 12px; font-weight: 800; color: #e8a320; margin-top: 14px; margin-bottom: 8px; }
+
+  .menu-item { border-radius: 14px; margin-bottom: 8px; padding: 13px 14px; border: 1px solid #1e1e28; background: #16161e; transition: all 0.15s; }
+  .menu-item.active { background: #14142a; border-color: #4040aa; }
+  .menu-row { display: flex; align-items: center; gap: 10px; }
+  .menu-info { flex: 1; }
+  .menu-name { font-size: 13px; font-weight: 700; color: #e0e0e8; margin-bottom: 3px; }
+  .menu-price { font-size: 11px; color: #e8a320; font-weight: 700; margin-left: 6px; }
+  .menu-cost { font-size: 10px; color: #444; }
+  .menu-cost .profit-per { }
+  .ingredients-toggle { font-size: 10px; color: #333; cursor: pointer; margin-left: 8px; }
+  .ingredients-detail { margin-top: 6px; padding: 6px 10px; background: #0f0f18; border-radius: 8px; font-size: 10px; color: #666; line-height: 1.9; }
+
+  .qty-wrap { display: flex; flex-direction: column; align-items: center; gap: 4px; }
+  .qty-row { display: flex; align-items: center; gap: 5px; }
+  .qty-btn { width: 30px; height: 30px; border-radius: 8px; border: none; cursor: pointer; font-size: 18px; font-weight: 700; line-height: 1; }
+  .qty-btn.minus { background: #2a2a35; color: #888; }
+  .qty-btn.plus { background: #C00000; color: #fff; }
+  .qty-input { width: 50px; height: 30px; background: #1a1a22; border: 1px solid #2a2a35; border-radius: 8px; color: #fff; font-size: 15px; font-weight: 900; text-align: center; outline: none; }
+  .qty-input.has-qty { background: #1e1e3a; border-color: #5050cc; }
+  .qty-profit { font-size: 10px; font-weight: 700; }
+
+  .menu-detail { margin-top: 10px; padding-top: 10px; border-top: 1px solid #1e1e2e; display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 6px; }
+  .detail-box { text-align: center; }
+  .detail-label { font-size: 9px; color: #444; }
+  .detail-value { font-size: 11px; font-weight: 700; }
+
+  .bottom-bar { position: fixed; bottom: 0; left: 0; right: 0; background: #0f0f12; border-top: 1px solid #1e1e28; padding: 12px 14px; display: flex; gap: 8px; }
+  .reset-btn { flex: 1; padding: 12px; border-radius: 12px; border: none; cursor: pointer; background: #2a2a35; color: #888; font-size: 13px; font-weight: 700; }
+  .bottom-profit { flex: 2; background: #0d1f14; border-radius: 12px; padding: 8px 14px; border: 1px solid #1a3a22; display: flex; justify-content: space-between; align-items: center; }
+  .bottom-profit.loss { background: #1f0d0d; border-color: #3a1a1a; }
+  .bottom-profit-label { font-size: 11px; color: #666; }
+  .bottom-profit-value { font-size: 16px; font-weight: 900; }
+
+  /* 설정화면 */
+  .setup-header { background: linear-gradient(135deg,#C00000 0%,#7a0000 100%); padding: 28px 20px 24px; }
+  .setup-brand { font-size: 11px; color: rgba(255,255,255,0.5); letter-spacing: 2px; margin-bottom: 6px; }
+  .setup-title { font-size: 26px; font-weight: 900; color: #fff; line-height: 1.2; margin-bottom: 8px; }
+  .setup-sub { font-size: 12px; color: rgba(255,255,255,0.6); line-height: 1.6; }
+  .setup-body { padding: 20px 18px; }
+  .setup-section-title { font-size: 11px; color: #666; font-weight: 700; margin-bottom: 10px; letter-spacing: 1px; }
+  .setup-item { background: #1a1a22; border-radius: 14px; padding: 14px 16px; margin-bottom: 10px; display: flex; align-items: center; gap: 12px; }
+  .setup-icon { font-size: 22px; }
+  .setup-item-info { flex: 1; }
+  .setup-item-label { font-size: 13px; font-weight: 700; color: #e0e0e8; }
+  .setup-item-sub { font-size: 11px; color: #555; margin-top: 1px; }
+  .setup-input-wrap { display: flex; align-items: center; gap: 6px; }
+  .setup-input { background: #13131a; border: 1px solid #333; border-radius: 8px; padding: 8px 10px; color: #e8a320; font-size: 16px; font-weight: 900; text-align: center; outline: none; width: 70px; }
+  .setup-input.rate { border-color: #C00000; color: #ff6b6b; width: 60px; }
+  .setup-unit { font-size: 12px; color: #666; }
+  .rate-slider { width: 100%; accent-color: #C00000; margin-top: 12px; }
+  .rate-labels { display: flex; justify-content: space-between; font-size: 10px; color: #555; margin-top: 2px; }
+  .rate-tip { margin-top: 8px; padding: 8px 10px; background: #13131a; border-radius: 8px; font-size: 11px; color: #888; }
+  .preview-box { background: #1a1a28; border-radius: 14px; padding: 14px 16px; margin-bottom: 24px; border: 1px solid #2a2a45; }
+  .preview-row { display: flex; justify-content: space-between; align-items: center; }
+  .preview-label { font-size: 12px; color: #888; }
+  .preview-value { font-size: 18px; font-weight: 900; color: #ff6b6b; }
+  .notice-box { background: #1a1a18; border-radius: 12px; padding: 12px 14px; margin-bottom: 24px; border: 1px solid #333320; font-size: 11px; color: #888; line-height: 1.8; }
+  .start-btn { width: 100%; padding: 16px; border-radius: 14px; border: none; cursor: pointer; background: linear-gradient(135deg,#C00000,#8B0000); color: #fff; font-size: 16px; font-weight: 900; letter-spacing: 0.5px; }
+
+  .empty-msg { text-align: center; color: #444; font-size: 12px; padding-top: 4px; }
+</style>
+</head>
+<body>
+
+<div id="app"></div>
+
+<script>
+const MENUS = [
+  {id:"b01",cat:"버거",name:"치킨버거",price:2900,cost:820,ing:["브리오슈번 1개","치킨패티 1장","그레이비소스 15g","마요 20g","피클 3장"]},
+  {id:"b02",cat:"버거",name:"치즈치킨버거",price:3700,cost:1050,ing:["브리오슈번 1개","치킨패티 1장","체다치즈 1장","그레이비 15g","마요 20g","피클 3장"]},
+  {id:"b03",cat:"버거",name:"디럭스치킨버거",price:3900,cost:1150,ing:["브리오슈번 1개","치킨패티 1장","슬라이스치즈 1장","양상추 10g","토마토 2조각","그레이비 15g","마요 30g","피클 3장"]},
+  {id:"b04",cat:"버거",name:"더블치즈치킨버거",price:4700,cost:1600,ing:["브리오슈번 1개","치킨패티 2장","그레이비 30g","마요 20g","피클 3장"]},
+  {id:"b05",cat:"버거",name:"핫스파이시치킨버거",price:3700,cost:1100,ing:["브리오슈번 1개","치킨패티 1장","나초치즈 5g","할라피뇨 5조각","메콤마요 15g"]},
+  {id:"b06",cat:"버거",name:"슈퍼쉬림프버거",price:5400,cost:1800,ing:["브리오슈번 1개","새우패티 1장","양상추 10g","타르타르 40g","피클 3장"]},
+  {id:"b07",cat:"버거",name:"더블치킨버거",price:5400,cost:1550,ing:["브리오슈번 1개","치킨패티 2장","그레이비 30g","마요 20g","피클 3장"]},
+  {id:"b08",cat:"버거",name:"골든포테이토치킨버거",price:5400,cost:1900,ing:["브리오슈번 1개","치킨패티 1장","헤쉬브라운 1장","베이컨 1장","메콤마요 15g","그레이비 15g","피클 3장","마요 20g"]},
+  {id:"b09",cat:"버거",name:"트러플머쉬룸치킨버거",price:5400,cost:2100,ing:["브리오슈번 1개","치킨패티 1장","베이컨 1장","트러플소스 70g","트러플버섯 20g"]},
+  {id:"c01",cat:"치킨",name:"슈퍼크리스피",price:9900,cost:5200,ing:["정육 600g","치킨파우더 70g","크리스피파우더","박스"]},
+  {id:"c02",cat:"치킨",name:"핫 슈퍼크리스피",price:11500,cost:5800,ing:["정육 600g","핫파우더 105g","크리스피파우더","핫소스 15g","박스"]},
+  {id:"c03",cat:"치킨",name:"양념 슈퍼크리스피",price:12500,cost:6500,ing:["정육 600g","치킨파우더 70g","K양념소스 350g","박스"]},
+  {id:"c04",cat:"치킨",name:"치즈 슈퍼크리스피",price:12500,cost:6200,ing:["정육 600g","치킨파우더 70g","치즈큐브분말 45g","박스"]},
+  {id:"c05",cat:"치킨",name:"소이 슈퍼크리스피",price:12500,cost:6300,ing:["정육 600g","치킨파우더 70g","향아리간장 170g","박스"]},
+  {id:"s01",cat:"사이드",name:"슈퍼크런치 감자튀김",price:2500,cost:600,ing:["통살치킨칩 150g"]},
+  {id:"s02",cat:"사이드",name:"양념감자(치즈/어니언)",price:3100,cost:750,ing:["통살치킨칩 150g","시즈닝 10g"]},
+  {id:"s03",cat:"사이드",name:"해피 치즈스틱 2개",price:2300,cost:800,ing:["치즈스틱 2개"]},
+  {id:"s04",cat:"사이드",name:"치즈볼 3개",price:2900,cost:900,ing:["모짜치즈찰볼 3개"]},
+  {id:"s05",cat:"사이드",name:"치킨텐더 2개",price:2900,cost:1100,ing:["치킨텐더 2개"]},
+  {id:"s06",cat:"사이드",name:"크린치너겟 3개",price:1800,cost:700,ing:["메가크런치 3개"]},
+  {id:"s07",cat:"사이드",name:"크리스피 핫 윙 1개",price:1300,cost:550,ing:["핫크리스피윙 1개"]},
+  {id:"s08",cat:"사이드",name:"닭다리살 치킨샐러드",price:3900,cost:1200,ing:["치킨패티 1장","양상추 60g","토마토 1조각","허니머스타드 24g"]},
+];
+const CAT_EMOJI = {버거:"🍔",치킨:"🍗",사이드:"🍟"};
+const CATS = ["전체","버거","치킨","사이드"];
+const STORAGE_KEY = "sc_v2";
+
+function fmt(n){return Math.round(n).toLocaleString("ko-KR");}
+function fmtW(n){
+  const a=Math.abs(Math.round(n));
+  const sign=n<0?"-":"";
+  if(a>=10000){const m=Math.floor(a/10000);const r=a%10000;return sign+m+"만"+(r>0?fmt(r):"")+"원";}
+  return sign+fmt(a)+"원";
+}
+function mc(m){
+  if(m===null)return"#888";
+  if(m<0)return"#ff4d4d";
+  if(m<10)return"#ff6b35";
+  if(m<20)return"#ff9500";
+  if(m<35)return"#34c759";
+  return"#007aff";
+}
+
+// State
+let state = {
+  screen: "main", // setup | main
+  settings: {rent:150,labor:300,other:50,workDays:25,costRate:68},
+  qty: {},
+  cat: "전체",
+  openIng: null,
+};
+
+// Load saved settings
+try {
+  const saved = JSON.parse(localStorage.getItem(STORAGE_KEY)||"null");
+  if(saved && saved.settings){ state.settings = saved.settings; }
+  else { state.screen = "setup"; }
+} catch(e){ state.screen = "setup"; }
+
+function saveSettings(){
+  try{ localStorage.setItem(STORAGE_KEY, JSON.stringify({settings:state.settings})); }catch(e){}
+}
+
+function calcSummary(){
+  let totalSales=0, totalMatCost=0, totalQty=0;
+  const daily = state.settings.workDays>0
+    ? (state.settings.rent+state.settings.labor+state.settings.other)*10000/state.settings.workDays
+    : 0;
+  const byMenu = MENUS.map(m=>{
+    const q = Number(state.qty[m.id])||0;
+    const unitCost = Math.round(m.price * state.settings.costRate/100);
+    const sales=m.price*q, cost=unitCost*q;
+    totalSales+=sales; totalMatCost+=cost; totalQty+=q;
+    return{...m,q,sales,cost,unitCost,profit:sales-cost};
+  });
+  const gross=totalSales-totalMatCost;
+  const net=gross-daily;
+  return{
+    totalSales,totalMatCost,totalQty,
+    grossProfit:gross, netProfit:net,
+    netMargin:totalSales>0?net/totalSales*100:null,
+    grossMargin:totalSales>0?gross/totalSales*100:null,
+    matCostRate:totalSales>0?totalMatCost/totalSales*100:null,
+    dailyFixed:daily, byMenu
+  };
+}
+
+function render(){
+  const app = document.getElementById("app");
+  if(state.screen==="setup"){ app.innerHTML = renderSetup(); bindSetup(); return; }
+  const s = calcSummary();
+  app.innerHTML = renderMain(s);
+  bindMain(s);
+}
+
+function renderSetup(){
+  const cfg = state.settings;
+  const dailyPreview = cfg.workDays>0 ? Math.round((cfg.rent+cfg.labor+cfg.other)*10000/cfg.workDays) : 0;
+  return `
+<div class="setup-header">
+  <div class="setup-brand">SUPER CRISPY</div>
+  <div class="setup-title">내 매장<br>수익 설정</div>
+  <div class="setup-sub">임대료·인건비만 입력하면<br>매출 입력 즉시 순수익이 계산돼요</div>
+</div>
+<div class="setup-body">
+  <div class="setup-section-title" style="margin-bottom:10px">식자재 원가율</div>
+  <div class="setup-item" style="flex-direction:column;align-items:stretch">
+    <div style="display:flex;align-items:center;gap:12px">
+      <span class="setup-icon">🍗</span>
+      <div class="setup-item-info">
+        <div class="setup-item-label">식자재 원가율</div>
+        <div class="setup-item-sub">식자재+포장재+소모품 포함</div>
+      </div>
+      <div class="setup-input-wrap">
+        <input class="setup-input rate" id="inp-costRate" type="number" value="${cfg.costRate}" min="40" max="85">
+        <span class="setup-unit">%</span>
+      </div>
+    </div>
+    <input class="rate-slider" id="slider-costRate" type="range" min="40" max="85" value="${cfg.costRate}">
+    <div class="rate-labels"><span>40%</span><span>60%</span><span>85%</span></div>
+    <div class="rate-tip">💡 수퍼크리스피 평균 식자재 원가율은 약 <span style="color:#e8a320;font-weight:700">62~68%</span> 수준이에요</div>
+  </div>
+
+  <div class="setup-section-title" style="margin-top:20px;margin-bottom:10px">고정비 (월 기준)</div>
+  ${[["rent","🏠","임대료","월 임대료"],["labor","👤","인건비","월 총 인건비 (본인 포함)"],["other","💡","기타 고정비","전기·수도·보험 등"]].map(([k,ico,label,sub])=>`
+  <div class="setup-item">
+    <span class="setup-icon">${ico}</span>
+    <div class="setup-item-info">
+      <div class="setup-item-label">${label}</div>
+      <div class="setup-item-sub">${sub}</div>
+    </div>
+    <div class="setup-input-wrap">
+      <input class="setup-input" id="inp-${k}" type="number" value="${cfg[k]}">
+      <span class="setup-unit">만원</span>
+    </div>
+  </div>`).join("")}
+
+  <div class="setup-section-title" style="margin-top:20px;margin-bottom:10px">월 영업일</div>
+  <div class="setup-item">
+    <span class="setup-icon">📅</span>
+    <div class="setup-item-info">
+      <div class="setup-item-label">월 영업일수</div>
+      <div class="setup-item-sub">하루 고정비 계산에 사용돼요</div>
+    </div>
+    <div class="setup-input-wrap">
+      <input class="setup-input" id="inp-workDays" type="number" value="${cfg.workDays}" style="width:55px">
+      <span class="setup-unit">일</span>
+    </div>
+  </div>
+
+  <div class="preview-box" style="margin-top:16px">
+    <div class="preview-row">
+      <span class="preview-label">📊 하루 고정비</span>
+      <span class="preview-value" id="daily-preview">${fmtW(dailyPreview)}</span>
+    </div>
+    <div style="font-size:10px;color:#555;margin-top:4px" id="daily-formula">월 ${fmt(cfg.rent+cfg.labor+cfg.other)}만원 ÷ ${cfg.workDays}일</div>
+  </div>
+
+  <div class="notice-box">💡 한 번만 입력하면 저장돼요. 나중에 바꾸려면 상단 ⚙️ 버튼을 눌러주세요.</div>
+  <button class="start-btn" id="start-btn">시작하기 →</button>
+</div>`;
+}
+
+function bindSetup(){
+  const cfg = state.settings;
+  function updatePreview(){
+    const r=Number(document.getElementById("inp-rent").value)||0;
+    const l=Number(document.getElementById("inp-labor").value)||0;
+    const o=Number(document.getElementById("inp-other").value)||0;
+    const d=Number(document.getElementById("inp-workDays").value)||1;
+    const daily=Math.round((r+l+o)*10000/d);
+    document.getElementById("daily-preview").textContent=fmtW(daily);
+    document.getElementById("daily-formula").textContent=`월 ${fmt(r+l+o)}만원 ÷ ${d}일`;
+  }
+  ["rent","labor","other","workDays"].forEach(k=>{
+    document.getElementById("inp-"+k).addEventListener("input",e=>{
+      state.settings[k]=Number(e.target.value)||0; updatePreview();
+    });
+  });
+  const rateInp = document.getElementById("inp-costRate");
+  const rateSlider = document.getElementById("slider-costRate");
+  rateInp.addEventListener("input",e=>{ state.settings.costRate=Number(e.target.value)||68; rateSlider.value=e.target.value; updatePreview(); });
+  rateSlider.addEventListener("input",e=>{ state.settings.costRate=Number(e.target.value)||68; rateInp.value=e.target.value; updatePreview(); });
+  document.getElementById("start-btn").addEventListener("click",()=>{
+    saveSettings(); state.screen="main"; render();
+  });
+}
+
+function renderMain(s){
+  const hasAny = s.totalQty>0;
+  const filteredMenus = MENUS.filter(m=>state.cat==="전체"||m.cat===state.cat);
+
+  let lastCat="";
+  const menuHTML = filteredMenus.map(m=>{
+    const sm = s.byMenu.find(x=>x.id===m.id);
+    const q=sm.q;
+    let header="";
+    if(m.cat!==lastCat){ lastCat=m.cat; header=`<div class="cat-header">${CAT_EMOJI[m.cat]} ${m.cat}</div>`; }
+    const profitColor = m.price-sm.unitCost>0?"#34c759":"#ff4d4d";
+    return `${header}
+    <div class="menu-item ${q>0?"active":""}" id="item-${m.id}">
+      <div class="menu-row">
+        <div class="menu-info">
+          <div><span class="menu-name">${m.name}</span><span class="menu-price">${fmt(m.price)}원</span></div>
+          <div class="menu-cost">
+            원가 ${fmt(sm.unitCost)}원 · 건당이익 <span style="color:${profitColor}">${fmt(m.price-sm.unitCost)}원</span>
+            <span class="ingredients-toggle" onclick="toggleIng('${m.id}')">재료▾</span>
+          </div>
+          ${state.openIng===m.id?`<div class="ingredients-detail">${m.ing.join("  ·  ")}</div>`:""}
+        </div>
+        <div class="qty-wrap">
+          <div class="qty-row">
+            <button class="qty-btn minus" onclick="changeQty('${m.id}',-1)">−</button>
+            <input class="qty-input ${q>0?"has-qty":""}" type="number" value="${q||""}" placeholder="0" onchange="setQty('${m.id}',this.value)" oninput="setQty('${m.id}',this.value)">
+            <button class="qty-btn plus" onclick="changeQty('${m.id}',1)">+</button>
+          </div>
+          ${q>0?`<div class="qty-profit" style="color:${sm.profit>=0?"#34c759":"#ff4d4d"}">${sm.profit>=0?"+":""}${fmtW(sm.profit)}</div>`:""}
+        </div>
+      </div>
+      ${q>0?`<div class="menu-detail">
+        <div class="detail-box"><div class="detail-label">매출</div><div class="detail-value" style="color:#e8a320">${fmtW(sm.sales)}</div></div>
+        <div class="detail-box"><div class="detail-label">원가</div><div class="detail-value" style="color:#ff9966">${fmtW(sm.cost)}</div></div>
+        <div class="detail-box"><div class="detail-label">재료후이익</div><div class="detail-value" style="color:${sm.profit>=0?"#aaa":"#ff4d4d"}">${sm.profit>=0?"+":""}${fmtW(sm.profit)}</div></div>
+      </div>`:""}
+    </div>`;
+  }).join("");
+
+  const cfg = state.settings;
+  return `
+<div class="header">
+  <div class="header-left">
+    <div class="brand">SUPER CRISPY</div>
+    <div class="title">일일 수익 계산기</div>
+  </div>
+  <button class="gear-btn" onclick="goSetup()">⚙️</button>
+</div>
+
+<div class="card">
+  <div class="grid3">
+    <div class="stat-box"><div class="stat-label">총 매출</div><div class="stat-value" style="color:#e8a320">${fmtW(s.totalSales)}</div></div>
+    <div class="stat-box"><div class="stat-label">식자재 원가</div><div class="stat-value" style="color:#ff9966">${fmtW(s.totalMatCost)}</div></div>
+    <div class="stat-box"><div class="stat-label">하루 고정비</div><div class="stat-value" style="color:#ff6b6b">${fmtW(s.dailyFixed)}</div></div>
+  </div>
+  <div class="profit-box ${s.netProfit>=0?"positive":"negative"}">
+    <div class="profit-row">
+      <div>
+        <div class="profit-label">오늘 순이익 (고정비 포함)</div>
+        <div class="profit-amount" style="color:${s.netProfit>=0?"#34c759":"#ff4d4d"}">${s.netProfit>=0?"+":""}${fmtW(s.netProfit)}</div>
+      </div>
+      ${s.netMargin!==null?`<div class="margin-badge"><div class="margin-label">순이익률</div><div class="margin-value" style="color:${mc(s.netMargin)}">${s.netMargin.toFixed(1)}%</div></div>`:""}
+    </div>
+    ${hasAny&&s.netMargin!==null?`
+    <div class="margin-bar-wrap">
+      <div class="margin-bar-bg"><div class="margin-bar-fill" style="width:${Math.min(100,Math.max(0,s.netMargin))}%;background:${mc(s.netMargin)}"></div></div>
+      <div class="margin-bar-labels">
+        <span>식자재 ${s.matCostRate?s.matCostRate.toFixed(0):0}%</span>
+        <span>고정비 ${s.totalSales>0?(s.dailyFixed/s.totalSales*100).toFixed(0):0}%</span>
+        <span style="color:${mc(s.netMargin)}">순이익 ${s.netMargin.toFixed(0)}%</span>
+      </div>
+    </div>`:`<div class="empty-msg" style="margin-top:8px">아래에서 판매수량을 입력하세요 👇</div>`}
+  </div>
+</div>
+
+<div class="settings-summary">
+  <span>원가율 <b style="color:#e8a320">${cfg.costRate}%</b> · 월고정비 <b style="color:#ff9966">${cfg.rent+cfg.labor+cfg.other}만원</b> · ${cfg.workDays}일 기준</span>
+  <button onclick="goSetup()">수정</button>
+</div>
+
+<div class="cat-scroll">
+  ${CATS.map(c=>`<button class="cat-btn ${state.cat===c?"active":"inactive"}" onclick="setCat('${c}')">${c==="전체"?"🍽️":CAT_EMOJI[c]} ${c}</button>`).join("")}
+</div>
+
+<div class="menu-section">${menuHTML}</div>
+
+<div class="bottom-bar">
+  <button class="reset-btn" onclick="resetQty()">🔄 초기화</button>
+  ${hasAny?`<div class="bottom-profit ${s.netProfit<0?"loss":""}">
+    <span class="bottom-profit-label">오늘 순이익</span>
+    <span class="bottom-profit-value" style="color:${s.netProfit>=0?"#34c759":"#ff4d4d"}">${s.netProfit>=0?"+":""}${fmtW(s.netProfit)}</span>
+  </div>`:""}
+</div>`;
+}
+
+function bindMain(s){}
+
+// Global handlers
+window.toggleIng = function(id){ state.openIng = state.openIng===id?null:id; render(); }
+window.changeQty = function(id,d){ const q=Math.max(0,(Number(state.qty[id])||0)+d); state.qty[id]=q; render(); }
+window.setQty = function(id,v){ state.qty[id]=Math.max(0,Number(v)||0); }
+window.setCat = function(c){ state.cat=c; render(); }
+window.resetQty = function(){ state.qty={}; render(); }
+window.goSetup = function(){ state.screen="setup"; render(); }
+
+render();
+</script>
+</body>
+</html>
