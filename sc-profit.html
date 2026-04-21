@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
-<title>수익 계산기</title>
+<title>치킨집 수익 계산기</title>
 <style>
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
 input[type=number]::-webkit-outer-spin-button,input[type=number]::-webkit-inner-spin-button{-webkit-appearance:none}
@@ -123,13 +123,13 @@ const MENUS=[
   {id:"bs07",cat:"세트",name:"골든포테이토버거 세트",price:8400,cost:4583},
   {id:"bs08",cat:"세트",name:"트러플머쉬룸버거 세트",price:8400,cost:4972},
   // 치킨
-  {id:"c01",cat:"치킨",name:"슈퍼크리스피",price:9900,cost:8107},
-  {id:"c02",cat:"치킨",name:"핫 슈퍼크리스피",price:11500,cost:8431},
-  {id:"c03",cat:"치킨",name:"양념 슈퍼크리스피",price:12500,cost:9857},
-  {id:"c04",cat:"치킨",name:"치즈 슈퍼크리스피",price:12500,cost:8534},
-  {id:"c05",cat:"치킨",name:"소이 슈퍼크리스피",price:12500,cost:9161},
+  {id:"c01",cat:"치킨",name:"후라이드 치킨",price:9900,cost:8107},
+  {id:"c02",cat:"치킨",name:"핫 후라이드",price:11500,cost:8431},
+  {id:"c03",cat:"치킨",name:"양념 치킨",price:12500,cost:9857},
+  {id:"c04",cat:"치킨",name:"치즈 치킨",price:12500,cost:8534},
+  {id:"c05",cat:"치킨",name:"소이 치킨",price:12500,cost:9161},
   // 사이드
-  {id:"s01",cat:"사이드",name:"슈퍼크런치 감자튀김",price:2500,cost:1517},
+  {id:"s01",cat:"사이드",name:"크런치 감자튀김",price:2500,cost:1517},
   {id:"s02",cat:"사이드",name:"양념감자",price:3100,cost:1517},
   {id:"s03",cat:"사이드",name:"해피 치즈스틱 2개",price:2300,cost:702},
   {id:"s04",cat:"사이드",name:"치즈볼 3개",price:2900,cost:1222},
@@ -183,7 +183,7 @@ function renderSetup(){
   document.getElementById("app").innerHTML=`
 <div class="wrap">
 <div class="s-header">
-  <div class="brand">SUPER CRISPY</div>
+  <div class="brand">MY STORE</div>
   <h1>내 매장 설정</h1>
   <p>한 번만 입력하면 저장돼요<br>⚙️ 버튼으로 언제든 수정 가능해요</p>
 </div>
@@ -192,7 +192,7 @@ function renderSetup(){
   <div class="s-sec">🏪 매장 이름</div>
   <div class="s-card">
     <div class="s-row"><span class="s-ico">🏪</span><div class="s-info"><div class="lbl">매장 이름</div><div class="sub">앱 상단에 표시돼요</div></div></div>
-    <input class="s-inp full" id="i-store" type="text" placeholder="예) 수퍼크리스피 제천점" maxlength="20" value="${c.store||""}">
+    <input class="s-inp full" id="i-store" type="text" placeholder="예) 제천점" maxlength="20" value="${c.store||""}">
   </div>
 
   <div class="s-sec">🛢️ 식용유</div>
