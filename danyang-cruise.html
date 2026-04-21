@@ -1,0 +1,815 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>단양 도담삼봉유람선 — 좌석 현황</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@300;400;600;700&family=Playfair+Display:ital,wght@0,700;1,500&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #0B1622;
+  --panel: #0F1E30;
+  --card: #132435;
+  --border: rgba(135,185,210,0.15);
+  --gold: #C8A951;
+  --gold2: #E8C97A;
+  --sky: #7BBFCF;
+  --sky2: #A8D8E8;
+  --green: #4CAF82;
+  --red: #D05A4A;
+  --amber: #E8A030;
+  --text: #E8EEF4;
+  --muted: #7A99B0;
+  --river: #1A3A5C;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  background: var(--bg);
+  min-height: 100vh;
+  font-family: 'Noto Serif KR', serif;
+  color: var(--text);
+  padding-bottom: 60px;
+  background-image:
+    radial-gradient(ellipse at 0% 0%, rgba(123,191,207,0.07) 0%, transparent 50%),
+    radial-gradient(ellipse at 100% 100%, rgba(200,169,81,0.06) 0%, transparent 50%);
+}
+
+/* ── HEADER ── */
+.header {
+  background: linear-gradient(180deg, #0D2540 0%, var(--panel) 100%);
+  border-bottom: 1px solid var(--border);
+  padding: 0 20px;
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  box-shadow: 0 4px 24px rgba(0,0,0,0.4);
+}
+.header-inner {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 16px 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.header-left {}
+.brand {
+  font-family: 'Playfair Display', serif;
+  font-size: 20px;
+  color: var(--gold);
+  letter-spacing: 1px;
+  line-height: 1.2;
+}
+.brand-sub {
+  font-size: 10px;
+  letter-spacing: 3px;
+  color: var(--muted);
+  text-transform: uppercase;
+  margin-top: 2px;
+}
+.header-date {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 12px;
+  color: var(--sky);
+  letter-spacing: 1px;
+  text-align: right;
+}
+.header-total {
+  font-size: 10px;
+  color: var(--muted);
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  margin-top: 2px;
+}
+
+/* ── DATE NAV ── */
+.date-nav {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 16px 20px 0;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.date-nav-label {
+  font-size: 10px;
+  letter-spacing: 3px;
+  color: var(--muted);
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+input[type="date"] {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  color: var(--text);
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 14px;
+  padding: 8px 12px;
+  outline: none;
+  cursor: pointer;
+}
+input[type="date"]:focus { border-color: var(--gold); }
+
+/* ── MAIN ── */
+.page {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 20px 20px 0;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* ── DAY SUMMARY ── */
+.day-summary {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 20px 24px;
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  flex-wrap: wrap;
+}
+.summary-item { text-align: center; flex: 1; min-width: 80px; }
+.summary-val {
+  font-family: 'Playfair Display', serif;
+  font-size: 32px;
+  color: var(--gold);
+  line-height: 1;
+}
+.summary-val.red { color: var(--red); }
+.summary-val.green { color: var(--green); }
+.summary-label {
+  font-size: 9px;
+  letter-spacing: 3px;
+  color: var(--muted);
+  text-transform: uppercase;
+  margin-top: 4px;
+}
+.summary-divider {
+  width: 1px;
+  height: 40px;
+  background: var(--border);
+}
+
+/* ── VOYAGE GRID ── */
+.voyage-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 14px;
+}
+
+/* ── VOYAGE CARD ── */
+.voyage-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  overflow: hidden;
+  transition: transform 0.15s, box-shadow 0.15s;
+  cursor: pointer;
+}
+.voyage-card:hover { transform: translateY(-2px); box-shadow: 0 8px 32px rgba(0,0,0,0.3); }
+.voyage-card.soldout { border-color: rgba(208,90,74,0.3); }
+.voyage-card.selected { border-color: var(--gold); box-shadow: 0 0 0 1px var(--gold); }
+
+/* Card top stripe by status */
+.card-stripe {
+  height: 3px;
+  background: var(--green);
+  transition: background 0.3s;
+}
+.card-stripe.warning { background: var(--amber); }
+.card-stripe.danger { background: var(--red); }
+.card-stripe.full { background: #555; }
+
+.card-head {
+  padding: 14px 16px 10px;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+}
+.card-time {
+  font-family: 'Playfair Display', serif;
+  font-size: 28px;
+  color: var(--text);
+  line-height: 1;
+}
+.card-time-ampm {
+  font-size: 10px;
+  color: var(--muted);
+  letter-spacing: 2px;
+  margin-top: 2px;
+}
+.card-badge {
+  font-size: 9px;
+  letter-spacing: 2px;
+  padding: 4px 9px;
+  border-radius: 3px;
+  text-transform: uppercase;
+  font-weight: 600;
+}
+.badge-open { background: rgba(76,175,130,0.15); color: var(--green); border: 1px solid rgba(76,175,130,0.3); }
+.badge-warning { background: rgba(232,160,48,0.15); color: var(--amber); border: 1px solid rgba(232,160,48,0.3); }
+.badge-soldout { background: rgba(208,90,74,0.12); color: var(--red); border: 1px solid rgba(208,90,74,0.25); }
+
+.card-seats {
+  padding: 0 16px 12px;
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+}
+.seat-remain {
+  font-family: 'Playfair Display', serif;
+  font-size: 42px;
+  color: var(--gold);
+  line-height: 1;
+  transition: all 0.3s cubic-bezier(0.34,1.56,0.64,1);
+}
+.seat-remain.low { color: var(--amber); }
+.seat-remain.zero { color: var(--red); }
+.seat-denom {
+  font-size: 13px;
+  color: var(--muted);
+  font-family: 'Share Tech Mono', monospace;
+}
+
+/* Mini seat dots */
+.mini-dots {
+  padding: 0 16px 12px;
+  display: grid;
+  grid-template-columns: repeat(20, 1fr);
+  gap: 3px;
+}
+.mini-dot {
+  aspect-ratio: 1;
+  border-radius: 2px;
+  background: rgba(135,185,210,0.1);
+  border: 1px solid rgba(135,185,210,0.08);
+  transition: background 0.25s;
+}
+.mini-dot.sold { background: var(--sky); border-color: var(--sky); }
+.mini-dot.sold.warning { background: var(--amber); border-color: var(--amber); }
+.mini-dot.sold.danger { background: var(--red); border-color: var(--red); }
+
+/* Progress */
+.card-progress {
+  padding: 0 16px 4px;
+}
+.prog-track {
+  background: rgba(255,255,255,0.05);
+  border-radius: 2px;
+  height: 4px;
+  overflow: hidden;
+}
+.prog-fill {
+  height: 100%;
+  border-radius: 2px;
+  background: var(--sky);
+  transition: width 0.5s ease, background 0.3s;
+}
+.prog-fill.warning { background: var(--amber); }
+.prog-fill.danger { background: var(--red); }
+
+/* Card actions */
+.card-actions {
+  padding: 12px 16px;
+  border-top: 1px solid var(--border);
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+.qty-input {
+  background: rgba(255,255,255,0.05);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  color: var(--text);
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 16px;
+  padding: 7px 10px;
+  width: 64px;
+  outline: none;
+  -moz-appearance: textfield;
+  transition: border-color 0.2s;
+  text-align: center;
+}
+.qty-input::-webkit-outer-spin-button,
+.qty-input::-webkit-inner-spin-button { -webkit-appearance: none; }
+.qty-input:focus { border-color: var(--gold); }
+
+.btn {
+  font-family: 'Noto Serif KR', serif;
+  font-size: 13px;
+  padding: 8px 14px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: opacity 0.15s, transform 0.1s;
+  white-space: nowrap;
+  font-weight: 600;
+}
+.btn:active { transform: scale(0.96); }
+.btn.sell { background: var(--gold); color: #0B1622; flex: 1; }
+.btn.cancel-reserve { background: rgba(123,191,207,0.1); color: var(--sky); border: 1px solid rgba(123,191,207,0.3); }
+.btn.cancel-onsite  { background: rgba(208,90,74,0.1);  color: var(--red); border: 1px solid rgba(208,90,74,0.3); }
+.btn:disabled { opacity: 0.3; cursor: not-allowed; }
+
+/* ── LOG PANEL ── */
+.log-panel {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  overflow: hidden;
+}
+.log-head {
+  padding: 14px 20px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.log-title {
+  font-family: 'Playfair Display', serif;
+  font-size: 16px;
+  color: var(--gold);
+  letter-spacing: 1px;
+}
+.log-clear {
+  font-size: 10px;
+  letter-spacing: 2px;
+  color: var(--muted);
+  text-transform: uppercase;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 3px;
+  transition: color 0.2s;
+}
+.log-clear:hover { color: var(--red); }
+
+.log-list {
+  max-height: 280px;
+  overflow-y: auto;
+}
+.log-list::-webkit-scrollbar { width: 4px; }
+.log-list::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+.log-empty {
+  padding: 32px;
+  text-align: center;
+  font-size: 11px;
+  letter-spacing: 3px;
+  color: var(--muted);
+  text-transform: uppercase;
+  opacity: 0.5;
+}
+.log-item {
+  display: flex;
+  align-items: center;
+  padding: 10px 20px;
+  border-bottom: 1px solid rgba(135,185,210,0.05);
+  gap: 12px;
+  animation: logIn 0.25s ease;
+  font-size: 13px;
+}
+@keyframes logIn {
+  from { opacity: 0; transform: translateX(-8px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+.log-time {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 11px;
+  color: var(--gold);
+  min-width: 44px;
+}
+.log-voyage {
+  background: rgba(123,191,207,0.12);
+  color: var(--sky);
+  font-size: 10px;
+  letter-spacing: 1px;
+  padding: 2px 8px;
+  border-radius: 3px;
+  white-space: nowrap;
+  min-width: 56px;
+  text-align: center;
+}
+.log-desc { flex: 1; color: var(--text); }
+.log-change {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 12px;
+  min-width: 40px;
+  text-align: right;
+}
+.log-change.plus { color: var(--green); }
+.log-change.minus { color: var(--red); }
+.log-remain {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 11px;
+  color: var(--muted);
+  min-width: 48px;
+  text-align: right;
+}
+
+/* ── SOLDOUT MODAL ── */
+.modal-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(7,14,25,0.9);
+  z-index: 200;
+  align-items: center;
+  justify-content: center;
+  backdrop-filter: blur(8px);
+}
+.modal-overlay.show { display: flex; }
+.modal-box {
+  text-align: center;
+  animation: popIn 0.45s cubic-bezier(0.34,1.56,0.64,1);
+  padding: 20px;
+  max-width: 340px;
+}
+@keyframes popIn {
+  from { transform: scale(0.6) translateY(30px); opacity: 0; }
+  to   { transform: scale(1) translateY(0); opacity: 1; }
+}
+.modal-icon { font-size: 72px; margin-bottom: 12px; }
+.modal-title {
+  font-family: 'Playfair Display', serif;
+  font-size: 52px;
+  color: var(--red);
+  letter-spacing: 4px;
+  line-height: 1;
+  margin-bottom: 6px;
+}
+.modal-voyage {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 16px;
+  color: var(--gold);
+  letter-spacing: 3px;
+  margin-bottom: 4px;
+}
+.modal-sub {
+  font-size: 11px;
+  letter-spacing: 3px;
+  color: var(--muted);
+  text-transform: uppercase;
+  margin-bottom: 28px;
+}
+.modal-close {
+  font-family: 'Noto Serif KR', serif;
+  font-size: 14px;
+  letter-spacing: 2px;
+  padding: 13px 40px;
+  background: transparent;
+  border: 1px solid var(--gold);
+  color: var(--gold);
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.modal-close:hover { background: rgba(200,169,81,0.1); }
+
+/* ── ADD VOYAGE ── */
+.add-section {
+  text-align: center;
+  padding: 8px 0;
+}
+.btn-add-voyage {
+  font-family: 'Noto Serif KR', serif;
+  font-size: 13px;
+  padding: 10px 24px;
+  background: rgba(255,255,255,0.04);
+  border: 1px dashed var(--border);
+  color: var(--muted);
+  border-radius: 6px;
+  cursor: pointer;
+  transition: color 0.2s, border-color 0.2s;
+  letter-spacing: 1px;
+}
+.btn-add-voyage:hover { color: var(--sky); border-color: var(--sky); }
+
+@media (max-width: 500px) {
+  .voyage-grid { grid-template-columns: 1fr; }
+  .day-summary { gap: 12px; }
+  .summary-val { font-size: 26px; }
+}
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div class="header">
+  <div class="header-inner">
+    <div class="header-left">
+      <div class="brand">단양 도담삼봉유람선</div>
+      <div class="brand-sub">Danyang Dodamsambong Cruise · Seat Management</div>
+    </div>
+    <div style="text-align:right">
+      <div class="header-date" id="headerDate">—</div>
+      <div class="header-total" id="headerTotal">전체 0 / 0석 판매</div>
+    </div>
+  </div>
+</div>
+
+<!-- DATE NAV -->
+<div class="date-nav">
+  <span class="date-nav-label">운항일</span>
+  <input type="date" id="datePicker">
+</div>
+
+<div class="page">
+
+  <!-- DAY SUMMARY -->
+  <div class="day-summary">
+    <div class="summary-item">
+      <div class="summary-val" id="sumTotal">0</div>
+      <div class="summary-label">총 판매석</div>
+    </div>
+    <div class="summary-divider"></div>
+    <div class="summary-item">
+      <div class="summary-val green" id="sumRemain">0</div>
+      <div class="summary-label">총 잔여석</div>
+    </div>
+    <div class="summary-divider"></div>
+    <div class="summary-item">
+      <div class="summary-val" id="sumVoyages">0</div>
+      <div class="summary-label">운항 회차</div>
+    </div>
+    <div class="summary-divider"></div>
+    <div class="summary-item">
+      <div class="summary-val red" id="sumSoldout">0</div>
+      <div class="summary-label">매진 회차</div>
+    </div>
+  </div>
+
+  <!-- VOYAGE CARDS -->
+  <div class="voyage-grid" id="voyageGrid"></div>
+
+  <!-- ADD VOYAGE -->
+  <div class="add-section">
+    <button class="btn-add-voyage" onclick="addVoyage()">+ 회차 추가</button>
+  </div>
+
+  <!-- LOG -->
+  <div class="log-panel">
+    <div class="log-head">
+      <span class="log-title">판매 로그</span>
+      <button class="log-clear" onclick="resetDay()" style="color:var(--amber);margin-right:8px;">오늘 초기화</button><button class="log-clear" onclick="clearLog()">기록 지우기</button>
+    </div>
+    <div class="log-list" id="logList">
+      <div class="log-empty">판매 내역이 없습니다</div>
+    </div>
+  </div>
+
+</div>
+
+<!-- SOLDOUT MODAL -->
+<div class="modal-overlay" id="soldoutModal">
+  <div class="modal-box">
+    <div class="modal-icon">🚢</div>
+    <div class="modal-title">매진</div>
+    <div class="modal-voyage" id="modalVoyage">—</div>
+    <div class="modal-sub">전석 판매 완료</div>
+    <button class="modal-close" onclick="closeModal()">확인</button>
+  </div>
+</div>
+
+<script>
+// ── DEFAULT SCHEDULES ──
+const WEEKDAY_VOYAGES = [
+  { time: '11:00', ampm: '오전', max: 100 },
+  { time: '12:00', ampm: '오후', max: 100 },
+  { time: '13:30', ampm: '오후', max: 100 },
+  { time: '14:30', ampm: '오후', max: 100 },
+  { time: '15:30', ampm: '오후', max: 100 },
+  { time: '16:30', ampm: '오후', max: 100 },
+];
+const WEEKEND_VOYAGES = [
+  { time: '10:00', ampm: '오전', max: 100 },
+  { time: '11:00', ampm: '오전', max: 100 },
+  { time: '12:00', ampm: '오후', max: 100 },
+  { time: '13:30', ampm: '오후', max: 100 },
+  { time: '14:30', ampm: '오후', max: 100 },
+  { time: '15:30', ampm: '오후', max: 100 },
+  { time: '16:30', ampm: '오후', max: 100 },
+  { time: '17:30', ampm: '오후', max: 100 },
+];
+function getDefaultVoyages(dateStr) {
+  const day = new Date(dateStr + 'T00:00:00').getDay();
+  return (day === 0 || day === 6 ? WEEKEND_VOYAGES : WEEKDAY_VOYAGES).map(v => ({ ...v, sold: 0 }));
+}
+
+// ── STATE ──
+// voyages: [{time, ampm, max, sold}]
+// logs: [{ts, time, change, remain, max}]
+let voyages = [];
+let logs = [];
+
+// ── INIT ──
+function init() {
+  const today = new Date();
+  const dp = document.getElementById('datePicker');
+  dp.value = today.toISOString().slice(0,10);
+  dp.addEventListener('change', () => { loadDay(); renderAll(); });
+  loadDay();
+  renderAll();
+}
+
+function todayKey() {
+  return 'voyages_' + document.getElementById('datePicker').value;
+}
+
+function loadDay() {
+  const stored = localStorage.getItem(todayKey());
+  if (stored) {
+    voyages = JSON.parse(stored);
+  } else {
+    voyages = getDefaultVoyages(document.getElementById('datePicker').value);
+  }
+  const logStored = localStorage.getItem('logs_' + document.getElementById('datePicker').value);
+  logs = logStored ? JSON.parse(logStored) : [];
+}
+
+function saveDay() {
+  localStorage.setItem(todayKey(), JSON.stringify(voyages));
+  localStorage.setItem('logs_' + document.getElementById('datePicker').value, JSON.stringify(logs));
+}
+
+// ── RENDER ──
+function renderAll() {
+  renderHeader();
+  renderSummary();
+  renderGrid();
+  renderLog();
+}
+
+function renderHeader() {
+  const dp = document.getElementById('datePicker');
+  const d = new Date(dp.value + 'T00:00:00');
+  const days = ['일','월','화','수','목','금','토'];
+  const day = d.getDay();
+  const isWeekend = day === 0 || day === 6;
+  const dayType = isWeekend ? '🟠 주말' : '🔵 주중';
+  document.getElementById('headerDate').textContent =
+    `${d.getFullYear()}.${String(d.getMonth()+1).padStart(2,'0')}.${String(d.getDate()).padStart(2,'0')} (${days[day]}) ${dayType}`;
+  const totalSold = voyages.reduce((a,v)=>a+v.sold,0);
+  const totalMax  = voyages.reduce((a,v)=>a+v.max,0);
+  document.getElementById('headerTotal').textContent = `전체 ${totalSold} / ${totalMax}석 판매`;
+}
+
+function renderSummary() {
+  const totalSold   = voyages.reduce((a,v)=>a+v.sold,0);
+  const totalRemain = voyages.reduce((a,v)=>a+(v.max-v.sold),0);
+  const soldoutCnt  = voyages.filter(v=>v.sold>=v.max).length;
+  document.getElementById('sumTotal').textContent   = totalSold;
+  document.getElementById('sumRemain').textContent  = totalRemain;
+  document.getElementById('sumVoyages').textContent = voyages.length;
+  document.getElementById('sumSoldout').textContent = soldoutCnt;
+}
+
+function renderGrid() {
+  const grid = document.getElementById('voyageGrid');
+  grid.innerHTML = voyages.map((v,i) => cardHTML(v,i)).join('');
+}
+
+function cardHTML(v, i) {
+  const remain = v.max - v.sold;
+  const pct    = Math.round((v.sold / v.max) * 100);
+  const isFull = remain === 0;
+  const isWarn = pct >= 70 && !isFull;
+  const isDang = pct >= 90 && !isFull;
+
+  const stripeClass = isFull ? 'full' : isDang ? 'danger' : isWarn ? 'warning' : '';
+  const remainClass = isFull ? 'zero' : isDang ? 'low' : isWarn ? 'low' : '';
+  const badgeClass  = isFull ? 'badge-soldout' : isWarn ? 'badge-warning' : 'badge-open';
+  const badgeText   = isFull ? '매진' : isWarn ? `잔여 ${remain}` : '예약가능';
+
+  const dots = Array.from({length: v.max}, (_,k) => {
+    let cls = 'mini-dot';
+    if (k < v.sold) cls += isFull ? ' sold danger' : isDang ? ' sold warning' : ' sold';
+    return `<div class="${cls}"></div>`;
+  }).join('');
+
+  const progClass = isFull ? 'danger' : isDang ? 'danger' : isWarn ? 'warning' : '';
+
+  return `
+  <div class="voyage-card${isFull?' soldout':''}" id="card-${i}">
+    <div class="card-stripe ${stripeClass}"></div>
+    <div class="card-head">
+      <div>
+        <div class="card-time">${v.time}</div>
+        <div class="card-time-ampm">${v.ampm} 출발</div>
+      </div>
+      <div class="card-badge ${badgeClass}">${badgeText}</div>
+    </div>
+    <div class="card-seats">
+      <span class="seat-remain ${remainClass}">${remain}</span>
+      <span class="seat-denom">/ ${v.max}석</span>
+    </div>
+    <div class="mini-dots">${dots}</div>
+    <div class="card-progress">
+      <div class="prog-track">
+        <div class="prog-fill ${progClass}" style="width:${pct}%"></div>
+      </div>
+    </div>
+    <div class="card-actions">
+      <input type="number" class="qty-input" id="qty-${i}" value="1" min="1" max="${v.max}">
+      <button class="btn sell" onclick="sell(${i})" ${isFull?'disabled':''}>+ 판매</button>
+      <button class="btn cancel-reserve" onclick="cancel(${i},'예약취소')" ${v.sold===0?'disabled':''}>예약취소</button>
+      <button class="btn cancel-onsite"  onclick="cancel(${i},'현장취소')" ${v.sold===0?'disabled':''}>현장취소</button>
+    </div>
+  </div>`;
+}
+
+function renderLog() {
+  const list = document.getElementById('logList');
+  if (logs.length === 0) {
+    list.innerHTML = '<div class="log-empty">판매 내역이 없습니다</div>';
+    return;
+  }
+  list.innerHTML = [...logs].reverse().map(l => `
+    <div class="log-item">
+      <span class="log-time">${l.ts}</span>
+      <span class="log-voyage">${l.time}</span>
+      <span class="log-desc" style="color:${l.desc==='예약취소'?'var(--sky)':l.desc==='현장취소'?'var(--red)':'var(--text)'}">${l.desc}</span>
+      <span class="log-change ${l.change>0?'plus':'minus'}">${l.change>0?'+':''}${l.change}석</span>
+      <span class="log-remain">잔여 ${l.remain}</span>
+    </div>`).join('');
+}
+
+// ── ACTIONS ──
+function sell(i) {
+  const n = parseInt(document.getElementById(`qty-${i}`).value) || 1;
+  const v = voyages[i];
+  const actual = Math.min(n, v.max - v.sold);
+  if (actual <= 0) return;
+  v.sold += actual;
+  addLog(i, actual);
+  saveDay();
+  renderAll();
+  if (v.sold >= v.max) {
+    document.getElementById('modalVoyage').textContent = `${v.ampm} ${v.time} 출발`;
+    document.getElementById('soldoutModal').classList.add('show');
+  }
+}
+
+function cancel(i, type) {
+  const n = parseInt(document.getElementById(`qty-${i}`).value) || 1;
+  const v = voyages[i];
+  const actual = Math.min(n, v.sold);
+  if (actual <= 0) return;
+  v.sold -= actual;
+  addLog(i, -actual, type);
+  saveDay();
+  renderAll();
+}
+
+function addLog(i, change, type) {
+  const v = voyages[i];
+  const now = new Date();
+  const ts = now.toLocaleTimeString('ko-KR',{hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false});
+  const desc = change > 0 ? '판매' : (type || '취소');
+  logs.push({ ts, time: v.time, desc, change, remain: v.max - v.sold });
+}
+
+function addVoyage() {
+  const time = prompt('회차 시간을 입력하세요 (예: 17:30)');
+  if (!time || !/^\d{1,2}:\d{2}$/.test(time)) return;
+  const [h] = time.split(':').map(Number);
+  const ampm = h < 12 ? '오전' : '오후';
+  const maxStr = prompt('정원을 입력하세요 (기본 100)', '100');
+  const max = parseInt(maxStr) || 100;
+  voyages.push({ time, ampm, max, sold: 0 });
+  voyages.sort((a,b) => a.time.localeCompare(b.time));
+  saveDay();
+  renderAll();
+}
+
+function resetDay() {
+  if (!confirm('오늘 스케줄을 초기화할까요?\n판매 내역도 모두 삭제됩니다.')) return;
+  localStorage.removeItem(todayKey());
+  localStorage.removeItem('logs_' + document.getElementById('datePicker').value);
+  loadDay();
+  renderAll();
+}
+
+function clearLog() {
+  if (!confirm('로그를 지울까요?')) return;
+  logs = [];
+  saveDay();
+  renderLog();
+}
+
+function closeModal() {
+  document.getElementById('soldoutModal').classList.remove('show');
+}
+
+init();
+</script>
+</body>
+</html>
