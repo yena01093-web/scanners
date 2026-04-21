@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>점주 소통 플랫폼</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+body{font-family:'Apple SD Gothic Neo','Noto Sans KR',sans-serif;background:#111318;color:#e8e8ec;min-height:100vh;padding-bottom:80px}
+.wrap{max-width:480px;margin:0 auto}
+
+.header{background:linear-gradient(135deg,#C00000,#8B0000);padding:20px 18px 16px}
+.header-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:4px}
+.header h1{font-size:20px;font-weight:900;color:#fff}
+.header p{font-size:11px;color:rgba(255,255,255,0.65)}
+.total-badge{background:rgba(255,255,255,0.2);border-radius:20px;padding:4px 10px;font-size:11px;color:#fff;font-weight:700}
+
+.tab-bar{display:flex;background:#1a1a22;border-bottom:1px solid #2a2a35}
+.tab{flex:1;padding:12px 8px;text-align:center;font-size:12px;font-weight:700;color:#666;border:none;background:none;cursor:pointer;border-bottom:2px solid transparent}
+.tab.on{color:#C00000;border-bottom-color:#C00000}
+
+/* 서명 섹션 */
+.petition-card{margin:12px 12px 0;background:#1a1a22;border-radius:16px;padding:16px;border:1px solid #2a2a35}
+.petition-title{font-size:14px;font-weight:800;color:#fff;margin-bottom:6px}
+.petition-desc{font-size:12px;color:#888;line-height:1.6;margin-bottom:14px}
+.sign-count{display:flex;align-items:center;gap:10px;margin-bottom:14px}
+.sign-num{font-size:32px;font-weight:900;color:#C00000}
+.sign-label{font-size:11px;color:#666}
+.progress-wrap{margin-bottom:14px}
+.progress-label{display:flex;justify-content:space-between;font-size:10px;color:#666;margin-bottom:4px}
+.progress-bg{background:#2a2a35;border-radius:6px;height:8px;overflow:hidden}
+.progress-fill{height:100%;border-radius:6px;background:linear-gradient(90deg,#C00000,#ff4444);transition:width 0.5s ease}
+.sign-btn{width:100%;padding:14px;border-radius:12px;border:none;cursor:pointer;font-size:14px;font-weight:900;background:linear-gradient(135deg,#C00000,#8B0000);color:#fff}
+.sign-btn.signed{background:#2a2a35;color:#888}
+.sign-form{margin-top:12px}
+.sign-inp{width:100%;background:#13131a;border:1px solid #2a2a35;border-radius:10px;padding:10px 12px;color:#e8e8ec;font-size:13px;outline:none;margin-bottom:8px}
+.sign-inp:focus{border-color:#C00000}
+
+/* 제보 섹션 */
+.report-form{margin:12px 12px 0;background:#1a1a22;border-radius:16px;padding:16px;border:1px solid #2a2a35}
+.form-title{font-size:13px;font-weight:800;color:#fff;margin-bottom:12px}
+.form-row{margin-bottom:10px}
+.form-label{font-size:11px;color:#888;margin-bottom:4px}
+.form-select{width:100%;background:#13131a;border:1px solid #2a2a35;border-radius:10px;padding:10px 12px;color:#e8e8ec;font-size:13px;outline:none}
+.form-textarea{width:100%;background:#13131a;border:1px solid #2a2a35;border-radius:10px;padding:10px 12px;color:#e8e8ec;font-size:13px;outline:none;resize:none;height:90px;font-family:inherit}
+.form-textarea:focus,.form-select:focus{border-color:#C00000}
+.submit-btn{width:100%;padding:13px;border-radius:12px;border:none;cursor:pointer;font-size:13px;font-weight:800;background:#C00000;color:#fff;margin-top:4px}
+
+/* 제보 목록 */
+.report-list{margin:10px 12px 0}
+.report-item{background:#1a1a22;border-radius:14px;padding:14px;margin-bottom:8px;border:1px solid #2a2a35}
+.report-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}
+.report-tag{font-size:10px;font-weight:700;padding:3px 8px;border-radius:20px}
+.tag-fee{background:#3a1010;color:#ff6b6b}
+.tag-cost{background:#1a1a3a;color:#6b9eff}
+.tag-ops{background:#1a3a1a;color:#6bff9e}
+.tag-other{background:#2a2a2a;color:#aaa}
+.report-store{font-size:10px;color:#555}
+.report-content{font-size:12px;color:#ccc;line-height:1.6;margin-bottom:8px}
+.report-footer{display:flex;justify-content:space-between;align-items:center}
+.report-time{font-size:10px;color:#444}
+.like-btn{background:#2a2a35;border:none;border-radius:20px;padding:4px 10px;color:#888;font-size:11px;cursor:pointer;display:flex;align-items:center;gap:4px}
+.like-btn.liked{background:#3a1010;color:#ff6b6b}
+
+/* 투표 섹션 */
+.vote-card{margin:12px 12px 0;background:#1a1a22;border-radius:16px;padding:16px;border:1px solid #2a2a35;margin-bottom:10px}
+.vote-question{font-size:13px;font-weight:800;color:#fff;margin-bottom:12px;line-height:1.5}
+.vote-options{display:flex;flex-direction:column;gap:8px}
+.vote-opt{background:#13131a;border:1.5px solid #2a2a35;border-radius:10px;padding:11px 14px;cursor:pointer;transition:all 0.15s;display:flex;justify-content:space-between;align-items:center}
+.vote-opt.voted{border-color:#C00000;background:#2a1010}
+.vote-opt-text{font-size:12px;color:#ccc;font-weight:600}
+.vote-opt.voted .vote-opt-text{color:#ff9966}
+.vote-bar-wrap{width:60%;height:4px;background:#2a2a35;border-radius:4px;margin-top:6px;overflow:hidden}
+.vote-bar{height:100%;border-radius:4px;background:#C00000;transition:width 0.4s}
+.vote-pct{font-size:11px;color:#666;font-weight:700}
+.vote-opt.voted .vote-pct{color:#C00000}
+.vote-total{font-size:10px;color:#555;margin-top:8px;text-align:right}
+
+/* 건의함 */
+.suggest-form{margin:12px 12px 0;background:#1a1a22;border-radius:16px;padding:16px;border:1px solid #2a2a35}
+.suggest-list{margin:10px 12px 0}
+.suggest-item{background:#1a1a22;border-radius:14px;padding:13px;margin-bottom:8px;border:1px solid #2a2a35}
+.suggest-content{font-size:12px;color:#ccc;line-height:1.6;margin-bottom:6px}
+.suggest-meta{display:flex;justify-content:space-between}
+.suggest-time{font-size:10px;color:#444}
+.suggest-agree{background:#2a2a35;border:none;border-radius:20px;padding:3px 10px;color:#888;font-size:11px;cursor:pointer}
+.suggest-agree.on{background:#1a3a1a;color:#6bff9e}
+
+.empty-msg{text-align:center;color:#444;font-size:13px;padding:30px 0}
+
+.toast{position:fixed;bottom:90px;left:50%;transform:translateX(-50%);background:#333;color:#fff;padding:10px 20px;border-radius:20px;font-size:13px;font-weight:700;opacity:0;transition:opacity 0.3s;pointer-events:none;z-index:999}
+.toast.show{opacity:1}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<div class="header">
+  <div class="header-top">
+    <h1>🍗 점주 소통 플랫폼</h1>
+    <span class="total-badge" id="total-badge">0명 참여</span>
+  </div>
+  <p>우리의 목소리를 하나로 · 익명 보장</p>
+</div>
+
+<div class="tab-bar">
+  <button class="tab on" onclick="showTab('petition')">✍️ 서명</button>
+  <button class="tab" onclick="showTab('report')">📢 제보</button>
+  <button class="tab" onclick="showTab('vote')">📊 투표</button>
+  <button class="tab" onclick="showTab('suggest')">💬 건의</button>
+</div>
+
+<div id="tab-petition">
+  <div class="petition-card">
+    <div class="petition-title">🚨 배달 수수료 개선 요구 서명</div>
+    <div class="petition-desc">
+      배민1 수수료 7.8% + 결제수수료 3.3% + 배달비 3,000원<br>
+      치킨 6마리 배달하면 <strong style="color:#ff6b6b">505원</strong> 남는 현실<br><br>
+      본사에 배민과 단체 수수료 협상을 요구합니다.
+    </div>
+    <div class="sign-count">
+      <div class="sign-num" id="sign-count">0</div>
+      <div class="sign-label">명이<br>서명했어요</div>
+    </div>
+    <div class="progress-wrap">
+      <div class="progress-label"><span>목표: 33명</span><span id="sign-pct">0%</span></div>
+      <div class="progress-bg"><div class="progress-fill" id="sign-bar" style="width:0%"></div></div>
+    </div>
+    <div id="sign-area">
+      <div class="sign-form">
+        <input class="sign-inp" id="sign-store" placeholder="매장명 (예: 제천점)">
+        <button class="sign-btn" onclick="doSign()">✍️ 서명하기</button>
+      </div>
+    </div>
+    <div id="sign-list" style="margin-top:12px"></div>
+  </div>
+</div>
+
+<div id="tab-report" style="display:none">
+  <div class="report-form">
+    <div class="form-title">📢 피해 제보 (익명)</div>
+    <div class="form-row">
+      <div class="form-label">유형</div>
+      <select class="form-select" id="report-type">
+        <option value="fee">배달 수수료 피해</option>
+        <option value="cost">원가 관련</option>
+        <option value="ops">운영 문제</option>
+        <option value="other">기타</option>
+      </select>
+    </div>
+    <div class="form-row">
+      <div class="form-label">내용 (익명으로 올라가요)</div>
+      <textarea class="form-textarea" id="report-content" placeholder="피해 내용을 자유롭게 적어주세요..."></textarea>
+    </div>
+    <button class="submit-btn" onclick="submitReport()">📢 제보하기</button>
+  </div>
+  <div class="report-list" id="report-list">
+    <div class="empty-msg">아직 제보가 없어요</div>
+  </div>
+</div>
+
+<div id="tab-vote" style="display:none">
+  <!-- 투표 1 -->
+  <div class="vote-card">
+    <div class="vote-question">🛵 배달 수수료 문제, 어떻게 해결해야 할까요?</div>
+    <div class="vote-options" id="vote1"></div>
+    <div class="vote-total" id="vote1-total">0명 투표</div>
+  </div>
+  <!-- 투표 2 -->
+  <div class="vote-card">
+    <div class="vote-question">📦 배달 최소주문금액을 얼마로 올려야 할까요?</div>
+    <div class="vote-options" id="vote2"></div>
+    <div class="vote-total" id="vote2-total">0명 투표</div>
+  </div>
+  <!-- 투표 3 -->
+  <div class="vote-card">
+    <div class="vote-question">🏪 배달 줄이고 홀 영업 강화에 동의하시나요?</div>
+    <div class="vote-options" id="vote3"></div>
+    <div class="vote-total" id="vote3-total">0명 투표</div>
+  </div>
+</div>
+
+<div id="tab-suggest" style="display:none">
+  <div class="suggest-form">
+    <div class="form-title">💬 본사 건의사항 (익명)</div>
+    <textarea class="form-textarea" id="suggest-content" placeholder="본사에 건의하고 싶은 내용을 자유롭게 적어주세요..."></textarea>
+    <button class="submit-btn" onclick="submitSuggest()" style="margin-top:8px">💬 건의하기</button>
+  </div>
+  <div class="suggest-list" id="suggest-list">
+    <div class="empty-msg">아직 건의사항이 없어요</div>
+  </div>
+</div>
+
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const SK = "owner_voice_v1";
+let data = {
+  signs: [],
+  reports: [],
+  votes: {
+    v1: [0,0,0,0],
+    v2: [0,0,0],
+    v3: [0,0]
+  },
+  myVotes: {},
+  suggests: [],
+  mySign: false
+};
+
+try { const s=localStorage.getItem(SK); if(s) data=JSON.parse(s); } catch(e){}
+
+function save(){ try{localStorage.setItem(SK,JSON.stringify(data));}catch(e){} }
+function fmt(n){return n.toLocaleString("ko-KR");}
+
+function showToast(msg){
+  const t=document.getElementById("toast");
+  t.textContent=msg; t.classList.add("show");
+  setTimeout(()=>t.classList.remove("show"),2000);
+}
+
+function showTab(tab){
+  ["petition","report","vote","suggest"].forEach(t=>{
+    document.getElementById("tab-"+t).style.display=t===tab?"block":"none";
+  });
+  document.querySelectorAll(".tab").forEach((btn,i)=>{
+    const tabs=["petition","report","vote","suggest"];
+    btn.className="tab"+(tabs[i]===tab?" on":"");
+  });
+  if(tab==="vote") renderVotes();
+}
+
+// ── 서명 ──
+function doSign(){
+  if(data.mySign){showToast("이미 서명하셨어요!");return;}
+  const store=document.getElementById("sign-store").value.trim()||"익명 점주";
+  data.signs.push({store, time: new Date().toLocaleString("ko-KR",{month:"numeric",day:"numeric",hour:"numeric",minute:"numeric"})});
+  data.mySign=true;
+  save(); renderSign();
+  showToast("✍️ 서명 완료! 감사합니다");
+}
+
+function renderSign(){
+  const count=data.signs.length;
+  const goal=33;
+  const pct=Math.min(100,Math.round(count/goal*100));
+  document.getElementById("sign-count").textContent=count;
+  document.getElementById("sign-pct").textContent=pct+"%";
+  document.getElementById("sign-bar").style.width=pct+"%";
+  document.getElementById("total-badge").textContent=count+"명 참여";
+
+  if(data.mySign){
+    document.getElementById("sign-area").innerHTML=`<div style="text-align:center;padding:10px;color:#ff9966;font-weight:700;font-size:13px">✅ 서명 완료! 함께해주셔서 감사합니다</div>`;
+  }
+
+  const list=document.getElementById("sign-list");
+  if(data.signs.length===0){list.innerHTML="";return;}
+  list.innerHTML=`<div style="font-size:10px;color:#555;margin-bottom:8px">서명 참여자 (${count}명)</div>`+
+    data.signs.slice().reverse().map(s=>
+      `<div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid #1f1f28">
+        <span style="font-size:12px;color:#aaa">🍗 ${s.store}</span>
+        <span style="font-size:10px;color:#444">${s.time}</span>
+      </div>`
+    ).join("");
+}
+
+// ── 제보 ──
+function submitReport(){
+  const type=document.getElementById("report-type").value;
+  const content=document.getElementById("report-content").value.trim();
+  if(!content){showToast("내용을 입력해주세요");return;}
+  const typeLabels={fee:"배달수수료",cost:"원가관련",ops:"운영문제",other:"기타"};
+  data.reports.unshift({type,typeLabel:typeLabels[type],content,
+    time:new Date().toLocaleString("ko-KR",{month:"numeric",day:"numeric",hour:"numeric",minute:"numeric"}),
+    likes:0,myLike:false});
+  document.getElementById("report-content").value="";
+  save(); renderReports();
+  showToast("📢 제보가 등록됐어요!");
+}
+
+function likeReport(idx){
+  if(data.reports[idx].myLike){showToast("이미 공감하셨어요");return;}
+  data.reports[idx].likes++; data.reports[idx].myLike=true;
+  save(); renderReports();
+}
+
+function renderReports(){
+  const list=document.getElementById("report-list");
+  if(data.reports.length===0){list.innerHTML=`<div class="empty-msg">아직 제보가 없어요</div>`;return;}
+  const tagClass={fee:"tag-fee",cost:"tag-cost",ops:"tag-ops",other:"tag-other"};
+  list.innerHTML=data.reports.map((r,i)=>`
+    <div class="report-item">
+      <div class="report-header">
+        <span class="report-tag ${tagClass[r.type]||"tag-other"}">${r.typeLabel}</span>
+        <span class="report-store">익명</span>
+      </div>
+      <div class="report-content">${r.content}</div>
+      <div class="report-footer">
+        <span class="report-time">${r.time}</span>
+        <button class="like-btn ${r.myLike?"liked":""}" onclick="likeReport(${i})">
+          👍 공감 ${r.likes}
+        </button>
+      </div>
+    </div>`).join("");
+}
+
+// ── 투표 ──
+const VOTES=[
+  {id:"v1",opts:["본사가 배민과 단체협상해야","배달 안 받겠다고 집단행동","가격 올려야","그냥 버텨야"]},
+  {id:"v2",opts:["2만원 이상","3만원 이상","4만원 이상"]},
+  {id:"v3",opts:["동의해요","아직 모르겠어요"]},
+];
+
+function doVote(vIdx, optIdx){
+  const vid=VOTES[vIdx].id;
+  if(data.myVotes[vid]!==undefined){showToast("이미 투표하셨어요!");return;}
+  data.votes[vid][optIdx]++;
+  data.myVotes[vid]=optIdx;
+  save(); renderVotes();
+  showToast("✅ 투표 완료!");
+}
+
+function renderVotes(){
+  VOTES.forEach((v,vi)=>{
+    const el=document.getElementById(v.id);
+    if(!el) return;
+    const total=data.votes[v.id].reduce((a,b)=>a+b,0);
+    const myVote=data.myVotes[v.id];
+    el.innerHTML=v.opts.map((opt,oi)=>{
+      const cnt=data.votes[v.id][oi];
+      const pct=total>0?Math.round(cnt/total*100):0;
+      const isVoted=myVote===oi;
+      return `<div class="vote-opt${isVoted?" voted":""}" onclick="doVote(${vi},${oi})">
+        <div>
+          <div class="vote-opt-text">${opt}</div>
+          ${total>0?`<div class="vote-bar-wrap"><div class="vote-bar" style="width:${pct}%"></div></div>`:""}
+        </div>
+        <span class="vote-pct">${total>0?pct+"%":""}</span>
+      </div>`;
+    }).join("");
+    const tel=document.getElementById(v.id+"-total");
+    if(tel) tel.textContent=total+"명 투표";
+  });
+}
+
+// ── 건의 ──
+function submitSuggest(){
+  const content=document.getElementById("suggest-content").value.trim();
+  if(!content){showToast("내용을 입력해주세요");return;}
+  data.suggests.unshift({content,
+    time:new Date().toLocaleString("ko-KR",{month:"numeric",day:"numeric",hour:"numeric",minute:"numeric"}),
+    agrees:0,myAgree:false});
+  document.getElementById("suggest-content").value="";
+  save(); renderSuggests();
+  showToast("💬 건의사항이 등록됐어요!");
+}
+
+function agreeSuggest(idx){
+  if(data.suggests[idx].myAgree){showToast("이미 동의하셨어요");return;}
+  data.suggests[idx].agrees++; data.suggests[idx].myAgree=true;
+  save(); renderSuggests();
+}
+
+function renderSuggests(){
+  const list=document.getElementById("suggest-list");
+  if(data.suggests.length===0){list.innerHTML=`<div class="empty-msg">아직 건의사항이 없어요</div>`;return;}
+  list.innerHTML=data.suggests.map((s,i)=>`
+    <div class="suggest-item">
+      <div class="suggest-content">${s.content}</div>
+      <div class="suggest-meta">
+        <span class="suggest-time">${s.time}</span>
+        <button class="suggest-agree ${s.myAgree?"on":""}" onclick="agreeSuggest(${i})">
+          👍 동의 ${s.agrees}
+        </button>
+      </div>
+    </div>`).join("");
+}
+
+// 초기 렌더
+renderSign(); renderReports(); renderSuggests(); renderVotes();
+</script>
+</body>
+</html>
