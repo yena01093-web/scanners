@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
-<title>배달 수익 계산기</title>
+<title>배달 실제 수익 계산기</title>
 <style>
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
 input[type=number]::-webkit-outer-spin-button,input[type=number]::-webkit-inner-spin-button{-webkit-appearance:none}
@@ -15,33 +15,45 @@ body{font-family:'Apple SD Gothic Neo','Noto Sans KR',sans-serif;background:#f2f
 .header h1{font-size:20px;font-weight:900;color:#fff}
 .header p{font-size:11px;color:rgba(255,255,255,0.6);margin-top:4px}
 
-/* 수수료 설정 */
-.fee-card{margin:12px 12px 0;background:#fff;border-radius:14px;padding:14px;box-shadow:0 1px 6px rgba(0,0,0,0.08)}
-.fee-title{font-size:11px;font-weight:800;color:#999;margin-bottom:10px;letter-spacing:1px}
-.fee-row{display:flex;align-items:center;gap:8px;margin-bottom:8px}
-.fee-label{font-size:12px;color:#666;flex:1}
-.fee-val{font-size:13px;font-weight:800;color:#1a1a2e;background:#f5f5f5;border-radius:8px;padding:5px 10px;min-width:70px;text-align:right}
-.fee-total{background:#1a1a2e;border-radius:10px;padding:10px 12px;margin-top:8px;display:flex;justify-content:space-between;align-items:center}
-.fee-total-label{font-size:11px;color:rgba(255,255,255,0.7)}
-.fee-total-val{font-size:16px;font-weight:900;color:#fff}
+/* 설정 카드 */
+.setup-card{margin:12px 12px 0;background:#fff;border-radius:14px;padding:14px;box-shadow:0 1px 6px rgba(0,0,0,0.08)}
+.setup-title{font-size:11px;font-weight:800;color:#999;margin-bottom:10px;letter-spacing:1px}
+.setup-row{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+.setup-label{font-size:12px;color:#555;flex:1;line-height:1.4}
+.setup-inp{background:#f5f5f5;border:1.5px solid #e0e0e0;border-radius:8px;padding:6px 10px;font-size:13px;font-weight:700;text-align:right;outline:none;color:#111;width:80px}
+.setup-inp:focus{border-color:#1a1a2e;background:#fff}
+.setup-unit{font-size:11px;color:#aaa;min-width:24px}
+.setup-sub{font-size:10px;color:#bbb;margin-top:2px}
 
-/* 결과 요약 */
+/* 하루 고정비 미리보기 */
+.daily-preview{background:#1a1a2e;border-radius:10px;padding:10px 12px;margin-top:8px}
+.dp-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:4px}
+.dp-row:last-child{margin-bottom:0;border-top:1px solid rgba(255,255,255,0.1);padding-top:6px;margin-top:4px}
+.dp-label{font-size:10px;color:rgba(255,255,255,0.5)}
+.dp-val{font-size:12px;font-weight:700;color:#fff}
+.dp-val.total{font-size:15px;color:#ff9966}
+
+/* 결과 */
 .result-card{margin:10px 12px 0;border-radius:14px;padding:16px;box-shadow:0 1px 6px rgba(0,0,0,0.08)}
 .result-card.profit{background:#f0faf3;border:2px solid #34c759}
 .result-card.loss{background:#fff0f0;border:2px solid #ff4d4d}
 .result-card.empty{background:#fff;border:2px solid #eee}
 .result-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px}
-.r-box{background:rgba(0,0,0,0.04);border-radius:10px;padding:10px;text-align:center}
-.r-label{font-size:9px;color:#888;margin-bottom:3px}
-.r-val{font-size:14px;font-weight:800}
-.result-main{text-align:center;padding:8px 0}
+.r-box{background:rgba(0,0,0,0.04);border-radius:10px;padding:9px;text-align:center}
+.r-label{font-size:9px;color:#888;margin-bottom:2px}
+.r-val{font-size:13px;font-weight:800}
+.result-main{text-align:center;padding:6px 0}
 .result-label{font-size:11px;color:#888;margin-bottom:4px}
-.result-amount{font-size:32px;font-weight:900;letter-spacing:-1px}
+.result-amount{font-size:30px;font-weight:900}
 .result-sub{font-size:11px;color:#aaa;margin-top:4px}
 
-/* 경고 */
-.warning{margin:10px 12px 0;background:#fff8e1;border-radius:12px;padding:12px 14px;border-left:4px solid #ff9500}
-.warning-text{font-size:12px;color:#a06000;line-height:1.6}
+/* 원가 breakdown */
+.breakdown{margin:10px 12px 0;background:#fff;border-radius:14px;padding:14px;box-shadow:0 1px 4px rgba(0,0,0,0.06)}
+.breakdown-title{font-size:11px;font-weight:800;color:#999;margin-bottom:10px;letter-spacing:1px}
+.bk-row{display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid #f5f5f5}
+.bk-row:last-child{border-bottom:none;padding-top:8px;margin-top:4px;border-top:1.5px solid #eee}
+.bk-label{font-size:12px;color:#666}
+.bk-val{font-size:12px;font-weight:700}
 
 /* 카테고리 */
 .cat-bar{display:flex;gap:7px;padding:12px 12px 6px;overflow-x:auto;scrollbar-width:none}
@@ -51,21 +63,13 @@ body{font-family:'Apple SD Gothic Neo','Noto Sans KR',sans-serif;background:#f2f
 .cb.off{background:#e8e8e8;color:#888}
 .cat-title{font-size:12px;font-weight:800;color:#1a1a2e;padding:10px 13px 5px}
 
-/* 메뉴 카드 */
+/* 메뉴 */
 .mc{background:#fff;margin:0 12px 7px;border-radius:14px;padding:12px 13px;box-shadow:0 1px 4px rgba(0,0,0,0.05);border:1.5px solid transparent}
 .mc.on{border-color:#1a1a2e;background:#f8f8ff}
 .mc-top{display:flex;justify-content:space-between;align-items:flex-start}
 .mc-name{font-size:13px;font-weight:800;margin-bottom:3px;color:#111}
-.mc-price{font-size:11px;color:#1a1a2e;font-weight:700}
-.mc-cost{font-size:10px;color:#bbb}
-
-/* 배달 계산 결과 */
-.mc-result{margin-top:10px;padding-top:10px;border-top:1px solid #f0f0f0}
-.mc-result-grid{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:4px}
-.mc-rb{text-align:center}
-.mc-rb .rl{font-size:8px;color:#ccc;margin-bottom:2px}
-.mc-rb .rv{font-size:11px;font-weight:700}
-
+.mc-info{font-size:10px;color:#bbb;line-height:1.6}
+.mc-profit{font-size:11px;font-weight:700}
 .qw{display:flex;flex-direction:column;align-items:center;gap:4px}
 .qr{display:flex;align-items:center;gap:5px}
 .qb{width:30px;height:30px;border-radius:8px;border:none;cursor:pointer;font-size:18px;font-weight:700;line-height:1;display:flex;align-items:center;justify-content:center}
@@ -74,8 +78,10 @@ body{font-family:'Apple SD Gothic Neo','Noto Sans KR',sans-serif;background:#f2f
 .qi{width:46px;height:30px;border:1.5px solid #e0e0e0;border-radius:8px;font-size:14px;font-weight:800;text-align:center;outline:none;color:#111}
 .qi.on{border-color:#1a1a2e;background:#f0f0ff}
 .qprofit{font-size:10px;font-weight:700}
+.mc-detail{margin-top:9px;padding-top:9px;border-top:1px solid #f5f5f5;display:grid;grid-template-columns:repeat(5,1fr);gap:3px}
+.mdb .mdl{font-size:8px;color:#ccc;margin-bottom:2px;text-align:center}
+.mdb .mdv{font-size:10px;font-weight:700;text-align:center}
 
-/* 하단 */
 .bot{position:fixed;bottom:0;left:0;right:0;background:#fff;border-top:1px solid #eee;padding:10px 12px;box-shadow:0 -2px 10px rgba(0,0,0,0.07)}
 .bot-inner{max-width:480px;margin:0 auto;display:flex;gap:8px}
 .reset-btn{flex:1;padding:12px;border-radius:12px;border:none;cursor:pointer;background:#f0f0f0;color:#aaa;font-size:13px;font-weight:700}
@@ -90,54 +96,77 @@ body{font-family:'Apple SD Gothic Neo','Noto Sans KR',sans-serif;background:#f2f
 <div class="wrap">
 
 <div class="header">
-  <h1>🛵 배달 수익 계산기</h1>
-  <p>배달 주문 시 실제 입금액 vs 원가 비교</p>
+  <h1>🛵 배달 실제 수익 계산기</h1>
+  <p>수수료 + 원가 + 기름값 + 인건비 전부 포함</p>
 </div>
 
-<!-- 수수료 설정 -->
-<div class="fee-card">
-  <div class="fee-title">📋 배민 수수료 (확인된 팩트)</div>
-  <div class="fee-row"><span class="fee-label">중개수수료</span><span class="fee-val">7.8%</span></div>
-  <div class="fee-row"><span class="fee-label">외부결제수수료</span><span class="fee-val">3.3%</span></div>
-  <div class="fee-row"><span class="fee-label">부가세 (수수료에)</span><span class="fee-val">10%</span></div>
-  <div class="fee-row"><span class="fee-label">건당 배달비 (점주부담)</span><span class="fee-val">3,000원</span></div>
-  <div class="fee-total">
-    <span class="fee-total-label">📦 주문금액 2만원 기준 실수령</span>
-    <span class="fee-total-value" style="color:#ff9966;font-weight:900;font-size:15px">약 14,324원</span>
+<!-- 하루 설정 -->
+<div class="setup-card">
+  <div class="setup-title">⚙️ 하루 기준 설정</div>
+
+  <div class="setup-row">
+    <div><div class="setup-label">🛢️ 하루 기름값</div><div class="setup-sub">식용유 교체 비용</div></div>
+    <input class="setup-inp" id="s-oil" type="number" value="22714" oninput="update()">
+    <span class="setup-unit">원</span>
   </div>
+  <div class="setup-row">
+    <div><div class="setup-label">👤 하루 인건비</div><div class="setup-sub">알바+본인 포함</div></div>
+    <input class="setup-inp" id="s-labor" type="number" value="80000" oninput="update()">
+    <span class="setup-unit">원</span>
+  </div>
+  <div class="setup-row">
+    <div><div class="setup-label">🏠 하루 월세</div><div class="setup-sub">월세 ÷ 영업일</div></div>
+    <input class="setup-inp" id="s-rent" type="number" value="60000" oninput="update()">
+    <span class="setup-unit">원</span>
+  </div>
+  <div class="setup-row">
+    <div><div class="setup-label">💡 하루 기타비용</div><div class="setup-sub">전기·가스·기타</div></div>
+    <input class="setup-inp" id="s-etc" type="number" value="20000" oninput="update()">
+    <span class="setup-unit">원</span>
+  </div>
+  <div class="setup-row">
+    <div><div class="setup-label">📦 하루 배달 건수</div><div class="setup-sub">평균 배달 주문수</div></div>
+    <input class="setup-inp" id="s-orders" type="number" value="30" oninput="update()">
+    <span class="setup-unit">건</span>
+  </div>
+
+  <div class="daily-preview" id="daily-preview"></div>
 </div>
 
-<!-- 결과 요약 -->
+<!-- 결과 -->
 <div class="result-card empty" id="result-card">
   <div class="result-grid">
     <div class="r-box"><div class="r-label">주문 총액</div><div class="r-val" id="r-sales" style="color:#1a1a2e">0원</div></div>
     <div class="r-box"><div class="r-label">실제 입금액</div><div class="r-val" id="r-income" style="color:#ff9500">0원</div></div>
-    <div class="r-box"><div class="r-label">총 원가</div><div class="r-val" id="r-cost" style="color:#888">0원</div></div>
-    <div class="r-box"><div class="r-label">배달 수수료</div><div class="r-val" id="r-fee" style="color:#ff4d4d">0원</div></div>
+    <div class="r-box"><div class="r-label">재료원가</div><div class="r-val" id="r-cost" style="color:#888">0원</div></div>
+    <div class="r-box"><div class="r-label">건당 고정비</div><div class="r-val" id="r-fixed" style="color:#ff6b6b">0원</div></div>
   </div>
   <div class="result-main">
-    <div class="result-label">배달 후 실제 남는 돈</div>
+    <div class="result-label">이 주문의 실제 남는 돈</div>
     <div class="result-amount" id="r-profit" style="color:#aaa">메뉴를 선택하세요</div>
     <div class="result-sub" id="r-sub"></div>
   </div>
 </div>
 
+<!-- 원가 내역 -->
+<div class="breakdown" id="breakdown" style="display:none">
+  <div class="breakdown-title">💰 이 주문 원가 내역</div>
+  <div id="breakdown-rows"></div>
+</div>
+
 <!-- 카테고리 -->
 <div class="cat-bar" id="cat-bar"></div>
-
-<!-- 메뉴 목록 -->
 <div id="menu-list"></div>
 
 <div class="bot">
   <div class="bot-inner">
     <button class="reset-btn" onclick="resetAll()">🔄 초기화</button>
     <div class="bot-result loss" id="bot-result" style="display:none">
-      <span class="bl">배달 후 남는돈</span>
+      <span class="bl">실제 남는돈</span>
       <span class="bv" id="bot-val">0원</span>
     </div>
   </div>
 </div>
-
 </div>
 
 <script>
@@ -165,20 +194,18 @@ const MENUS=[
   {id:"c05",cat:"치킨",name:"소이 치킨",price:16500,cost:9161},
   {id:"s01",cat:"사이드",name:"크런치 감자튀김",price:2800,cost:1517},
   {id:"s02",cat:"사이드",name:"양념감자",price:3400,cost:1517},
-  {id:"s03",cat:"사이드",name:"해피 치즈스틱 2개",price:3300,cost:702},
+  {id:"s03",cat:"사이드",name:"치즈스틱 2개",price:3300,cost:702},
   {id:"s04",cat:"사이드",name:"치즈볼 3개",price:3200,cost:1222},
   {id:"s05",cat:"사이드",name:"치킨텐더 2개",price:3200,cost:1338},
   {id:"s06",cat:"사이드",name:"크런치너겟 3개",price:1800,cost:870},
-  {id:"s07",cat:"사이드",name:"크리스피 핫 윙 1개",price:1600,cost:704},
+  {id:"s07",cat:"사이드",name:"핫 윙 1개",price:1600,cost:704},
 ];
 
 const CATS=["전체","버거","세트","치킨","사이드"];
 const EMOJI={버거:"🍔",세트:"🍔✨",치킨:"🍗",사이드:"🍟"};
-
-// 배민 수수료 (확인된 팩트)
-const FEE_RATE = (7.8 + 3.3) / 100; // 11.1%
-const FEE_VAT = 1.1; // 부가세 포함
-const DELIVERY_FEE = 3000;
+const FEE_RATE=0.111; // 7.8+3.3%
+const FEE_VAT=1.1;
+const DELIVERY_FEE=3000;
 
 let qty={}, activeCat="전체";
 
@@ -189,42 +216,74 @@ function fmtW(n){
   return s+fmt(a)+"원";
 }
 
-function calcDeliveryFee(sales){
-  // 중개수수료 7.8% + 결제수수료 3.3% = 11.1% + 부가세
-  return Math.round(sales * FEE_RATE * FEE_VAT) + DELIVERY_FEE;
+function getSettings(){
+  return{
+    oil:Number(document.getElementById("s-oil").value)||0,
+    labor:Number(document.getElementById("s-labor").value)||0,
+    rent:Number(document.getElementById("s-rent").value)||0,
+    etc:Number(document.getElementById("s-etc").value)||0,
+    orders:Number(document.getElementById("s-orders").value)||1,
+  };
 }
 
+function calcFee(sales){ return Math.round(sales*FEE_RATE*FEE_VAT)+DELIVERY_FEE; }
+
 function calcAll(){
-  let totalSales=0, totalCost=0, totalQty=0;
+  const cfg=getSettings();
+  const dailyFixed=cfg.oil+cfg.labor+cfg.rent+cfg.etc;
+  const perOrderFixed=Math.round(dailyFixed/cfg.orders);
+  let totalSales=0,totalCost=0,totalQty=0;
   MENUS.forEach(m=>{
     const q=Number(qty[m.id])||0;
-    totalSales+=m.price*q;
-    totalCost+=m.cost*q;
-    totalQty+=q;
+    totalSales+=m.price*q; totalCost+=m.cost*q; totalQty+=q;
   });
-  const fee=totalQty>0?calcDeliveryFee(totalSales):0;
+  const fee=totalQty>0?calcFee(totalSales):0;
   const income=totalSales-fee;
-  const profit=income-totalCost;
-  return{totalSales,totalCost,totalQty,fee,income,profit};
+  const fixedThisOrder=totalQty>0?perOrderFixed:0;
+  const profit=income-totalCost-fixedThisOrder;
+  return{totalSales,totalCost,totalQty,fee,income,fixedThisOrder,profit,perOrderFixed,dailyFixed,cfg};
+}
+
+function update(){
+  const cfg=getSettings();
+  const daily=cfg.oil+cfg.labor+cfg.rent+cfg.etc;
+  const perOrder=Math.round(daily/cfg.orders);
+  document.getElementById("daily-preview").innerHTML=`
+    <div class="dp-row"><span class="dp-label">🛢️ 기름값</span><span class="dp-val">${fmtW(cfg.oil)}</span></div>
+    <div class="dp-row"><span class="dp-label">👤 인건비</span><span class="dp-val">${fmtW(cfg.labor)}</span></div>
+    <div class="dp-row"><span class="dp-label">🏠 월세</span><span class="dp-val">${fmtW(cfg.rent)}</span></div>
+    <div class="dp-row"><span class="dp-label">💡 기타</span><span class="dp-val">${fmtW(cfg.etc)}</span></div>
+    <div class="dp-row"><span class="dp-label">💰 하루 총 고정비</span><span class="dp-val total">${fmtW(daily)}</span></div>
+    <div class="dp-row"><span class="dp-label">📦 건당 고정비 (÷${cfg.orders}건)</span><span class="dp-val total">${fmtW(perOrder)}</span></div>`;
+  render();
 }
 
 function render(){
   const s=calcAll();
   const hasAny=s.totalQty>0;
 
-  // 결과 카드
-  const card=document.getElementById("result-card");
   document.getElementById("r-sales").textContent=fmtW(s.totalSales);
   document.getElementById("r-income").textContent=fmtW(s.income);
   document.getElementById("r-cost").textContent=fmtW(s.totalCost);
-  document.getElementById("r-fee").textContent="-"+fmtW(s.fee);
+  document.getElementById("r-fixed").textContent=fmtW(s.fixedThisOrder);
 
+  const card=document.getElementById("result-card");
   if(hasAny){
     card.className="result-card "+(s.profit>=0?"profit":"loss");
     document.getElementById("r-profit").textContent=(s.profit>=0?"+":"")+fmtW(s.profit);
     document.getElementById("r-profit").style.color=s.profit>=0?"#34c759":"#ff4d4d";
     const margin=s.totalSales>0?(s.profit/s.totalSales*100):0;
-    document.getElementById("r-sub").textContent=`마진율 ${margin.toFixed(1)}% · 수수료 ${fmtW(s.fee)} 차감됨`;
+    document.getElementById("r-sub").textContent=`순이익률 ${margin.toFixed(1)}%`;
+
+    // 내역
+    document.getElementById("breakdown").style.display="block";
+    document.getElementById("breakdown-rows").innerHTML=`
+      <div class="bk-row"><span class="bk-label">📦 주문 총액</span><span class="bk-val" style="color:#1a1a2e">${fmtW(s.totalSales)}</span></div>
+      <div class="bk-row"><span class="bk-label">🛵 배달 수수료 (7.8%+3.3%+부가세+배달비)</span><span class="bk-val" style="color:#ff4d4d">-${fmtW(s.fee)}</span></div>
+      <div class="bk-row"><span class="bk-label">💰 실제 입금액</span><span class="bk-val" style="color:#ff9500">${fmtW(s.income)}</span></div>
+      <div class="bk-row"><span class="bk-label">🥩 재료 원가</span><span class="bk-val" style="color:#888">-${fmtW(s.totalCost)}</span></div>
+      <div class="bk-row"><span class="bk-label">⚙️ 건당 고정비 (기름+인건비+월세+기타)</span><span class="bk-val" style="color:#ff6b6b">-${fmtW(s.fixedThisOrder)}</span></div>
+      <div class="bk-row"><span class="bk-label" style="font-weight:800;color:#111">🏆 실제 남는 돈</span><span class="bk-val" style="font-size:15px;color:${s.profit>=0?"#34c759":"#ff4d4d"}">${s.profit>=0?"+":""}${fmtW(s.profit)}</span></div>`;
 
     const bot=document.getElementById("bot-result");
     bot.style.display="flex";
@@ -236,6 +295,7 @@ function render(){
     document.getElementById("r-profit").textContent="메뉴를 선택하세요";
     document.getElementById("r-profit").style.color="#aaa";
     document.getElementById("r-sub").textContent="";
+    document.getElementById("breakdown").style.display="none";
     document.getElementById("bot-result").style.display="none";
   }
 
@@ -244,15 +304,16 @@ function render(){
     `<button class="cb ${activeCat===c?"on":"off"}" onclick="setCat('${c}')">${c==="전체"?"🍽️":EMOJI[c]} ${c}</button>`
   ).join("");
 
-  // 메뉴 목록
+  // 메뉴
   const filtered=MENUS.filter(m=>activeCat==="전체"||m.cat===activeCat);
   let lastCat="";
-  let html=filtered.map(m=>{
+  document.getElementById("menu-list").innerHTML=filtered.map(m=>{
     const q=Number(qty[m.id])||0;
-    const fee=calcDeliveryFee(m.price);
+    const fee=calcFee(m.price);
     const income=m.price-fee;
-    const profit=income-m.cost;
-    const ms=m.price*q, mfee=calcDeliveryFee(m.price)*q, minc=(m.price-calcDeliveryFee(m.price))*q, mp=profit*q;
+    const perFixed=s.perOrderFixed;
+    const unitProfit=income-m.cost-perFixed;
+    const ms=m.price*q,mfee=fee*q,minc=income*q,mp=unitProfit*q;
     let hdr="";
     if(m.cat!==lastCat){lastCat=m.cat;hdr=`<div class="cat-title">${EMOJI[m.cat]||"🍽️"} ${m.cat}</div>`;}
     return `${hdr}
@@ -260,9 +321,9 @@ function render(){
   <div class="mc-top">
     <div style="flex:1">
       <div class="mc-name">${m.name}</div>
-      <div class="mc-price">판매가 ${fmt(m.price)}원 · 원가 ${fmt(m.cost)}원</div>
-      <div class="mc-cost" style="color:${profit>=0?"#00a844":"#ff4d4d"};font-weight:700">
-        배달후 건당 ${profit>=0?"+":""}${fmtW(profit)} · 수수료 ${fmtW(fee)}
+      <div class="mc-info">판매가 ${fmt(m.price)}원 · 원가 ${fmt(m.cost)}원 · 수수료 ${fmt(fee)}원 · 건당고정비 ${fmt(perFixed)}원</div>
+      <div class="mc-profit" style="color:${unitProfit>=0?"#00a844":"#ff4d4d"}">
+        건당 실수익 ${unitProfit>=0?"+":""}${fmtW(unitProfit)}
       </div>
     </div>
     <div class="qw">
@@ -274,17 +335,15 @@ function render(){
       ${q>0?`<div class="qprofit" style="color:${mp>=0?"#00a844":"#ff4d4d"}">${mp>=0?"+":""}${fmtW(mp)}</div>`:""}
     </div>
   </div>
-  ${q>0?`<div class="mc-result">
-    <div class="mc-result-grid">
-      <div class="mc-rb"><div class="rl">매출</div><div class="rv" style="color:#1a1a2e">${fmtW(ms)}</div></div>
-      <div class="mc-rb"><div class="rl">수수료</div><div class="rv" style="color:#ff4d4d">-${fmtW(mfee)}</div></div>
-      <div class="mc-rb"><div class="rl">입금액</div><div class="rv" style="color:#ff9500">${fmtW(minc)}</div></div>
-      <div class="mc-rb"><div class="rl">남는돈</div><div class="rv" style="color:${mp>=0?"#00a844":"#ff4d4d"}">${mp>=0?"+":""}${fmtW(mp)}</div></div>
-    </div>
+  ${q>0?`<div class="mc-detail">
+    <div class="mdb"><div class="mdl">매출</div><div class="mdv" style="color:#1a1a2e">${fmtW(ms)}</div></div>
+    <div class="mdb"><div class="mdl">수수료</div><div class="mdv" style="color:#ff4d4d">-${fmtW(mfee)}</div></div>
+    <div class="mdb"><div class="mdl">입금</div><div class="mdv" style="color:#ff9500">${fmtW(minc)}</div></div>
+    <div class="mdb"><div class="mdl">원가</div><div class="mdv" style="color:#888">-${fmtW(m.cost*q)}</div></div>
+    <div class="mdb"><div class="mdl">남는돈</div><div class="mdv" style="color:${mp>=0?"#00a844":"#ff4d4d"}">${mp>=0?"+":""}${fmtW(mp)}</div></div>
   </div>`:""}
 </div>`;
   }).join("");
-  document.getElementById("menu-list").innerHTML=html;
 }
 
 window.chg=function(id,d){qty[id]=Math.max(0,(Number(qty[id])||0)+d);render();}
@@ -292,7 +351,7 @@ window.setQ=function(id,v){qty[id]=Math.max(0,Number(v)||0);render();}
 window.setCat=function(c){activeCat=c;render();}
 window.resetAll=function(){qty={};render();}
 
-render();
+update();
 </script>
 </body>
 </html>
