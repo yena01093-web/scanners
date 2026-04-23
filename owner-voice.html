@@ -133,8 +133,7 @@ body{font-family:'Apple SD Gothic Neo','Noto Sans KR',sans-serif;background:#111
     </div>
     <div id="sign-area">
       <div class="sign-form">
-        <input class="sign-inp" id="sign-store" placeholder="매장명 (예: 제천점)">
-        <button class="sign-btn" onclick="doSign()">✍️ 서명하기</button>
+        <button class="sign-btn" onclick="doSign()">✍️ 익명으로 서명하기</button>
       </div>
     </div>
     <div id="sign-list" style="margin-top:12px"></div>
@@ -240,8 +239,7 @@ function showTab(tab){
 // ── 서명 ──
 function doSign(){
   if(data.mySign){showToast("이미 서명하셨어요!");return;}
-  const store=document.getElementById("sign-store").value.trim()||"익명 점주";
-  data.signs.push({store, time: new Date().toLocaleString("ko-KR",{month:"numeric",day:"numeric",hour:"numeric",minute:"numeric"})});
+  data.signs.push({store:"익명 점주", time: new Date().toLocaleString("ko-KR",{month:"numeric",day:"numeric",hour:"numeric",minute:"numeric"})});
   data.mySign=true;
   save(); renderSign();
   showToast("✍️ 서명 완료! 감사합니다");
@@ -265,7 +263,7 @@ function renderSign(){
   list.innerHTML=`<div style="font-size:10px;color:#555;margin-bottom:8px">서명 참여자 (${count}명)</div>`+
     data.signs.slice().reverse().map(s=>
       `<div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid #1f1f28">
-        <span style="font-size:12px;color:#aaa">🍗 ${s.store}</span>
+        <span style="font-size:12px;color:#aaa">🍗 익명 점주</span>
         <span style="font-size:10px;color:#444">${s.time}</span>
       </div>`
     ).join("");
