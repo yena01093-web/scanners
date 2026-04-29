@@ -1,0 +1,574 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>단양흑마늘버섯닭 체험농장</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@400;700;900&family=Noto+Sans+KR:wght@300;400;700&display=swap');
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  :root {
+    --earth: #3d2b1f;
+    --moss: #5a6e3a;
+    --gold: #c8960c;
+    --cream: #f5f0e8;
+    --dark: #1a1208;
+  }
+
+  body {
+    font-family: 'Noto Sans KR', sans-serif;
+    background: var(--cream);
+    color: var(--earth);
+    overflow-x: hidden;
+  }
+
+  /* 헤더 */
+  header {
+    position: fixed;
+    top: 0;
+    width: 100%;
+    z-index: 100;
+    padding: 16px 24px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: rgba(245,240,232,0.95);
+    backdrop-filter: blur(8px);
+    border-bottom: 1px solid rgba(61,43,31,0.1);
+  }
+
+  .logo {
+    font-family: 'Noto Serif KR', serif;
+    font-size: 18px;
+    font-weight: 900;
+    color: var(--earth);
+    line-height: 1.2;
+  }
+
+  .logo span {
+    display: block;
+    font-size: 11px;
+    font-weight: 300;
+    color: var(--moss);
+    letter-spacing: 2px;
+  }
+
+  nav a {
+    text-decoration: none;
+    color: var(--earth);
+    font-size: 13px;
+    margin-left: 20px;
+    opacity: 0.7;
+    transition: opacity 0.2s;
+  }
+
+  nav a:hover { opacity: 1; }
+
+  /* 히어로 */
+  .hero {
+    min-height: 100vh;
+    background: linear-gradient(160deg, #1a2e0a 0%, #2d4a1a 40%, #3d2b1f 100%);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    padding: 100px 24px 60px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .hero::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.03'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+  }
+
+  .hero-tag {
+    background: var(--gold);
+    color: #fff;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 3px;
+    padding: 6px 16px;
+    border-radius: 20px;
+    margin-bottom: 24px;
+  }
+
+  .hero h1 {
+    font-family: 'Noto Serif KR', serif;
+    font-size: clamp(32px, 8vw, 56px);
+    font-weight: 900;
+    color: #fff;
+    line-height: 1.3;
+    margin-bottom: 20px;
+  }
+
+  .hero h1 em {
+    color: var(--gold);
+    font-style: normal;
+  }
+
+  .hero p {
+    font-size: 15px;
+    color: rgba(255,255,255,0.75);
+    line-height: 1.8;
+    max-width: 480px;
+    margin-bottom: 40px;
+  }
+
+  .hero-btns {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+
+  .btn-primary {
+    background: var(--gold);
+    color: #fff;
+    border: none;
+    padding: 14px 28px;
+    border-radius: 8px;
+    font-size: 15px;
+    font-weight: 700;
+    cursor: pointer;
+    text-decoration: none;
+    transition: all 0.2s;
+  }
+
+  .btn-secondary {
+    background: transparent;
+    color: #fff;
+    border: 2px solid rgba(255,255,255,0.4);
+    padding: 14px 28px;
+    border-radius: 8px;
+    font-size: 15px;
+    font-weight: 700;
+    cursor: pointer;
+    text-decoration: none;
+    transition: all 0.2s;
+  }
+
+  .scroll-hint {
+    position: absolute;
+    bottom: 30px;
+    left: 50%;
+    transform: translateX(-50%);
+    color: rgba(255,255,255,0.4);
+    font-size: 12px;
+    letter-spacing: 2px;
+    animation: bounce 2s infinite;
+  }
+
+  @keyframes bounce {
+    0%, 100% { transform: translateX(-50%) translateY(0); }
+    50% { transform: translateX(-50%) translateY(8px); }
+  }
+
+  /* 섹션 공통 */
+  section {
+    padding: 80px 24px;
+    max-width: 720px;
+    margin: 0 auto;
+  }
+
+  .section-tag {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 3px;
+    color: var(--moss);
+    margin-bottom: 12px;
+  }
+
+  .section-title {
+    font-family: 'Noto Serif KR', serif;
+    font-size: clamp(24px, 5vw, 36px);
+    font-weight: 900;
+    color: var(--earth);
+    line-height: 1.3;
+    margin-bottom: 20px;
+  }
+
+  .section-desc {
+    font-size: 15px;
+    color: #6b5c4e;
+    line-height: 1.9;
+    margin-bottom: 40px;
+  }
+
+  /* 스토리 */
+  .story-section {
+    background: var(--earth);
+    color: #fff;
+    padding: 80px 24px;
+  }
+
+  .story-inner {
+    max-width: 720px;
+    margin: 0 auto;
+  }
+
+  .story-section .section-tag { color: var(--gold); }
+  .story-section .section-title { color: #fff; }
+  .story-section .section-desc { color: rgba(255,255,255,0.75); }
+
+  .story-highlight {
+    background: rgba(200,150,12,0.15);
+    border-left: 4px solid var(--gold);
+    padding: 20px 24px;
+    border-radius: 0 8px 8px 0;
+    font-size: 16px;
+    font-style: italic;
+    color: rgba(255,255,255,0.9);
+    line-height: 1.8;
+    margin-top: 24px;
+  }
+
+  /* 체험 프로그램 */
+  .programs {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .program-card {
+    background: #fff;
+    border-radius: 16px;
+    padding: 24px;
+    display: flex;
+    align-items: flex-start;
+    gap: 16px;
+    box-shadow: 0 2px 16px rgba(61,43,31,0.08);
+    border: 1px solid rgba(61,43,31,0.06);
+  }
+
+  .program-icon {
+    font-size: 32px;
+    width: 56px;
+    height: 56px;
+    background: var(--cream);
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+
+  .program-info h3 {
+    font-family: 'Noto Serif KR', serif;
+    font-size: 17px;
+    font-weight: 700;
+    margin-bottom: 6px;
+    color: var(--earth);
+  }
+
+  .program-info p {
+    font-size: 13px;
+    color: #8a7060;
+    line-height: 1.7;
+  }
+
+  .program-tag {
+    display: inline-block;
+    background: var(--moss);
+    color: #fff;
+    font-size: 10px;
+    font-weight: 700;
+    padding: 3px 8px;
+    border-radius: 4px;
+    margin-top: 8px;
+    letter-spacing: 1px;
+  }
+
+  /* 특징 */
+  .features {
+    background: #f0ebe0;
+    padding: 80px 24px;
+  }
+
+  .features-inner {
+    max-width: 720px;
+    margin: 0 auto;
+  }
+
+  .feature-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin-top: 40px;
+  }
+
+  .feature-item {
+    background: #fff;
+    padding: 20px;
+    border-radius: 12px;
+    text-align: center;
+  }
+
+  .feature-item .icon { font-size: 28px; margin-bottom: 10px; }
+  .feature-item h4 {
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--earth);
+    margin-bottom: 6px;
+  }
+  .feature-item p { font-size: 12px; color: #8a7060; line-height: 1.6; }
+
+  /* 예약 */
+  .reservation {
+    background: var(--moss);
+    padding: 80px 24px;
+    text-align: center;
+  }
+
+  .reservation-inner { max-width: 480px; margin: 0 auto; }
+
+  .reservation .section-tag { color: rgba(255,255,255,0.6); }
+  .reservation .section-title { color: #fff; }
+  .reservation .section-desc { color: rgba(255,255,255,0.8); }
+
+  .contact-box {
+    background: rgba(255,255,255,0.15);
+    border-radius: 16px;
+    padding: 24px;
+    margin-top: 24px;
+  }
+
+  .contact-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 0;
+    border-bottom: 1px solid rgba(255,255,255,0.15);
+    color: #fff;
+    font-size: 15px;
+  }
+
+  .contact-item:last-child { border-bottom: none; }
+  .contact-item .label { font-size: 12px; opacity: 0.7; width: 60px; }
+
+  .kakao-btn {
+    display: block;
+    background: #FEE500;
+    color: #3C1E1E;
+    text-decoration: none;
+    padding: 14px;
+    border-radius: 10px;
+    font-size: 15px;
+    font-weight: 700;
+    margin-top: 20px;
+    text-align: center;
+  }
+
+  /* 위치 */
+  .location-box {
+    background: #fff;
+    border-radius: 16px;
+    padding: 24px;
+    box-shadow: 0 2px 16px rgba(61,43,31,0.08);
+  }
+
+  .location-box h3 {
+    font-size: 16px;
+    font-weight: 700;
+    margin-bottom: 12px;
+    color: var(--earth);
+  }
+
+  .location-box p {
+    font-size: 14px;
+    color: #6b5c4e;
+    line-height: 1.8;
+  }
+
+  .map-placeholder {
+    background: #e8e0d4;
+    border-radius: 12px;
+    height: 180px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-top: 16px;
+    font-size: 14px;
+    color: #8a7060;
+  }
+
+  /* 푸터 */
+  footer {
+    background: var(--dark);
+    color: rgba(255,255,255,0.5);
+    text-align: center;
+    padding: 40px 24px;
+    font-size: 12px;
+    line-height: 2;
+  }
+
+  footer strong {
+    color: rgba(255,255,255,0.8);
+    font-family: 'Noto Serif KR', serif;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">
+    단양흑마늘버섯닭
+    <span>DANYANG FARM EXPERIENCE</span>
+  </div>
+  <nav>
+    <a href="#story">스토리</a>
+    <a href="#program">체험</a>
+    <a href="#reservation">예약</a>
+  </nav>
+</header>
+
+<!-- 히어로 -->
+<div class="hero">
+  <div class="hero-tag">🌿 단양 18,000평 자연 속에서</div>
+  <h1>흑마늘과 버섯으로<br>키운 <em>건강한 닭</em></h1>
+  <p>단양의 맑은 공기와 흙, 직접 재배한 버섯과 흑마늘을 먹고 자란 닭.<br>자연이 만든 진짜 맛을 체험하세요.</p>
+  <div class="hero-btns">
+    <a href="#reservation" class="btn-primary">예약 문의하기</a>
+    <a href="#program" class="btn-secondary">체험 프로그램 보기</a>
+  </div>
+  <div class="scroll-hint">▼ SCROLL</div>
+</div>
+
+<!-- 스토리 -->
+<div class="story-section" id="story">
+  <div class="story-inner">
+    <div class="section-tag">OUR STORY</div>
+    <h2 class="section-title">자연이 키우고<br>사람이 담는 이야기</h2>
+    <p class="section-desc">단양의 깊은 산속 18,000평. 이곳에서 닭들은 직접 재배한 표고버섯과 흑마늘을 먹으며 자랍니다. 빠른 성장보다 건강한 성장을, 규모보다 품질을 선택했습니다.</p>
+    <div class="story-highlight">
+      "버섯을 먹고 자란 닭은 다릅니다. 육질이 다르고, 맛이 다르고, 먹고 난 후의 느낌이 다릅니다."
+    </div>
+  </div>
+</div>
+
+<!-- 체험 프로그램 -->
+<section id="program">
+  <div class="section-tag">EXPERIENCE PROGRAM</div>
+  <h2 class="section-title">직접 보고, 만지고,<br>맛보는 체험</h2>
+  <p class="section-desc">단순한 관람이 아닙니다. 버섯을 수확하고, 닭에게 먹이를 주고, 그 닭으로 직접 끓인 백숙을 먹는 — 처음부터 끝까지 자연을 경험하세요.</p>
+
+  <div class="programs">
+    <div class="program-card">
+      <div class="program-icon">🍄</div>
+      <div class="program-info">
+        <h3>버섯 수확 체험</h3>
+        <p>직접 재배한 표고버섯을 손으로 따고, 건조 과정을 체험합니다. 수확한 버섯은 가져가실 수 있어요.</p>
+        <span class="program-tag">1시간</span>
+      </div>
+    </div>
+    <div class="program-card">
+      <div class="program-icon">🐔</div>
+      <div class="program-info">
+        <h3>방목 닭 먹이주기</h3>
+        <p>버섯과 흑마늘을 먹고 자라는 닭들에게 직접 먹이를 줍니다. 아이들에게 특히 인기 있는 체험이에요.</p>
+        <span class="program-tag">30분</span>
+      </div>
+    </div>
+    <div class="program-card">
+      <div class="program-icon">🧄</div>
+      <div class="program-info">
+        <h3>단양 흑마늘 체험</h3>
+        <p>단양의 특산물 흑마늘 수확과 발효 과정을 배웁니다. 흑마늘의 효능과 활용법도 알려드려요.</p>
+        <span class="program-tag">1시간</span>
+      </div>
+    </div>
+    <div class="program-card">
+      <div class="program-icon">🍲</div>
+      <div class="program-info">
+        <h3>버섯닭 백숙 체험식</h3>
+        <p>직접 키운 닭으로 끓인 버섯닭 백숙을 맛봅니다. 단양 약초와 흑마늘이 들어간 보양식입니다.</p>
+        <span class="program-tag">식사 포함</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 특징 -->
+<div class="features">
+  <div class="features-inner">
+    <div class="section-tag">WHY DANYANG</div>
+    <h2 class="section-title">왜 단양흑마늘버섯닭인가요</h2>
+    <div class="feature-grid">
+      <div class="feature-item">
+        <div class="icon">🌱</div>
+        <h4>무항생제 사육</h4>
+        <p>항생제 없이 자연 먹이로만 키웁니다</p>
+      </div>
+      <div class="feature-item">
+        <div class="icon">🏔️</div>
+        <h4>단양 청정 환경</h4>
+        <p>18,000평 산속 맑은 공기와 물</p>
+      </div>
+      <div class="feature-item">
+        <div class="icon">🍄</div>
+        <h4>직접 재배 버섯</h4>
+        <p>직접 키운 표고버섯을 먹이로</p>
+      </div>
+      <div class="feature-item">
+        <div class="icon">🧄</div>
+        <h4>단양 흑마늘</h4>
+        <p>지역 특산 흑마늘로 면역력 UP</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 예약 -->
+<div class="reservation" id="reservation">
+  <div class="reservation-inner">
+    <div class="section-tag">RESERVATION</div>
+    <h2 class="section-title">체험 예약 및 문의</h2>
+    <p class="section-desc">단체, 가족, 커플 모두 환영합니다. 체험 일정과 인원을 알려주시면 맞춤 안내해드립니다.</p>
+    <div class="contact-box">
+      <div class="contact-item">
+        <span class="label">전화</span>
+        <span>043-643-1400</span>
+      </div>
+      <div class="contact-item">
+        <span class="label">휴대폰</span>
+        <span>010-8739-2421</span>
+      </div>
+      <div class="contact-item">
+        <span class="label">위치</span>
+        <span>충청북도 단양군</span>
+      </div>
+      <div class="contact-item">
+        <span class="label">운영</span>
+        <span>사전 예약제 운영</span>
+      </div>
+    </div>
+    <a href="tel:01087392421" class="kakao-btn">📞 지금 바로 전화 예약하기</a>
+  </div>
+</div>
+
+<!-- 위치 -->
+<section id="location">
+  <div class="section-tag">LOCATION</div>
+  <h2 class="section-title">찾아오시는 길</h2>
+  <div class="location-box">
+    <h3>단양흑마늘버섯닭 체험농장</h3>
+    <p>📍 충청북도 단양군<br>
+    🚗 서울에서 약 2시간 / 청주에서 약 1시간<br>
+    🅿️ 주차 가능</p>
+    <div class="map-placeholder">🗺️ 지도는 준비 중입니다</div>
+  </div>
+</section>
+
+<footer>
+  <strong>단양흑마늘버섯닭 체험농장</strong><br>
+  충청북도 단양군 · 043-643-1400 · 010-8739-2421<br>
+  © 2026 단양흑마늘버섯닭. All rights reserved.
+</footer>
+
+</body>
+</html>
