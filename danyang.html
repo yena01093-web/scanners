@@ -523,29 +523,83 @@
     <div class="section-tag">WHY DANYANG</div>
     <h2 class="section-title">왜 단양흑마늘버섯닭인가요</h2>
     <div class="feature-grid">
-      <div class="feature-item">
+      <div class="feature-item" onclick="openPopup('chicken')" style="cursor:pointer">
         <div class="icon">🐔</div>
         <h4>버섯 먹고 자란 닭</h4>
         <p>직접 재배한 버섯을 먹이로 건강하게 키웁니다</p>
+        <div style="font-size:11px;color:#c8960c;margin-top:8px">자세히 보기 →</div>
       </div>
-      <div class="feature-item">
+      <div class="feature-item" onclick="openPopup('egg')" style="cursor:pointer">
         <div class="icon">🥚</div>
         <h4>유기농 계란</h4>
         <p>방목 닭이 낳은 신선한 유기농 계란 직판</p>
+        <div style="font-size:11px;color:#c8960c;margin-top:8px">자세히 보기 →</div>
       </div>
-      <div class="feature-item">
+      <div class="feature-item" onclick="openPopup('herb')" style="cursor:pointer">
         <div class="icon">🌿</div>
         <h4>산나물 채취</h4>
         <p>18,000평 산에서 직접 채취하는 제철 나물</p>
+        <div style="font-size:11px;color:#c8960c;margin-top:8px">자세히 보기 →</div>
       </div>
-      <div class="feature-item">
+      <div class="feature-item" onclick="openPopup('nature')" style="cursor:pointer">
         <div class="icon">🏔️</div>
         <h4>단양 청정 환경</h4>
         <p>단양의 맑은 공기와 물, 자연 그대로</p>
+        <div style="font-size:11px;color:#c8960c;margin-top:8px">자세히 보기 →</div>
       </div>
     </div>
   </div>
 </div>
+
+<!-- 팝업 -->
+<div id="popup-overlay" onclick="closePopup()" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:500;align-items:flex-end;">
+  <div id="popup-box" onclick="event.stopPropagation()" style="background:#fff;width:100%;border-radius:20px 20px 0 0;padding:24px;max-height:80vh;overflow-y:auto;">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+      <h3 id="popup-title" style="font-size:18px;font-weight:900;color:#3d2b1f;font-family:'Noto Serif KR',serif;"></h3>
+      <button onclick="closePopup()" style="background:none;border:none;font-size:22px;cursor:pointer;color:#888;">✕</button>
+    </div>
+    <div id="popup-img" style="font-size:80px;text-align:center;padding:20px 0;background:#f5f0e8;border-radius:12px;margin-bottom:16px;"></div>
+    <p id="popup-desc" style="font-size:14px;color:#5a4a3a;line-height:1.9;"></p>
+  </div>
+</div>
+
+<script>
+const popupData = {
+  chicken: {
+    title: '🐔 버섯 먹고 자란 닭',
+    img: '🐔🍄',
+    desc: '단양의 18,000평 산에서 방목으로 키우는 닭들은 직접 재배한 표고버섯을 먹이로 자랍니다.\n\n버섯의 영양분이 닭에게 전달되어 일반 닭보다 육질이 탄탄하고 맛이 깊습니다.\n\n항생제 없이 자연 먹이로만 키우는 건강한 닭을 직접 만나보세요.'
+  },
+  egg: {
+    title: '🥚 유기농 계란',
+    img: '🥚🐓',
+    desc: '방목으로 자유롭게 키운 닭들이 낳은 신선한 유기농 계란입니다.\n\n좁은 케이지가 아닌 넓은 자연 환경에서 키운 닭의 계란은 노른자 색이 진하고 영양이 풍부합니다.\n\n체험 후 현장에서 직접 구매하실 수 있습니다.'
+  },
+  herb: {
+    title: '🌿 산나물 채취',
+    img: '🌿🏔️',
+    desc: '단양의 깊은 산속 18,000평에서 제철 산나물을 직접 채취하는 체험입니다.\n\n봄에는 두릅, 고사리, 취나물 등 다양한 나물이 자랍니다. 직접 채취한 산나물로 부침개와 떡을 만들고, 장아찌도 담가볼 수 있어요.\n\n채취한 나물은 집에 가져가실 수 있습니다.'
+  },
+  nature: {
+    title: '🏔️ 단양 청정 환경',
+    img: '🏔️🌲',
+    desc: '충청북도 단양은 소백산과 도담삼봉으로 유명한 청정 자연 환경을 자랑합니다.\n\n18,000평 산의 맑은 공기와 깨끗한 물, 비옥한 토양에서 자란 농산물은 그 품질이 다릅니다.\n\n도시의 일상에서 벗어나 단양의 자연 속에서 힐링하세요.'
+  }
+};
+
+function openPopup(type) {
+  const data = popupData[type];
+  document.getElementById('popup-title').textContent = data.title;
+  document.getElementById('popup-img').textContent = data.img;
+  document.getElementById('popup-desc').textContent = data.desc;
+  const overlay = document.getElementById('popup-overlay');
+  overlay.style.display = 'flex';
+}
+
+function closePopup() {
+  document.getElementById('popup-overlay').style.display = 'none';
+}
+</script>
 
 <!-- 예약 -->
 <div class="reservation" id="reservation">
