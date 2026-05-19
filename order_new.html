@@ -1,0 +1,397 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>슈퍼크리스피 제천점 주문</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: 'Apple SD Gothic Neo', 'Noto Sans KR', sans-serif; background: #1a1a1a; color: #fff; min-height: 100vh; }
+
+  header { background: #c8102e; padding: 14px 16px; text-align: center; position: sticky; top: 0; z-index: 100; }
+  header h1 { font-size: 18px; font-weight: 900; }
+  header p { font-size: 11px; opacity: 0.85; margin-top: 2px; }
+
+  .category-tabs { display: flex; overflow-x: auto; background: #111; padding: 0 8px; scrollbar-width: none; position: sticky; top: 60px; z-index: 99; }
+  .category-tabs::-webkit-scrollbar { display: none; }
+  .tab { padding: 10px 14px; font-size: 13px; font-weight: 700; white-space: nowrap; color: #888; border-bottom: 3px solid transparent; cursor: pointer; }
+  .tab.active { color: #c8102e; border-bottom-color: #c8102e; }
+
+  .section { padding: 16px; display: none; }
+  .section.active { display: block; }
+  .section-title { font-size: 15px; font-weight: 900; color: #c8102e; margin-bottom: 10px; margin-top: 16px; padding-bottom: 6px; border-bottom: 1px solid #333; }
+  .section-title:first-child { margin-top: 0; }
+
+  .menu-item { background: #242424; border-radius: 10px; padding: 12px; display: flex; justify-content: space-between; align-items: center; border: 1px solid #333; margin-bottom: 8px; }
+  .menu-info { flex: 1; }
+  .menu-name { font-size: 14px; font-weight: 700; margin-bottom: 3px; }
+  .menu-price { font-size: 14px; font-weight: 900; color: #ffd700; }
+  .menu-sub { font-size: 11px; color: #888; margin-bottom: 3px; }
+
+  .qty-control { display: flex; align-items: center; gap: 8px; margin-left: 10px; }
+  .qty-btn { width: 28px; height: 28px; border-radius: 50%; border: none; font-size: 16px; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+  .qty-btn.minus { background: #333; color: #fff; }
+  .qty-btn.plus { background: #c8102e; color: #fff; }
+  .qty-num { font-size: 15px; font-weight: 900; min-width: 18px; text-align: center; }
+
+  .badge-new { background: #c8102e; color: #fff; font-size: 9px; font-weight: 700; padding: 2px 5px; border-radius: 3px; margin-left: 4px; }
+  .badge-best { background: #ffd700; color: #000; font-size: 9px; font-weight: 700; padding: 2px 5px; border-radius: 3px; margin-left: 4px; }
+
+  .cart-bar { position: fixed; bottom: 0; left: 0; right: 0; background: #c8102e; padding: 12px 16px; display: none; align-items: center; justify-content: space-between; z-index: 200; }
+  .cart-bar.visible { display: flex; }
+  .cart-info { font-size: 13px; font-weight: 700; }
+  .cart-total { font-size: 17px; font-weight: 900; }
+  .cart-btn { background: #fff; color: #c8102e; border: none; padding: 10px 18px; border-radius: 8px; font-size: 14px; font-weight: 900; cursor: pointer; }
+
+  .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 300; align-items: flex-end; }
+  .modal-overlay.visible { display: flex; }
+  .modal { background: #1a1a1a; width: 100%; border-radius: 20px 20px 0 0; padding: 20px 16px; max-height: 85vh; overflow-y: auto; }
+  .modal h2 { font-size: 17px; font-weight: 900; margin-bottom: 14px; }
+
+  .order-item { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #333; font-size: 13px; }
+  .order-item-price { color: #ffd700; font-weight: 700; }
+  .order-total { display: flex; justify-content: space-between; padding: 12px 0; font-size: 16px; font-weight: 900; }
+
+  .table-select { width: 100%; background: #242424; color: #fff; border: 1px solid #444; border-radius: 8px; padding: 12px; font-size: 14px; margin-bottom: 12px; }
+  .confirm-btn { width: 100%; background: #c8102e; color: #fff; border: none; padding: 14px; border-radius: 10px; font-size: 15px; font-weight: 900; cursor: pointer; margin-bottom: 8px; }
+  .cancel-btn { width: 100%; background: #333; color: #fff; border: none; padding: 12px; border-radius: 10px; font-size: 13px; font-weight: 700; cursor: pointer; }
+
+  .success-msg { display: none; text-align: center; padding: 24px 0; }
+  .success-msg .icon { font-size: 48px; margin-bottom: 10px; }
+  .success-msg h3 { font-size: 19px; font-weight: 900; margin-bottom: 6px; }
+  .success-msg p { color: #888; font-size: 13px; }
+
+  .loading { display: none; text-align: center; padding: 12px; color: #888; font-size: 13px; }
+
+  div[style*="height:80px"] { height: 80px; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>🍗 SUPER CRISPY 제천점</h1>
+  <p>메뉴를 선택하고 주문해주세요</p>
+</header>
+
+<div class="category-tabs">
+  <div class="tab active" onclick="showSection('chicken', this)">🍗 치킨</div>
+  <div class="tab" onclick="showSection('burger', this)">🍔 버거</div>
+  <div class="tab" onclick="showSection('set', this)">🍱 세트</div>
+  <div class="tab" onclick="showSection('side', this)">🍟 사이드</div>
+  <div class="tab" onclick="showSection('drink', this)">🥤 음료</div>
+</div>
+
+<!-- 치킨 -->
+<div class="section active" id="chicken">
+  <div class="section-title">한마리</div>
+  <div class="menu-item"><div class="menu-info"><div class="menu-name">슈퍼크리스피 <span class="badge-best">BEST</span></div><div class="menu-price">9,900원</div></div><div class="qty-control"><button class="qty-btn minus" onclick="updateQty(this,-1)">−</button><span class="qty-num">0</span><button class="qty-btn plus" onclick="updateQty(this,1)" data-name="슈퍼크리스피(한마리)" data-price="9900">+</button></div></div>
+  <div class="menu-item"><div class="menu-info"><div class="menu-name">핫 슈퍼크리스피</div><div class="menu-price">11,500원</div></div><div class="qty-control"><button class="qty-btn minus" onclick="updateQty(this,-1)">−</button><span class="qty-num">0</span><button class="qty-btn plus" onclick="updateQty(this,1)" data-name="핫 슈퍼크리스피(한마리)" data-price="11500">+</button></div></div>
+  <div class="menu-item"><div class="menu-info"><div class="menu-name">양념 슈퍼크리스피</div><div class="menu-price">12,500원</div></div><div class="qty-control"><button class="qty-btn minus" onclick="updateQty(this,-1)">−</button><span class="qty-num">0</span><button class="qty-btn plus" onclick="updateQty(this,1)" data-name="양념 슈퍼크리스피(한마리)" data-price="12500">+</button></div></div>
+  <div class="menu-item"><div class="menu-info"><div class="menu-name">소이 슈퍼크리스피</div><div class="menu-price">12,500원</div></div><div class="qty-control"><button class="qty-btn minus" onclick="updateQty(this,-1)">−</button><span class="qty-num">0</span><button class="qty-btn plus" onclick="updateQty(this,1)" data-name="소이 슈퍼크리스피(한마리)" data-price="12500">+</button></div></div>
+  <div class="menu-item"><div class="menu-info"><div class="menu-name">치즈 슈퍼크리스피</div><div class="menu-price">12,500원</div></div><div class="qty-control"><button class="qty-btn minus" onclick="updateQty(this,-1)">−</button><span class="qty-num">0</span><button class="qty-btn plus" onclick="updateQty(this,1)" data-name="치즈 슈퍼크리스피(한마리)" data-price="12500">+</button></div></div>
+
+  <div class="section-title">반마리</div>
+  <div class="menu-item"><div class="menu-info"><div class="menu-name">슈퍼크리스피 반마리</div><div class="menu-price">6,900원</div></div><div class="qty-control"><button class="qty-btn minus" onclick="updateQty(this,-1)">−</button><span class="qty-num">0</span><button class="qty-btn plus" onclick="updateQty(this,1)" data-name="슈퍼크리스피 반마리" data-price="6900">+</button></div></div>
+  <div class="menu-item"><div class="menu-info"><div class="menu-name">핫 슈퍼크리스피 반마리</div><div class="menu-price">7,900원</div></div><div class="qty-control"><button class="qty-btn minus" onclick="updateQty(this,-1)">−</button><span class="qty-num">0</span><button class="qty-btn plus" onclick="updateQty(this,1)" data-name="핫 슈퍼크리스피 반마리" data-price="7900">+</button></div></div>
+  <div class="menu-item"><div class="menu-info"><div class="menu-name">양념 슈퍼크리스피 반마리</div><div class="menu-price">8,000원</div></div><div class="qty-control"><button class="qty-btn minus" onclick="updateQty(this,-1)">−</button><span class="qty-num">0</span><button class="qty-btn plus" onclick="updateQty(this,1)" data-name="양념 슈퍼크리스피 반마리" data-price="8000">+</button></div></div>
+  <div class="menu-item"><div class="menu-info"><div class="menu-name">소이 슈퍼크리스피 반마리</div><div class="menu-price">8,900원</div></div><div class="qty-control"><button class="qty-btn minus" onclick="updateQty(this,-1)">−</button><span class="qty-num">0</span><button class="qty-btn plus" onclick="updateQty(this,1)" data-name="소이 슈퍼크리스피 반마리" data-price="8900">+</button></div></div>
+  <div class="menu-item"><div class="menu-info"><div class="menu-name">치즈 슈퍼크리스피 반마리</div><div class="menu-price">8,900원</div></div><div class="qty-control"><button class="qty-btn minus" onclick="updateQty(this,-1)">−</button><span class="qty-num">0</span><button class="qty-btn plus" onclick="updateQty(this,1)" data-name="치즈 슈퍼크리스피 반마리" data-price="8900">+</button></div></div>
+
+  <div class="section-title">순살 한마리</div>
+  <div class="menu-item"><div class="menu-info"><div class="menu-name">슈퍼크리스피 순살</div><div class="menu-price">12,900원</div></div><div class="qty-control"><button class="qty-btn minus" onclick="updateQty(this,-1)">−</button><span class="qty-num">0</span><button class="qty-btn plus" onclick="updateQty(this,1)" data-name="슈퍼크리스피 순살" data-price="12900">+</button></div></div>
+  <div class="menu-item"><div class="menu-info"><div class="menu-name">핫 슈퍼크리스피 순살</div><div class="menu-price">14,500원</div></div><div class="qty-control"><button class="qty-btn minus" onclick="updateQty(this,-1)">−</button><span class="qty-num">0</span><button class="qty-btn plus" onclick="updateQty(this,1)" data-name="핫 슈퍼크리스피 순살" data-price="14500">+</button></div></div>
+  <div class="menu-item"><div class="menu-info"><div class="menu-name">양념 슈퍼크리스피 순살</div><div class="menu-price">15,500원</div></div><div class="qty-control"><button class="qty-btn minus" onclick="updateQty(this,-1)">−</button><span class="qty-num">0</span><button class="qty-btn plus" onclick="updateQty(this,1)" data-name="양념 슈퍼크리스피 순살" data-price="15500">+</button></div></div>
+  <div class="menu-item"><div class="menu-info"><div class="menu-name">소이 슈퍼크리스피 순살</div><div class="menu-price">15,500원</div></div><div class="qty-control"><button class="qty-btn minus" onclick="updateQty(this,-1)">−</button><span class="qty-num">0</span><button class="qty-btn plus" onclick="updateQty(this,1)" data-name="소이 슈퍼크리스피 순살" data-price="15500">+</button></div></div>
+  <div class="menu-item"><div class="menu-info"><div class="menu-name">치즈 슈퍼크리스피 순살</div><div class="menu-price">15,500원</div></div><div class="qty-control"><button class="qty-btn minus" onclick="updateQty(this,-1)">−</button><span class="qty-num">0</span><button class="qty-btn plus" onclick="updateQty(this,1)" data-name="치즈 슈퍼크리스피 순살" data-price="15500">+</button></div></div>
+</div>
+
+<!-- 버거 -->
+<div class="section" id="burger">
+  <div class="section-title">치킨버거</div>
+  <div class="menu-item"><div class="menu-info"><div class="menu-name">치킨버거 <span class="badge-best">BEST</span></div><div class="menu-price">2,900원</div></div><div class="qty-control"><button class="qty-btn minus" onclick="updateQty(this,-1)">−</button><span class="qty-num">0</span><button class="qty-btn plus" onclick="updateQty(this,1)" data-name="치킨버거" data-price="2900">+</button></div></div>
+  <div class="menu-item"><div class="menu-info"><div class="menu-name">치즈 치킨버거 <span class="badge-best">BEST</span></div><div class="menu-price">3,700원</div></div><div class="qty-control"><button class="qty-btn minus" onclick="updateQty(this,-1)">−</button><span class="qty-num">0</span><button class="qty-btn plus" onclick="updateQty(this,1)" data-name="치즈 치킨버거" data-price="3700">+</button></div></div>
+  <div class="menu-item"><div class="menu-info"><div class="menu-name">디럭스 치킨버거</div><div class="menu-price">3,900원</div></div><div class="qty-control"><button class="qty-btn minus" onclick="updateQty(this,-1)">−</button><span class="qty-num">0</span><button class="qty-btn plus" onclick="updateQty(this,1)" data-name="디럭스 치킨버거" data-price="3900">+</button></div></div>
+  <div class="menu-item"><div class="menu-info"><div class="menu-name">디럭스 치즈치킨버거</div><div class="menu-price">4,700원</div></div><div class="qty-control"><button class="qty-btn minus" onclick="updateQty(this,-1)">−</button><span class="qty-num">0</span><button class="qty-btn plus" onclick="updateQty(this,1)" data-name="디럭스 치즈치킨버거" data-price="4700">+</button></div></div>
+  <div class="menu-item"><div class="menu-info"><div class="menu-name">핫스파이시 치킨버거</div><div class="menu-price">3,700원</div></div><div class="qty-control"><button class="qty-btn minus" onclick="updateQty(this,-1)">−</button><span class="qty-num">0</span><button class="qty-btn plus" onclick="updateQty(this,1)" data-name="핫스파이시 치킨버거" data-price="3700">+</button></div></div>
+  <div class="menu-item"><div class="menu-info"><div class="menu-name">슈퍼쉬림프 버거</div><div class="menu-price">5,400원</div></div><div class="qty-control"><button class="qty-btn minus" onclick="updateQty(this,-1)">−</button><span class="qty-num">0</span><button class="qty-btn plus" onclick="updateQty(this,1)" data-name="슈퍼쉬림프 버거" data-price="5400">+</button></div></div>
+  <div class="menu-item"><div class="menu-info"><div class="menu-name">더블 치킨버거 <span class="badge-best">BEST</span></div><div class="menu-price">5,400원</div></div><div class="qty-control"><button class="qty-btn minus" onclick="updateQty(this,-1)">−</button><span class="qty-num">0</span><button class="qty-btn plus" onclick="updateQty(this,1)" data-name="더블 치킨버거" data-price="5400">+</button></div></div>
+  <div class="menu-item"><div class="menu-info"><div class="menu-name">골든포테이토 치킨버거</div><div class="menu-price">5,400원</div></div><div class="qty-control"><button class="qty-btn minus" onclick="updateQty(this,-1)">−</button><span class="qty-num">0</span><button class="qty-btn plus" onclick="updateQty(this,1)" data-name="골든포테이토 치킨버거" data-price="5400">+</button></div></div>
+  <div class="menu-item"><div class="menu-info"><div class="menu-name">트리플머쉬룸 치킨버거</div><div class="menu-price">5,400원</div></div><div class="qty-control"><button class="qty-btn minus" onclick="updateQty(this,-1)">−</button><span class="qty-num">0</span><button class="qty-btn plus" onclick="updateQty(this,1)" data-name="트리플머쉬룸 치킨버거" data-price="5400">+</button></div></div>
+  <div class="menu-item"><div class="menu-info"><div class="menu-name">화이트갈릭 치킨버거 <span class="badge-new">NEW</span></div><div class="menu-price">3,700원</div></div><div class="qty-control"><button class="qty-btn minus" onclick="updateQty(this,-1)">−</button><span class="qty-num">0</span><button class="qty-btn plus" onclick="updateQty(this,1)" data-name="화이트갈릭 치킨버거" data-price="3700">+</button></div></div>
+
+  <div class="section-title">비프버거 <span class="badge-new">NEW</span></div>
+  <div class="menu-item"><div class="menu-info"><div class="menu-name">슈퍼불고기 <span class="badge-new">NEW</span></div><div class="menu-price">2,900원</div></div><div class="qty-control"><button class="qty-btn minus" onclick="updateQty(this,-1)">−</button><span class="qty-num">0</span><button class="qty-btn plus" onclick="updateQty(this,1)" data-name="슈퍼불고기" data-price="2900">+</button></div></div>
+  <div class="menu-item"><div class="menu-info"><div class="menu-name">비프치즈버거 <span class="badge-new">NEW</span></div><div class="menu-price">3,700원</div></div><div class="qty-control"><button class="qty-btn minus" onclick="updateQty(this,-1)">−</button><span class="qty-num">0</span><button class="qty-btn plus" onclick="updateQty(this,1)" data-name="비프치즈버거" data-price="3700">+</button></div></div>
+  <div class="menu-item"><div class="menu-info"><div class="menu-name">슈퍼비프디럭스 <span class="badge-new">NEW</span></div><div class="menu-price">5,400원</div></div><div class="qty-control"><button class="qty-btn minus" onclick="updateQty(this,-1)">−</button><span class="qty-num">0</span><button class="qty-btn plus" onclick="updateQty(this,1)" data-name="슈퍼비프디럭스" data-price="5400">+</button></div></div>
+  <div class="menu-item"><div class="menu-info"><div class="menu-name">슈퍼화백 <span class="badge-new">NEW</span></div><div class="menu-price">5,900원</div></div><div class="qty-control"><button class="qty-btn minus" onclick="updateQty(this,-1)">−</button><span class="qty-num">0</span><button class="qty-btn plus" onclick="updateQty(this,1)" data-name="슈퍼화백" data-price="5900">+</button></div></div>
+  <div class="menu-item"><div class="menu-info"><div class="menu-name">통모짜치즈버거 <span class="badge-new">NEW</span></div><div class="menu-price">5,900원</div></div><div class="qty-control"><button class="qty-btn minus" onclick="updateQty(this,-1)">−</button><span class="qty-num">0</span><button class="qty-btn plus" onclick="updateQty(this,1)" data-name="통모짜치즈버거" data-price="5900">+</button></div></div>
+</div>
+
+<!-- 세트 -->
+<div class="section" id="set">
+  <div class="section-title">버거 세트 (버거+감자+음료)</div>
+  <div class="menu-item"><div class="menu-info"><div class="menu-name">치킨버거 세트 <span class="badge-best">BEST</span></div><div class="menu-price">5,900원</div></div><div class="qty-control"><button class="qty-btn minus" onclick="updateQty(this,-1)">−</button><span class="qty-num">0</span><button class="qty-btn plus" onclick="updateQty(this,1)" data-name="치킨버거 세트" data-price="5900">+</button></div></div>
+  <div class="menu-item"><div class="menu-info"><div class="menu-name">치즈 치킨버거 세트</div><div class="menu-price">6,700원</div></div><div class="qty-control"><button class="qty-btn minus" onclick="updateQty(this,-1)">−</button><span class="qty-num">0</span><button class="qty-btn plus" onclick="updateQty(this,1)" data-name="치즈 치킨버거 세트" data-price="6700">+</button></div></div>
+  <div class="menu-item"><div class="menu-info"><div class="menu-name">디럭스 치킨버거 세트</div><div class="menu-price">6,900원</div></div><div class="qty-control"><button class="qty-btn minus" onclick="updateQty(this,-1)">−</button><span class="qty-num">0</span><button class="qty-btn plus" onclick="updateQty(this,1)" data-name="디럭스 치킨버거 세트" data-price="6900">+</button></div></div>
+  <div class="menu-item"><div class="menu-info"><div class="menu-name">더블 치킨버거 세트</div><div class="menu-price">8,400원</div></div><div class="qty-control"><button class="qty-btn minus" onclick="updateQty(this,-1)">−</button><span class="qty-num">0</span><button class="qty-btn plus" onclick="updateQty(this,1)" data-name="더블 치킨버거 세트" data-price="8400">+</button></div></div>
+  <div class="menu-item"><div class="menu-info"><div class="menu-name">슈퍼불고기 세트 <span class="badge-new">NEW</span></div><div class="menu-price">5,900원</div></div><div class="qty-control"><button class="qty-btn minus" onclick="updateQty(this,-1)">−</button><span class="qty-num">0</span><button class="qty-btn plus" onclick="updateQty(this,1)" data-name="슈퍼불고기 세트" data-price="5900">+</button></div></div>
+
+  <div class="section-title">콤보팩</div>
+  <div class="menu-item"><div class="menu-info"><div class="menu-name">치킨콤보팩</div><div class="menu-sub">치킨버거2+치킨반마리+너겟3+콜라2</div><div class="menu-price">16,900원</div></div><div class="qty-control"><button class="qty-btn minus" onclick="updateQty(this,-1)">−</button><span class="qty-num">0</span><button class="qty-btn plus" onclick="updateQty(this,1)" data-name="치킨콤보팩" data-price="16900">+</button></div></div>
+  <div class="menu-item"><div class="menu-info"><div class="menu-name">비프콤보팩 <span class="badge-new">NEW</span></div><div class="menu-sub">불고기2+치킨반마리+너겟3+콜라2</div><div class="menu-price">16,900원</div></div><div class="qty-control"><button class="qty-btn minus" onclick="updateQty(this,-1)">−</button><span class="qty-num">0</span><button class="qty-btn plus" onclick="updateQty(this,1)" data-name="비프콤보팩" data-price="16900">+</button></div></div>
+  <div class="menu-item"><div class="menu-info"><div class="menu-name">패밀리팩 <span class="badge-new">NEW</span></div><div class="menu-sub">버거3+반마리+너겟3+샐러드+콜라3</div><div class="menu-price">27,900원</div></div><div class="qty-control"><button class="qty-btn minus" onclick="updateQty(this,-1)">−</button><span class="qty-num">0</span><button class="qty-btn plus" onclick="updateQty(this,1)" data-name="패밀리팩" data-price="27900">+</button></div></div>
+</div>
+
+<!-- 사이드 -->
+<div class="section" id="side">
+  <div class="section-title">사이드</div>
+  <div class="menu-item"><div class="menu-info"><div class="menu-name">슈퍼크런치 감자튀김</div><div class="menu-price">2,500원</div></div><div class="qty-control"><button class="qty-btn minus" onclick="updateQty(this,-1)">−</button><span class="qty-num">0</span><button class="qty-btn plus" onclick="updateQty(this,1)" data-name="슈퍼크런치 감자튀김" data-price="2500">+</button></div></div>
+  <div class="menu-item"><div class="menu-info"><div class="menu-name">양념감자(치즈/어니언)</div><div class="menu-price">3,100원</div></div><div class="qty-control"><button class="qty-btn minus" onclick="updateQty(this,-1)">−</button><span class="qty-num">0</span><button class="qty-btn plus" onclick="updateQty(this,1)" data-name="양념감자" data-price="3100">+</button></div></div>
+  <div class="menu-item"><div class="menu-info"><div class="menu-name">해피 치즈스틱 2개</div><div class="menu-price">2,300원</div></div><div class="qty-control"><button class="qty-btn minus" onclick="updateQty(this,-1)">−</button><span class="qty-num">0</span><button class="qty-btn plus" onclick="updateQty(this,1)" data-name="해피 치즈스틱 2개" data-price="2300">+</button></div></div>
+  <div class="menu-item"><div class="menu-info"><div class="menu-name">쫀득 모짜 치즈볼 3개</div><div class="menu-price">2,900원</div></div><div class="qty-control"><button class="qty-btn minus" onclick="updateQty(this,-1)">−</button><span class="qty-num">0</span><button class="qty-btn plus" onclick="updateQty(this,1)" data-name="쫀득 모짜 치즈볼 3개" data-price="2900">+</button></div></div>
+  <div class="menu-item"><div class="menu-info"><div class="menu-name">닭다리살 치킨샐러드</div><div class="menu-price">3,900원</div></div><div class="qty-control"><button class="qty-btn minus" onclick="updateQty(this,-1)">−</button><span class="qty-num">0</span><button class="qty-btn plus" onclick="updateQty(this,1)" data-name="닭다리살 치킨샐러드" data-price="3900">+</button></div></div>
+  <div class="menu-item"><div class="menu-info"><div class="menu-name">애플시나몬파이 <span class="badge-new">NEW</span></div><div class="menu-price">1,800원</div></div><div class="qty-control"><button class="qty-btn minus" onclick="updateQty(this,-1)">−</button><span class="qty-num">0</span><button class="qty-btn plus" onclick="updateQty(this,1)" data-name="애플시나몬파이" data-price="1800">+</button></div></div>
+  <div class="menu-item"><div class="menu-info"><div class="menu-name">치킨텐더 2개</div><div class="menu-price">2,900원</div></div><div class="qty-control"><button class="qty-btn minus" onclick="updateQty(this,-1)">−</button><span class="qty-num">0</span><button class="qty-btn plus" onclick="updateQty(this,1)" data-name="치킨텐더 2개" data-price="2900">+</button></div></div>
+  <div class="menu-item"><div class="menu-info"><div class="menu-name">크런치너겟 3개</div><div class="menu-price">1,800원</div></div><div class="qty-control"><button class="qty-btn minus" onclick="updateQty(this,-1)">−</button><span class="qty-num">0</span><button class="qty-btn plus" onclick="updateQty(this,1)" data-name="크런치너겟 3개" data-price="1800">+</button></div></div>
+</div>
+
+<!-- 음료 -->
+<div class="section" id="drink">
+  <div class="section-title">음료</div>
+  <div class="menu-item"><div class="menu-info"><div class="menu-name">코카콜라 245ml</div><div class="menu-price">1,300원</div></div><div class="qty-control"><button class="qty-btn minus" onclick="updateQty(this,-1)">−</button><span class="qty-num">0</span><button class="qty-btn plus" onclick="updateQty(this,1)" data-name="코카콜라 245ml" data-price="1300">+</button></div></div>
+  <div class="menu-item"><div class="menu-info"><div class="menu-name">코카콜라 제로 245ml</div><div class="menu-price">1,300원</div></div><div class="qty-control"><button class="qty-btn minus" onclick="updateQty(this,-1)">−</button><span class="qty-num">0</span><button class="qty-btn plus" onclick="updateQty(this,1)" data-name="코카콜라 제로 245ml" data-price="1300">+</button></div></div>
+  <div class="menu-item"><div class="menu-info"><div class="menu-name">스프라이트 245ml</div><div class="menu-price">1,300원</div></div><div class="qty-control"><button class="qty-btn minus" onclick="updateQty(this,-1)">−</button><span class="qty-num">0</span><button class="qty-btn plus" onclick="updateQty(this,1)" data-name="스프라이트 245ml" data-price="1300">+</button></div></div>
+  <div class="menu-item"><div class="menu-info"><div class="menu-name">코카콜라 500ml</div><div class="menu-price">2,100원</div></div><div class="qty-control"><button class="qty-btn minus" onclick="updateQty(this,-1)">−</button><span class="qty-num">0</span><button class="qty-btn plus" onclick="updateQty(this,1)" data-name="코카콜라 500ml" data-price="2100">+</button></div></div>
+  <div class="menu-item"><div class="menu-info"><div class="menu-name">스프라이트 500ml</div><div class="menu-price">2,100원</div></div><div class="qty-control"><button class="qty-btn minus" onclick="updateQty(this,-1)">−</button><span class="qty-num">0</span><button class="qty-btn plus" onclick="updateQty(this,1)" data-name="스프라이트 500ml" data-price="2100">+</button></div></div>
+
+  <div class="section-title">소스</div>
+  <div class="menu-item"><div class="menu-info"><div class="menu-name">치킨 피클</div><div class="menu-price">500원</div></div><div class="qty-control"><button class="qty-btn minus" onclick="updateQty(this,-1)">−</button><span class="qty-num">0</span><button class="qty-btn plus" onclick="updateQty(this,1)" data-name="치킨 피클" data-price="500">+</button></div></div>
+  <div class="menu-item"><div class="menu-info"><div class="menu-name">치즈 시즈닝</div><div class="menu-price">600원</div></div><div class="qty-control"><button class="qty-btn minus" onclick="updateQty(this,-1)">−</button><span class="qty-num">0</span><button class="qty-btn plus" onclick="updateQty(this,1)" data-name="치즈 시즈닝" data-price="600">+</button></div></div>
+  <div class="menu-item"><div class="menu-info"><div class="menu-name">양념 소스 추가</div><div class="menu-price">1,000원</div></div><div class="qty-control"><button class="qty-btn minus" onclick="updateQty(this,-1)">−</button><span class="qty-num">0</span><button class="qty-btn plus" onclick="updateQty(this,1)" data-name="양념 소스 추가" data-price="1000">+</button></div></div>
+</div>
+
+<div style="height:80px"></div>
+
+<div class="cart-bar" id="cartBar">
+  <div>
+    <div class="cart-info" id="cartCount">0개 선택</div>
+    <div class="cart-total" id="cartTotal">0원</div>
+  </div>
+  <button class="cart-btn" onclick="openModal()">주문하기</button>
+</div>
+
+<div class="modal-overlay" id="modalOverlay">
+  <div class="modal">
+    <div id="orderContent">
+      <h2>🛒 주문 확인</h2>
+      <div id="orderList"></div>
+      <div class="order-total"><span>합계</span><span id="modalTotal">0원</span></div>
+      <!-- 주문 유형 선택 -->
+      <div style="display:flex;gap:8px;margin-bottom:12px;">
+        <button onclick="setOrderType('hall')" id="btn-hall" style="flex:1;padding:10px;border-radius:8px;border:2px solid #c8102e;background:#c8102e;color:#fff;font-weight:700;font-size:13px;cursor:pointer;">🍽️ 홀 (내점)</button>
+        <button onclick="setOrderType('pack')" id="btn-pack" style="flex:1;padding:10px;border-radius:8px;border:2px solid #444;background:#333;color:#fff;font-weight:700;font-size:13px;cursor:pointer;">📦 포장</button>
+        <button onclick="setOrderType('reserve')" id="btn-reserve" style="flex:1;padding:10px;border-radius:8px;border:2px solid #444;background:#333;color:#fff;font-weight:700;font-size:13px;cursor:pointer;">📅 예약</button>
+      </div>
+
+      <!-- 홀 - 테이블 선택 -->
+      <div id="section-hall">
+        <select class="table-select" id="tableSelect">
+          <option value="">테이블 선택</option>
+          <option value="1번">1번 테이블</option>
+          <option value="2번">2번 테이블</option>
+          <option value="3번">3번 테이블</option>
+          <option value="4번">4번 테이블</option>
+          <option value="5번">5번 테이블</option>
+          <option value="6번">6번 테이블</option>
+          <option value="7번">7번 테이블</option>
+          <option value="8번">8번 테이블</option>
+        </select>
+      </div>
+
+      <!-- 포장 -->
+      <div id="section-pack" style="display:none;">
+        <div style="background:#242424;border-radius:8px;padding:14px;margin-bottom:12px;font-size:14px;color:#aaa;">
+          📦 포장 주문입니다. 준비되면 카운터에서 수령해주세요.
+        </div>
+      </div>
+
+      <!-- 예약 -->
+      <div id="section-reserve" style="display:none;">
+        <input type="date" id="reserveDate" style="width:100%;background:#242424;color:#fff;border:1px solid #444;border-radius:8px;padding:12px;font-size:14px;margin-bottom:8px;">
+        <select id="reserveTime" class="table-select">
+          <option value="">방문 시간 선택</option>
+          <option value="11:00">11:00</option>
+          <option value="11:30">11:30</option>
+          <option value="12:00">12:00</option>
+          <option value="12:30">12:30</option>
+          <option value="13:00">13:00</option>
+          <option value="13:30">13:30</option>
+          <option value="14:00">14:00</option>
+          <option value="15:00">15:00</option>
+          <option value="16:00">16:00</option>
+          <option value="17:00">17:00</option>
+          <option value="18:00">18:00</option>
+          <option value="19:00">19:00</option>
+          <option value="20:00">20:00</option>
+        </select>
+        <input type="text" id="reserveName" placeholder="예약자 이름" style="width:100%;background:#242424;color:#fff;border:1px solid #444;border-radius:8px;padding:12px;font-size:14px;margin-top:8px;">
+        <input type="tel" id="reservePhone" placeholder="연락처" style="width:100%;background:#242424;color:#fff;border:1px solid #444;border-radius:8px;padding:12px;font-size:14px;margin-top:8px;">
+      </div>
+      <div class="loading" id="loadingMsg">⏳ 주문 전송 중...</div>
+      <button class="confirm-btn" onclick="confirmOrder()">주문 완료</button>
+      <button class="cancel-btn" onclick="closeModal()">취소</button>
+    </div>
+    <div class="success-msg" id="successMsg">
+      <div class="icon">✅</div>
+      <h3>주문이 접수되었습니다!</h3>
+      <p>잠시 후 음식이 준비됩니다</p>
+      <br>
+      <button class="confirm-btn" onclick="resetOrder()">새 주문하기</button>
+    </div>
+  </div>
+</div>
+
+<!-- Firebase -->
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+  import { getFirestore, collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyBHX6xer7Yy_kLFDPiuWrJO2l_PTQ6M0Ts",
+    authDomain: "supercrispy-staff.firebaseapp.com",
+    projectId: "supercrispy-staff",
+    storageBucket: "supercrispy-staff.firebasestorage.app",
+    messagingSenderId: "1015813214645",
+    appId: "1:1015813214645:web:9bca5550b065a2c1c0c9fc",
+    measurementId: "G-VZ9XEXSV37"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const db = getFirestore(app);
+
+  window.saveOrder = async function(orderData) {
+    try {
+      await addDoc(collection(db, "orders"), {
+        ...orderData,
+        status: "new",
+        createdAt: serverTimestamp()
+      });
+      return true;
+    } catch (e) {
+      console.error("주문 저장 오류:", e);
+      return false;
+    }
+  };
+</script>
+
+<script>
+  let cart = {};
+  let orderType = 'hall';
+
+  function setOrderType(type) {
+    orderType = type;
+    document.getElementById('section-hall').style.display = type === 'hall' ? 'block' : 'none';
+    document.getElementById('section-pack').style.display = type === 'pack' ? 'block' : 'none';
+    document.getElementById('section-reserve').style.display = type === 'reserve' ? 'block' : 'none';
+    ['hall','pack','reserve'].forEach(t => {
+      const btn = document.getElementById('btn-' + t);
+      btn.style.background = t === type ? '#c8102e' : '#333';
+      btn.style.borderColor = t === type ? '#c8102e' : '#444';
+    });
+  }
+
+  function showSection(id, el) {
+    document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    document.getElementById(id).classList.add('active');
+    el.classList.add('active');
+  }
+
+  function updateQty(btn, delta) {
+    const plusBtn = delta > 0 ? btn : btn.parentElement.querySelector('.plus');
+    const name = plusBtn.dataset.name;
+    const price = parseInt(plusBtn.dataset.price);
+    const qtyEl = btn.parentElement.querySelector('.qty-num');
+    let qty = parseInt(qtyEl.textContent) + delta;
+    if (qty < 0) qty = 0;
+    qtyEl.textContent = qty;
+    if (qty === 0) delete cart[name];
+    else cart[name] = { price, qty };
+    updateCartBar();
+  }
+
+  function updateCartBar() {
+    const bar = document.getElementById('cartBar');
+    const total = Object.values(cart).reduce((s, i) => s + i.price * i.qty, 0);
+    const count = Object.values(cart).reduce((s, i) => s + i.qty, 0);
+    if (count > 0) {
+      bar.classList.add('visible');
+      document.getElementById('cartCount').textContent = count + '개 선택';
+      document.getElementById('cartTotal').textContent = total.toLocaleString() + '원';
+    } else {
+      bar.classList.remove('visible');
+    }
+  }
+
+  function openModal() {
+    const list = document.getElementById('orderList');
+    list.innerHTML = '';
+    let total = 0;
+    Object.entries(cart).forEach(([name, item]) => {
+      const sub = item.price * item.qty;
+      total += sub;
+      list.innerHTML += `<div class="order-item"><span>${name} x${item.qty}</span><span class="order-item-price">${sub.toLocaleString()}원</span></div>`;
+    });
+    document.getElementById('modalTotal').textContent = total.toLocaleString() + '원';
+    document.getElementById('modalOverlay').classList.add('visible');
+    document.getElementById('orderContent').style.display = 'block';
+    document.getElementById('successMsg').style.display = 'none';
+    document.getElementById('loadingMsg').style.display = 'none';
+  }
+
+  function closeModal() {
+    document.getElementById('modalOverlay').classList.remove('visible');
+  }
+
+  async function confirmOrder() {
+    let orderInfo = {};
+
+    if (orderType === 'hall') {
+      const table = document.getElementById('tableSelect').value;
+      if (!table) { alert('테이블을 선택해주세요'); return; }
+      orderInfo = { type: '홀', table };
+    } else if (orderType === 'pack') {
+      orderInfo = { type: '포장' };
+    } else if (orderType === 'reserve') {
+      const date = document.getElementById('reserveDate').value;
+      const time = document.getElementById('reserveTime').value;
+      const name = document.getElementById('reserveName').value;
+      const phone = document.getElementById('reservePhone').value;
+      if (!date || !time) { alert('예약 날짜와 시간을 선택해주세요'); return; }
+      if (!name) { alert('예약자 이름을 입력해주세요'); return; }
+      orderInfo = { type: '예약', date, time, name, phone };
+    }
+
+    document.getElementById('loadingMsg').style.display = 'block';
+
+    const items = Object.entries(cart).map(([name, item]) => ({ name, price: item.price, qty: item.qty, subtotal: item.price * item.qty }));
+    const total = items.reduce((s, i) => s + i.subtotal, 0);
+
+    const orderData = { ...orderInfo, items, total, orderTime: new Date().toLocaleString('ko-KR') };
+
+    if (window.saveOrder) await window.saveOrder(orderData);
+
+    document.getElementById('loadingMsg').style.display = 'none';
+    document.getElementById('orderContent').style.display = 'none';
+    document.getElementById('successMsg').style.display = 'block';
+  }
+
+  function resetOrder() {
+    cart = {};
+    document.querySelectorAll('.qty-num').forEach(el => el.textContent = '0');
+    updateCartBar();
+    closeModal();
+  }
+</script>
+</body>
+</html>
