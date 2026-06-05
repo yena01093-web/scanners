@@ -382,25 +382,44 @@
     // Firebase에 임시 저장
     if (window.saveOrder) await window.saveOrder(orderData);
 
-    // 토스페이먼츠 결제
+    // 나이스페이먼츠 결제 - 서버에서 SignData 받아오기
     const orderId = 'ORDER_' + Date.now();
     const orderName = items.length === 1 ? items[0].name : items[0].name + ' 외 ' + (items.length - 1) + '건';
 
     try {
-      const tossPayments = TossPayments('test_ck_5OWRapdA8dGE0jlZm2eAro1zEqZK');
-      const payment = tossPayments.payment({ customerKey: 'GUEST_' + Date.now() });
-
-      await payment.requestPayment({
-        method: 'CARD',
-        amount: { currency: 'KRW', value: total },
-        orderId: orderId,
-        orderName: orderName,
-        successUrl: window.location.origin + window.location.pathname + '?success=true&orderId=' + orderId,
-        failUrl: window.location.origin + window.location.pathname + '?fail=true',
+      const response = await fetch('http://52.79.250.60:3000/api/payment/init', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          amount: total,
+          orderName: orderName,
+          orderId: orderId,
+          buyerName: orderInfo.type === '예약' ? (orderInfo.name || '고객') : '고객',
+          buyerTel: orderInfo.phone || '01000000000'
+        })
       });
+
+      const payParams = await response.json();
+
+      const form = document.createElement('form');
+      form.method = 'POST';
+      form.action = 'https://pg.nicepay.co.kr/nicepay/bill/InicisPay.jsp';
+      payParams.ReturnURL = window.location.href;
+
+      Object.entries(payParams).forEach(([key, value]) => {
+        const input = document.createElement('input');
+        input.type = 'hidden';
+        input.name = key;
+        input.value = value;
+        form.appendChild(input);
+      });
+
+      document.body.appendChild(form);
+      form.submit();
+
     } catch (e) {
       console.error('결제 오류:', e);
-      alert('결제 중 오류가 발생했습니다. 다시 시도해주세요.');
+      alert('결제 서버 연결 오류. 다시 시도해주세요.');
     }
   }
 
