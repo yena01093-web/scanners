@@ -384,7 +384,7 @@
     const orderName = items.length === 1 ? items[0].name : items[0].name + ' 외 ' + (items.length - 1) + '건';
 
     try {
-      const response = await fetch('http://52.79.250.60:3000/api/payment/init', {
+      const response = await fetch('https://stark-sleep-update.ngrok-free.app/api/payment/init', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
