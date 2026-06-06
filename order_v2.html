@@ -1,0 +1,456 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>슈퍼크리스피 제천점</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;900&display=swap');
+
+  * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  body { font-family: 'Noto Sans KR', sans-serif; background: #f5f5f5; color: #1a1a1a; min-height: 100vh; max-width: 480px; margin: 0 auto; }
+
+  /* 헤더 */
+  .header { background: #fff; padding: 16px; position: sticky; top: 0; z-index: 100; box-shadow: 0 1px 0 #ebebeb; }
+  .store-name { font-size: 18px; font-weight: 900; margin-bottom: 2px; }
+  .store-sub { font-size: 12px; color: #888; }
+
+  /* 카테고리 탭 */
+  .cat-tabs { background: #fff; display: flex; overflow-x: auto; scrollbar-width: none; border-bottom: 1px solid #ebebeb; padding: 0 4px; position: sticky; top: 62px; z-index: 99; }
+  .cat-tabs::-webkit-scrollbar { display: none; }
+  .cat-tab { padding: 12px 14px; font-size: 14px; font-weight: 700; color: #888; white-space: nowrap; border-bottom: 2px solid transparent; cursor: pointer; flex-shrink: 0; }
+  .cat-tab.active { color: #c8102e; border-bottom-color: #c8102e; }
+
+  /* 섹션 */
+  .section { display: none; }
+  .section.active { display: block; }
+  .section-header { padding: 20px 16px 12px; font-size: 16px; font-weight: 900; }
+
+  /* 메뉴 카드 - 이미지형 */
+  .menu-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; padding: 0 16px 16px; }
+
+  .menu-card { background: #fff; border-radius: 12px; overflow: hidden; cursor: pointer; position: relative; box-shadow: 0 1px 4px rgba(0,0,0,0.08); }
+  .menu-card-img { width: 100%; height: 120px; object-fit: cover; background: #f0f0f0; display: flex; align-items: center; justify-content: center; font-size: 40px; }
+  .menu-card-body { padding: 10px; }
+  .menu-card-name { font-size: 13px; font-weight: 700; margin-bottom: 4px; line-height: 1.3; }
+  .menu-card-price { font-size: 14px; font-weight: 900; color: #c8102e; }
+  .menu-card-badge { position: absolute; top: 8px; left: 8px; background: #c8102e; color: #fff; font-size: 9px; font-weight: 700; padding: 2px 6px; border-radius: 4px; }
+  .menu-card-badge.new { background: #1a73e8; }
+
+  /* 메뉴 리스트형 */
+  .menu-list { padding: 0 16px 16px; display: flex; flex-direction: column; gap: 8px; }
+  .menu-item { background: #fff; border-radius: 12px; padding: 14px; display: flex; gap: 12px; align-items: center; box-shadow: 0 1px 4px rgba(0,0,0,0.06); }
+  .menu-emoji { font-size: 32px; width: 52px; height: 52px; background: #f8f8f8; border-radius: 10px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .menu-info { flex: 1; min-width: 0; }
+  .menu-name { font-size: 14px; font-weight: 700; margin-bottom: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .menu-desc { font-size: 11px; color: #888; margin-bottom: 4px; }
+  .menu-price { font-size: 14px; font-weight: 900; color: #c8102e; }
+
+  .qty-ctrl { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
+  .qty-btn { width: 28px; height: 28px; border-radius: 50%; border: none; font-size: 16px; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: transform 0.1s; }
+  .qty-btn:active { transform: scale(0.9); }
+  .qty-btn.minus { background: #f0f0f0; color: #333; }
+  .qty-btn.plus { background: #c8102e; color: #fff; }
+  .qty-num { font-size: 14px; font-weight: 900; min-width: 16px; text-align: center; }
+
+  /* 장바구니 바 */
+  .cart-bar { position: fixed; bottom: 0; left: 50%; transform: translateX(-50%); width: 100%; max-width: 480px; background: #c8102e; padding: 12px 16px; display: none; align-items: center; justify-content: space-between; z-index: 200; safe-area-inset-bottom: env(safe-area-inset-bottom); }
+  .cart-bar.visible { display: flex; }
+  .cart-badge { background: rgba(255,255,255,0.25); color: #fff; font-size: 12px; font-weight: 700; padding: 4px 10px; border-radius: 20px; }
+  .cart-price { font-size: 16px; font-weight: 900; color: #fff; }
+  .cart-go { background: #fff; color: #c8102e; border: none; padding: 10px 18px; border-radius: 8px; font-size: 14px; font-weight: 900; cursor: pointer; }
+
+  /* 주문 모달 */
+  .modal-bg { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 300; }
+  .modal-bg.open { display: block; }
+  .modal { position: fixed; bottom: 0; left: 50%; transform: translateX(-50%); width: 100%; max-width: 480px; background: #fff; border-radius: 20px 20px 0 0; padding: 20px 16px 32px; z-index: 301; max-height: 85vh; overflow-y: auto; }
+  .modal-handle { width: 40px; height: 4px; background: #e0e0e0; border-radius: 2px; margin: 0 auto 16px; }
+  .modal-title { font-size: 17px; font-weight: 900; margin-bottom: 16px; }
+
+  /* 주문 타입 선택 */
+  .type-tabs { display: flex; gap: 8px; margin-bottom: 16px; }
+  .type-tab { flex: 1; padding: 10px; border: 2px solid #e0e0e0; border-radius: 10px; font-size: 13px; font-weight: 700; color: #888; text-align: center; cursor: pointer; }
+  .type-tab.active { border-color: #c8102e; color: #c8102e; background: #fff5f5; }
+
+  /* 주문 목록 */
+  .order-row { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid #f5f5f5; font-size: 14px; }
+  .order-row-name { color: #333; font-weight: 500; }
+  .order-row-price { font-weight: 700; color: #1a1a1a; }
+  .order-total-row { display: flex; justify-content: space-between; padding: 14px 0; font-size: 16px; font-weight: 900; }
+
+  .section-select { width: 100%; border: 1px solid #e0e0e0; border-radius: 10px; padding: 12px; font-size: 14px; background: #fff; color: #333; margin-bottom: 10px; font-family: inherit; }
+  .req-area { width: 100%; border: 1px solid #e0e0e0; border-radius: 10px; padding: 12px; font-size: 13px; background: #fff; color: #333; resize: none; font-family: inherit; margin-bottom: 14px; }
+
+  .order-btn { width: 100%; background: #c8102e; color: #fff; border: none; padding: 15px; border-radius: 12px; font-size: 16px; font-weight: 900; cursor: pointer; margin-bottom: 8px; font-family: inherit; }
+  .cancel-btn { width: 100%; background: #f5f5f5; color: #666; border: none; padding: 13px; border-radius: 12px; font-size: 14px; font-weight: 700; cursor: pointer; font-family: inherit; }
+
+  /* 예약 폼 */
+  .reserve-form { display: none; }
+  .form-label { font-size: 12px; color: #888; margin-bottom: 6px; display: block; font-weight: 700; }
+  .form-input { width: 100%; border: 1px solid #e0e0e0; border-radius: 10px; padding: 12px; font-size: 14px; font-family: inherit; margin-bottom: 10px; }
+
+  /* 완료 화면 */
+  .success-wrap { display: none; text-align: center; padding: 32px 0; }
+  .success-icon { font-size: 56px; margin-bottom: 12px; }
+  .success-title { font-size: 20px; font-weight: 900; margin-bottom: 6px; }
+  .success-sub { font-size: 14px; color: #888; margin-bottom: 24px; }
+
+  .pad-bottom { height: 80px; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="store-name">🍗 슈퍼크리스피 제천점</div>
+  <div class="store-sub">EVERYONE IS HAPPY BECAUSE CRISPY AND CHEAP</div>
+</div>
+
+<div class="cat-tabs">
+  <div class="cat-tab active" onclick="showCat('chicken',this)">치킨</div>
+  <div class="cat-tab" onclick="showCat('burger',this)">버거</div>
+  <div class="cat-tab" onclick="showCat('set',this)">세트</div>
+  <div class="cat-tab" onclick="showCat('side',this)">사이드</div>
+  <div class="cat-tab" onclick="showCat('drink',this)">음료</div>
+</div>
+
+<!-- 치킨 -->
+<div class="section active" id="cat-chicken">
+  <div class="section-header">🍗 치킨</div>
+  <div class="menu-grid">
+    <div class="menu-card" onclick="addToCart('슈퍼크리스피(한마리)',9900)">
+      <div class="menu-card-img">🍗</div>
+      <div class="menu-card-badge">BEST</div>
+      <div class="menu-card-body">
+        <div class="menu-card-name">슈퍼크리스피 한마리</div>
+        <div class="menu-card-price">9,900원</div>
+      </div>
+    </div>
+    <div class="menu-card" onclick="addToCart('핫 슈퍼크리스피(한마리)',11500)">
+      <div class="menu-card-img">🌶️</div>
+      <div class="menu-card-body">
+        <div class="menu-card-name">핫 슈퍼크리스피</div>
+        <div class="menu-card-price">11,500원</div>
+      </div>
+    </div>
+    <div class="menu-card" onclick="addToCart('양념 슈퍼크리스피(한마리)',12500)">
+      <div class="menu-card-img">🍯</div>
+      <div class="menu-card-body">
+        <div class="menu-card-name">양념 슈퍼크리스피</div>
+        <div class="menu-card-price">12,500원</div>
+      </div>
+    </div>
+    <div class="menu-card" onclick="addToCart('소이 슈퍼크리스피(한마리)',12500)">
+      <div class="menu-card-img">🫙</div>
+      <div class="menu-card-body">
+        <div class="menu-card-name">소이 슈퍼크리스피</div>
+        <div class="menu-card-price">12,500원</div>
+      </div>
+    </div>
+    <div class="menu-card" onclick="addToCart('슈퍼크리스피 반마리',6900)">
+      <div class="menu-card-img">🍗</div>
+      <div class="menu-card-body">
+        <div class="menu-card-name">슈퍼크리스피 반마리</div>
+        <div class="menu-card-price">6,900원</div>
+      </div>
+    </div>
+    <div class="menu-card" onclick="addToCart('슈퍼크리스피 순살',12900)">
+      <div class="menu-card-img">✨</div>
+      <div class="menu-card-body">
+        <div class="menu-card-name">순살 한마리</div>
+        <div class="menu-card-price">12,900원</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 버거 -->
+<div class="section" id="cat-burger">
+  <div class="section-header">🍔 버거</div>
+  <div class="menu-list">
+    <div class="menu-item">
+      <div class="menu-emoji">🍔</div>
+      <div class="menu-info"><div class="menu-name">치킨버거</div><div class="menu-price">2,900원</div></div>
+      <div class="qty-ctrl"><button class="qty-btn minus" onclick="updateQty(this,-1)">−</button><span class="qty-num">0</span><button class="qty-btn plus" onclick="updateQty(this,1)" data-name="치킨버거" data-price="2900">+</button></div>
+    </div>
+    <div class="menu-item">
+      <div class="menu-emoji">🧀</div>
+      <div class="menu-info"><div class="menu-name">치즈 치킨버거</div><div class="menu-price">3,700원</div></div>
+      <div class="qty-ctrl"><button class="qty-btn minus" onclick="updateQty(this,-1)">−</button><span class="qty-num">0</span><button class="qty-btn plus" onclick="updateQty(this,1)" data-name="치즈 치킨버거" data-price="3700">+</button></div>
+    </div>
+    <div class="menu-item">
+      <div class="menu-emoji">🍔</div>
+      <div class="menu-info"><div class="menu-name">디럭스 치킨버거</div><div class="menu-price">3,900원</div></div>
+      <div class="qty-ctrl"><button class="qty-btn minus" onclick="updateQty(this,-1)">−</button><span class="qty-num">0</span><button class="qty-btn plus" onclick="updateQty(this,1)" data-name="디럭스 치킨버거" data-price="3900">+</button></div>
+    </div>
+    <div class="menu-item">
+      <div class="menu-emoji">🌶️</div>
+      <div class="menu-info"><div class="menu-name">핫스파이시 치킨버거</div><div class="menu-price">3,700원</div></div>
+      <div class="qty-ctrl"><button class="qty-btn minus" onclick="updateQty(this,-1)">−</button><span class="qty-num">0</span><button class="qty-btn plus" onclick="updateQty(this,1)" data-name="핫스파이시 치킨버거" data-price="3700">+</button></div>
+    </div>
+    <div class="menu-item">
+      <div class="menu-emoji">🍔</div>
+      <div class="menu-info"><div class="menu-name">더블 치킨버거</div><div class="menu-price">5,400원</div></div>
+      <div class="qty-ctrl"><button class="qty-btn minus" onclick="updateQty(this,-1)">−</button><span class="qty-num">0</span><button class="qty-btn plus" onclick="updateQty(this,1)" data-name="더블 치킨버거" data-price="5400">+</button></div>
+    </div>
+    <div class="menu-item">
+      <div class="menu-emoji">🥩</div>
+      <div class="menu-info"><div class="menu-name">슈퍼불고기 <span style="font-size:10px;background:#1a73e8;color:#fff;padding:2px 5px;border-radius:3px;margin-left:4px">NEW</span></div><div class="menu-price">2,900원</div></div>
+      <div class="qty-ctrl"><button class="qty-btn minus" onclick="updateQty(this,-1)">−</button><span class="qty-num">0</span><button class="qty-btn plus" onclick="updateQty(this,1)" data-name="슈퍼불고기" data-price="2900">+</button></div>
+    </div>
+    <div class="menu-item">
+      <div class="menu-emoji">🍤</div>
+      <div class="menu-info"><div class="menu-name">슈퍼쉬림프 버거</div><div class="menu-price">5,400원</div></div>
+      <div class="qty-ctrl"><button class="qty-btn minus" onclick="updateQty(this,-1)">−</button><span class="qty-num">0</span><button class="qty-btn plus" onclick="updateQty(this,1)" data-name="슈퍼쉬림프 버거" data-price="5400">+</button></div>
+    </div>
+  </div>
+</div>
+
+<!-- 세트 -->
+<div class="section" id="cat-set">
+  <div class="section-header">🍱 세트</div>
+  <div class="menu-list">
+    <div class="menu-item">
+      <div class="menu-emoji">🍱</div>
+      <div class="menu-info"><div class="menu-name">치킨버거 세트</div><div class="menu-desc">버거+감자+음료</div><div class="menu-price">5,900원</div></div>
+      <div class="qty-ctrl"><button class="qty-btn minus" onclick="updateQty(this,-1)">−</button><span class="qty-num">0</span><button class="qty-btn plus" onclick="updateQty(this,1)" data-name="치킨버거 세트" data-price="5900">+</button></div>
+    </div>
+    <div class="menu-item">
+      <div class="menu-emoji">🍱</div>
+      <div class="menu-info"><div class="menu-name">치즈 치킨버거 세트</div><div class="menu-desc">버거+감자+음료</div><div class="menu-price">6,700원</div></div>
+      <div class="qty-ctrl"><button class="qty-btn minus" onclick="updateQty(this,-1)">−</button><span class="qty-num">0</span><button class="qty-btn plus" onclick="updateQty(this,1)" data-name="치즈 치킨버거 세트" data-price="6700">+</button></div>
+    </div>
+    <div class="menu-item">
+      <div class="menu-emoji">📦</div>
+      <div class="menu-info"><div class="menu-name">치킨콤보팩</div><div class="menu-desc">치킨버거2+반마리+너겟3+콜라2</div><div class="menu-price">16,900원</div></div>
+      <div class="qty-ctrl"><button class="qty-btn minus" onclick="updateQty(this,-1)">−</button><span class="qty-num">0</span><button class="qty-btn plus" onclick="updateQty(this,1)" data-name="치킨콤보팩" data-price="16900">+</button></div>
+    </div>
+    <div class="menu-item">
+      <div class="menu-emoji">👨‍👩‍👧‍👦</div>
+      <div class="menu-info"><div class="menu-name">패밀리팩</div><div class="menu-desc">버거3+반마리+너겟3+샐러드+콜라3</div><div class="menu-price">27,900원</div></div>
+      <div class="qty-ctrl"><button class="qty-btn minus" onclick="updateQty(this,-1)">−</button><span class="qty-num">0</span><button class="qty-btn plus" onclick="updateQty(this,1)" data-name="패밀리팩" data-price="27900">+</button></div>
+    </div>
+  </div>
+</div>
+
+<!-- 사이드 -->
+<div class="section" id="cat-side">
+  <div class="section-header">🍟 사이드</div>
+  <div class="menu-list">
+    <div class="menu-item"><div class="menu-emoji">🍟</div><div class="menu-info"><div class="menu-name">슈퍼크런치 감자튀김</div><div class="menu-price">2,500원</div></div><div class="qty-ctrl"><button class="qty-btn minus" onclick="updateQty(this,-1)">−</button><span class="qty-num">0</span><button class="qty-btn plus" onclick="updateQty(this,1)" data-name="슈퍼크런치 감자튀김" data-price="2500">+</button></div></div>
+    <div class="menu-item"><div class="menu-emoji">🧀</div><div class="menu-info"><div class="menu-name">해피 치즈스틱 2개</div><div class="menu-price">2,300원</div></div><div class="qty-ctrl"><button class="qty-btn minus" onclick="updateQty(this,-1)">−</button><span class="qty-num">0</span><button class="qty-btn plus" onclick="updateQty(this,1)" data-name="해피 치즈스틱 2개" data-price="2300">+</button></div></div>
+    <div class="menu-item"><div class="menu-emoji">🍡</div><div class="menu-info"><div class="menu-name">쫀득 모짜 치즈볼 3개</div><div class="menu-price">2,900원</div></div><div class="qty-ctrl"><button class="qty-btn minus" onclick="updateQty(this,-1)">−</button><span class="qty-num">0</span><button class="qty-btn plus" onclick="updateQty(this,1)" data-name="쫀득 모짜 치즈볼 3개" data-price="2900">+</button></div></div>
+    <div class="menu-item"><div class="menu-emoji">🥗</div><div class="menu-info"><div class="menu-name">닭다리살 치킨샐러드</div><div class="menu-price">3,900원</div></div><div class="qty-ctrl"><button class="qty-btn minus" onclick="updateQty(this,-1)">−</button><span class="qty-num">0</span><button class="qty-btn plus" onclick="updateQty(this,1)" data-name="닭다리살 치킨샐러드" data-price="3900">+</button></div></div>
+    <div class="menu-item"><div class="menu-emoji">🍗</div><div class="menu-info"><div class="menu-name">크런치너겟 3개</div><div class="menu-price">1,800원</div></div><div class="qty-ctrl"><button class="qty-btn minus" onclick="updateQty(this,-1)">−</button><span class="qty-num">0</span><button class="qty-btn plus" onclick="updateQty(this,1)" data-name="크런치너겟 3개" data-price="1800">+</button></div></div>
+  </div>
+</div>
+
+<!-- 음료 -->
+<div class="section" id="cat-drink">
+  <div class="section-header">🥤 음료</div>
+  <div class="menu-list">
+    <div class="menu-item"><div class="menu-emoji">🥤</div><div class="menu-info"><div class="menu-name">코카콜라 245ml</div><div class="menu-price">1,300원</div></div><div class="qty-ctrl"><button class="qty-btn minus" onclick="updateQty(this,-1)">−</button><span class="qty-num">0</span><button class="qty-btn plus" onclick="updateQty(this,1)" data-name="코카콜라 245ml" data-price="1300">+</button></div></div>
+    <div class="menu-item"><div class="menu-emoji">🥤</div><div class="menu-info"><div class="menu-name">코카콜라 제로 245ml</div><div class="menu-price">1,300원</div></div><div class="qty-ctrl"><button class="qty-btn minus" onclick="updateQty(this,-1)">−</button><span class="qty-num">0</span><button class="qty-btn plus" onclick="updateQty(this,1)" data-name="코카콜라 제로 245ml" data-price="1300">+</button></div></div>
+    <div class="menu-item"><div class="menu-emoji">💚</div><div class="menu-info"><div class="menu-name">스프라이트 245ml</div><div class="menu-price">1,300원</div></div><div class="qty-ctrl"><button class="qty-btn minus" onclick="updateQty(this,-1)">−</button><span class="qty-num">0</span><button class="qty-btn plus" onclick="updateQty(this,1)" data-name="스프라이트 245ml" data-price="1300">+</button></div></div>
+    <div class="menu-item"><div class="menu-emoji">🥤</div><div class="menu-info"><div class="menu-name">코카콜라 500ml</div><div class="menu-price">2,100원</div></div><div class="qty-ctrl"><button class="qty-btn minus" onclick="updateQty(this,-1)">−</button><span class="qty-num">0</span><button class="qty-btn plus" onclick="updateQty(this,1)" data-name="코카콜라 500ml" data-price="2100">+</button></div></div>
+  </div>
+</div>
+
+<div class="pad-bottom"></div>
+
+<!-- 장바구니 바 -->
+<div class="cart-bar" id="cartBar">
+  <div class="cart-badge" id="cartBadge">0개</div>
+  <div class="cart-price" id="cartPrice">0원</div>
+  <button class="cart-go" onclick="openModal()">주문하기</button>
+</div>
+
+<!-- 주문 모달 -->
+<div class="modal-bg" id="modalBg" onclick="closeModal()"></div>
+<div class="modal" id="modal">
+  <div class="modal-handle"></div>
+
+  <div id="modalOrder">
+    <div class="modal-title">🛒 주문 확인</div>
+
+    <div class="type-tabs">
+      <div class="type-tab active" onclick="setType('hall',this)">🍽️ 홀</div>
+      <div class="type-tab" onclick="setType('pack',this)">📦 포장</div>
+      <div class="type-tab" onclick="setType('reserve',this)">📅 예약</div>
+    </div>
+
+    <div id="typeHall">
+      <select class="section-select" id="tableSelect">
+        <option value="">테이블 선택</option>
+        <option value="1번">1번 테이블</option>
+        <option value="2번">2번 테이블</option>
+        <option value="3번">3번 테이블</option>
+        <option value="4번">4번 테이블</option>
+        <option value="5번">5번 테이블</option>
+        <option value="6번">6번 테이블</option>
+        <option value="7번">7번 테이블</option>
+        <option value="8번">8번 테이블</option>
+      </select>
+    </div>
+
+    <div id="typePack" style="display:none">
+      <div style="background:#f8f8f8;border-radius:10px;padding:12px;font-size:13px;color:#666;margin-bottom:10px">📦 포장 주문입니다. 카운터에서 수령해주세요.</div>
+    </div>
+
+    <div id="typeReserve" style="display:none">
+      <input type="date" class="form-input" id="resDate">
+      <select class="section-select" id="resTime">
+        <option value="">방문 시간 선택</option>
+        <option>11:00</option><option>11:30</option><option>12:00</option>
+        <option>12:30</option><option>13:00</option><option>14:00</option>
+        <option>15:00</option><option>16:00</option><option>17:00</option>
+        <option>18:00</option><option>19:00</option><option>20:00</option>
+      </select>
+      <input type="text" class="form-input" id="resName" placeholder="예약자 이름">
+      <input type="tel" class="form-input" id="resPhone" placeholder="연락처">
+    </div>
+
+    <div id="orderItemList"></div>
+    <div class="order-total-row"><span>합계</span><span id="orderTotalPrice">0원</span></div>
+
+    <textarea class="req-area" id="reqText" placeholder="요청사항 (예: 소스 많이 주세요)" rows="2"></textarea>
+
+    <button class="order-btn" onclick="confirmOrder()">💳 결제하기</button>
+    <button class="cancel-btn" onclick="closeModal()">취소</button>
+  </div>
+
+  <div class="success-wrap" id="successWrap">
+    <div class="success-icon">✅</div>
+    <div class="success-title">주문 완료!</div>
+    <div class="success-sub">잠시 후 음식이 준비됩니다</div>
+    <button class="order-btn" onclick="resetAll()">추가 주문하기</button>
+  </div>
+</div>
+
+<!-- Firebase -->
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+  import { getFirestore, collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+  const app = initializeApp({
+    apiKey: "AIzaSyBHX6xer7Yy_kLFDPiuWrJO2l_PTQ6M0Ts",
+    authDomain: "supercrispy-staff.firebaseapp.com",
+    projectId: "supercrispy-staff",
+    storageBucket: "supercrispy-staff.firebasestorage.app",
+    messagingSenderId: "1015813214645",
+    appId: "1:1015813214645:web:9bca5550b065a2c1c0c9fc"
+  });
+  const db = getFirestore(app);
+  window.saveOrder = async (data) => {
+    try { await addDoc(collection(db, "orders"), { ...data, status: "new", createdAt: serverTimestamp() }); return true; }
+    catch(e) { return false; }
+  };
+</script>
+
+<script>
+  let cart = {};
+  let orderType = 'hall';
+
+  function showCat(id, el) {
+    document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+    document.querySelectorAll('.cat-tab').forEach(t => t.classList.remove('active'));
+    document.getElementById('cat-' + id).classList.add('active');
+    el.classList.add('active');
+  }
+
+  function addToCart(name, price) {
+    cart[name] = { price, qty: (cart[name]?.qty || 0) + 1 };
+    updateBar();
+    // 살짝 진동
+    if (navigator.vibrate) navigator.vibrate(30);
+  }
+
+  function updateQty(btn, delta) {
+    const plus = delta > 0 ? btn : btn.parentElement.querySelector('.plus');
+    const name = plus.dataset.name;
+    const price = parseInt(plus.dataset.price);
+    const qtyEl = btn.parentElement.querySelector('.qty-num');
+    let qty = parseInt(qtyEl.textContent) + delta;
+    if (qty < 0) qty = 0;
+    qtyEl.textContent = qty;
+    if (qty === 0) delete cart[name];
+    else cart[name] = { price, qty };
+    updateBar();
+  }
+
+  function updateBar() {
+    const bar = document.getElementById('cartBar');
+    const total = Object.values(cart).reduce((s, i) => s + i.price * i.qty, 0);
+    const count = Object.values(cart).reduce((s, i) => s + i.qty, 0);
+    if (count > 0) {
+      bar.classList.add('visible');
+      document.getElementById('cartBadge').textContent = count + '개';
+      document.getElementById('cartPrice').textContent = total.toLocaleString() + '원';
+    } else {
+      bar.classList.remove('visible');
+    }
+  }
+
+  function setType(type, el) {
+    orderType = type;
+    document.querySelectorAll('.type-tab').forEach(t => t.classList.remove('active'));
+    el.classList.add('active');
+    document.getElementById('typeHall').style.display = type === 'hall' ? 'block' : 'none';
+    document.getElementById('typePack').style.display = type === 'pack' ? 'block' : 'none';
+    document.getElementById('typeReserve').style.display = type === 'reserve' ? 'block' : 'none';
+  }
+
+  function openModal() {
+    let html = '';
+    let total = 0;
+    Object.entries(cart).forEach(([name, item]) => {
+      const sub = item.price * item.qty;
+      total += sub;
+      html += `<div class="order-row"><span class="order-row-name">${name} x${item.qty}</span><span class="order-row-price">${sub.toLocaleString()}원</span></div>`;
+    });
+    document.getElementById('orderItemList').innerHTML = html;
+    document.getElementById('orderTotalPrice').textContent = total.toLocaleString() + '원';
+    document.getElementById('modalBg').classList.add('open');
+    document.getElementById('modal').style.display = 'block';
+    document.getElementById('modalOrder').style.display = 'block';
+    document.getElementById('successWrap').style.display = 'none';
+  }
+
+  function closeModal() {
+    document.getElementById('modalBg').classList.remove('open');
+  }
+
+  async function confirmOrder() {
+    let orderInfo = {};
+    if (orderType === 'hall') {
+      const t = document.getElementById('tableSelect').value;
+      if (!t) { alert('테이블을 선택해주세요'); return; }
+      orderInfo = { type: '홀', table: t };
+    } else if (orderType === 'pack') {
+      orderInfo = { type: '포장' };
+    } else {
+      const date = document.getElementById('resDate').value;
+      const time = document.getElementById('resTime').value;
+      const name = document.getElementById('resName').value;
+      if (!date || !time) { alert('날짜와 시간을 선택해주세요'); return; }
+      if (!name) { alert('예약자 이름을 입력해주세요'); return; }
+      orderInfo = { type: '예약', date, time, name, phone: document.getElementById('resPhone').value };
+    }
+
+    const items = Object.entries(cart).map(([name, item]) => ({ name, price: item.price, qty: item.qty, subtotal: item.price * item.qty }));
+    const total = items.reduce((s, i) => s + i.subtotal, 0);
+    const req = document.getElementById('reqText').value;
+
+    if (window.saveOrder) await window.saveOrder({ ...orderInfo, items, total, request: req, orderTime: new Date().toLocaleString('ko-KR') });
+
+    document.getElementById('modalOrder').style.display = 'none';
+    document.getElementById('successWrap').style.display = 'block';
+  }
+
+  function resetAll() {
+    cart = {};
+    document.querySelectorAll('.qty-num').forEach(el => el.textContent = '0');
+    updateBar();
+    closeModal();
+  }
+</script>
+</body>
+</html>
