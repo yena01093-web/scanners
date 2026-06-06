@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>JC Hotel 룸서비스</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: 'Apple SD Gothic Neo', 'Noto Sans KR', sans-serif; background: #0f0e0a; color: #f0ead0; min-height: 100vh; }
+
+  header { background: #1a1810; border-bottom: 1px solid #2a2618; padding: 14px 16px; text-align: center; position: sticky; top: 0; z-index: 100; }
+  .hotel-name { font-size: 11px; color: #c8960c; letter-spacing: 3px; font-weight: 700; margin-bottom: 3px; }
+  .room-num { font-size: 18px; font-weight: 900; }
+  .room-num span { color: #c8960c; }
+
+  .tabs { display: flex; background: #1a1810; border-bottom: 1px solid #2a2618; overflow-x: auto; scrollbar-width: none; }
+  .tabs::-webkit-scrollbar { display: none; }
+  .tab { padding: 11px 16px; font-size: 13px; font-weight: 700; color: #887a50; border-bottom: 2px solid transparent; cursor: pointer; white-space: nowrap; }
+  .tab.active { color: #c8960c; border-bottom-color: #c8960c; }
+
+  .section { display: none; padding: 16px; }
+  .section.active { display: block; }
+
+  .menu-item { background: #1a1810; border: 1px solid #2a2618; border-radius: 12px; padding: 14px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+  .menu-info { flex: 1; }
+  .menu-name { font-size: 14px; font-weight: 700; margin-bottom: 3px; }
+  .menu-desc { font-size: 11px; color: #887a50; margin-bottom: 4px; }
+  .menu-price { font-size: 14px; font-weight: 900; color: #c8960c; }
+
+  .qty-control { display: flex; align-items: center; gap: 8px; margin-left: 12px; }
+  .qty-btn { width: 28px; height: 28px; border-radius: 50%; border: none; font-size: 16px; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+  .qty-btn.minus { background: #2a2618; color: #f0ead0; }
+  .qty-btn.plus { background: #c8960c; color: #000; }
+  .qty-num { font-size: 15px; font-weight: 900; min-width: 18px; text-align: center; }
+
+  .cart-bar { position: fixed; bottom: 0; left: 0; right: 0; background: #c8960c; padding: 12px 16px; display: none; align-items: center; justify-content: space-between; z-index: 200; }
+  .cart-bar.visible { display: flex; }
+  .cart-info { font-size: 13px; font-weight: 700; color: #000; }
+  .cart-total { font-size: 17px; font-weight: 900; color: #000; }
+  .cart-btn { background: #000; color: #c8960c; border: none; padding: 10px 18px; border-radius: 8px; font-size: 14px; font-weight: 900; cursor: pointer; }
+
+  .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.85); z-index: 300; align-items: flex-end; }
+  .modal-overlay.visible { display: flex; }
+  .modal { background: #1a1810; width: 100%; border-radius: 20px 20px 0 0; padding: 24px 16px; max-height: 85vh; overflow-y: auto; border-top: 1px solid #2a2618; }
+  .modal h2 { font-size: 17px; font-weight: 900; margin-bottom: 16px; }
+
+  .order-item { display: flex; justify-content: space-between; padding: 8px 0; font-size: 13px; border-bottom: 1px solid #2a2618; }
+  .order-price { color: #c8960c; font-weight: 700; }
+  .order-total { display: flex; justify-content: space-between; padding: 14px 0; font-size: 16px; font-weight: 900; color: #c8960c; }
+
+  .req-input { width: 100%; background: #0f0e0a; border: 1px solid #2a2618; border-radius: 8px; padding: 12px; color: #f0ead0; font-size: 14px; margin-bottom: 12px; resize: none; }
+
+  .confirm-btn { width: 100%; background: #c8960c; color: #000; border: none; padding: 14px; border-radius: 10px; font-size: 15px; font-weight: 900; cursor: pointer; margin-bottom: 8px; }
+  .cancel-btn { width: 100%; background: #2a2618; color: #f0ead0; border: none; padding: 12px; border-radius: 10px; font-size: 13px; font-weight: 700; cursor: pointer; }
+
+  .success-msg { display: none; text-align: center; padding: 24px 0; }
+  .success-msg .icon { font-size: 48px; margin-bottom: 10px; }
+  .success-msg h3 { font-size: 19px; font-weight: 900; margin-bottom: 6px; }
+  .success-msg p { color: #887a50; font-size: 13px; }
+
+  .sec-title { font-size: 13px; font-weight: 700; color: #887a50; letter-spacing: 1px; margin: 16px 0 10px; }
+  .sec-title:first-child { margin-top: 0; }
+
+  div[style*="height:80px"] { height: 80px; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="hotel-name">JC HOTEL · ROOM SERVICE</div>
+  <div class="room-num">객실 <span id="roomDisplay">101</span>호</div>
+</header>
+
+<div class="tabs">
+  <div class="tab active" onclick="showSection('alcohol', this)">🍺 주류</div>
+  <div class="tab" onclick="showSection('drink', this)">🥤 음료</div>
+  <div class="tab" onclick="showSection('meal', this)">🍽️ 식사</div>
+  <div class="tab" onclick="showSection('snack', this)">🍿 간식</div>
+  <div class="tab" onclick="showSection('anju', this)">🍖 안주</div>
+</div>
+
+<!-- 주류 -->
+<div class="section active" id="alcohol">
+  <div class="sec-title">맥주</div>
+  <div class="menu-item"><div class="menu-info"><div class="menu-name">카스 Fresh</div><div class="menu-desc">500ml</div><div class="menu-price">5,000원</div></div><div class="qty-control"><button class="qty-btn minus" onclick="updateQty(this,-1)">−</button><span class="qty-num">0</span><button class="qty-btn plus" onclick="updateQty(this,1)" data-name="카스 Fresh" data-price="5000">+</button></div></div>
+  <div class="menu-item"><div class="menu-info"><div class="menu-name">테라</div><div class="menu-desc">500ml</div><div class="menu-price">5,000원</div></div><div class="qty-control"><button class="qty-btn minus" onclick="updateQty(this,-1)">−</button><span class="qty-num">0</span><button class="qty-btn plus" onclick="updateQty(this,1)" data-name="테라" data-price="5000">+</button></div></div>
+  <div class="menu-item"><div class="menu-info"><div class="menu-name">하이네켄</div><div class="menu-desc">330ml</div><div class="menu-price">7,000원</div></div><div class="qty-control"><button class="qty-btn minus" onclick="updateQty(this,-1)">−</button><span class="qty-num">0</span><button class="qty-btn plus" onclick="updateQty(this,1)" data-name="하이네켄" data-price="7000">+</button></div></div>
+
+  <div class="sec-title">소주/양주</div>
+  <div class="menu-item"><div class="menu-info"><div class="menu-name">참이슬</div><div class="menu-desc">360ml</div><div class="menu-price">5,000원</div></div><div class="qty-control"><button class="qty-btn minus" onclick="updateQty(this,-1)">−</button><span class="qty-num">0</span><button class="qty-btn plus" onclick="updateQty(this,1)" data-name="참이슬" data-price="5000">+</button></div></div>
+  <div class="menu-item"><div class="menu-info"><div class="menu-name">처음처럼</div><div class="menu-desc">360ml</div><div class="menu-price">5,000원</div></div><div class="qty-control"><button class="qty-btn minus" onclick="updateQty(this,-1)">−</button><span class="qty-num">0</span><button class="qty-btn plus" onclick="updateQty(this,1)" data-name="처음처럼" data-price="5000">+</button></div></div>
+  <div class="menu-item"><div class="menu-info"><div class="menu-name">막걸리</div><div class="menu-desc">750ml</div><div class="menu-price">6,000원</div></div><div class="qty-control"><button class="qty-btn minus" onclick="updateQty(this,-1)">−</button><span class="qty-num">0</span><button class="qty-btn plus" onclick="updateQty(this,1)" data-name="막걸리" data-price="6000">+</button></div></div>
+
+  <div class="sec-title">와인</div>
+  <div class="menu-item"><div class="menu-info"><div class="menu-name">레드 와인</div><div class="menu-desc">1잔</div><div class="menu-price">12,000원</div></div><div class="qty-control"><button class="qty-btn minus" onclick="updateQty(this,-1)">−</button><span class="qty-num">0</span><button class="qty-btn plus" onclick="updateQty(this,1)" data-name="레드 와인" data-price="12000">+</button></div></div>
+  <div class="menu-item"><div class="menu-info"><div class="menu-name">화이트 와인</div><div class="menu-desc">1잔</div><div class="menu-price">12,000원</div></div><div class="qty-control"><button class="qty-btn minus" onclick="updateQty(this,-1)">−</button><span class="qty-num">0</span><button class="qty-btn plus" onclick="updateQty(this,1)" data-name="화이트 와인" data-price="12000">+</button></div></div>
+</div>
+
+<!-- 음료 -->
+<div class="section" id="drink">
+  <div class="sec-title">음료</div>
+  <div class="menu-item"><div class="menu-info"><div class="menu-name">콜라</div><div class="menu-desc">355ml</div><div class="menu-price">3,000원</div></div><div class="qty-control"><button class="qty-btn minus" onclick="updateQty(this,-1)">−</button><span class="qty-num">0</span><button class="qty-btn plus" onclick="updateQty(this,1)" data-name="콜라" data-price="3000">+</button></div></div>
+  <div class="menu-item"><div class="menu-info"><div class="menu-name">사이다</div><div class="menu-desc">355ml</div><div class="menu-price">3,000원</div></div><div class="qty-control"><button class="qty-btn minus" onclick="updateQty(this,-1)">−</button><span class="qty-num">0</span><button class="qty-btn plus" onclick="updateQty(this,1)" data-name="사이다" data-price="3000">+</button></div></div>
+  <div class="menu-item"><div class="menu-info"><div class="menu-name">오렌지 주스</div><div class="menu-desc">200ml</div><div class="menu-price">4,000원</div></div><div class="qty-control"><button class="qty-btn minus" onclick="updateQty(this,-1)">−</button><span class="qty-num">0</span><button class="qty-btn plus" onclick="updateQty(this,1)" data-name="오렌지 주스" data-price="4000">+</button></div></div>
+  <div class="menu-item"><div class="menu-info"><div class="menu-name">생수</div><div class="menu-desc">500ml</div><div class="menu-price">2,000원</div></div><div class="qty-control"><button class="qty-btn minus" onclick="updateQty(this,-1)">−</button><span class="qty-num">0</span><button class="qty-btn plus" onclick="updateQty(this,1)" data-name="생수" data-price="2000">+</button></div></div>
+  <div class="menu-item"><div class="menu-info"><div class="menu-name">커피 (아메리카노)</div><div class="menu-desc">따뜻/아이스</div><div class="menu-price">5,000원</div></div><div class="qty-control"><button class="qty-btn minus" onclick="updateQty(this,-1)">−</button><span class="qty-num">0</span><button class="qty-btn plus" onclick="updateQty(this,1)" data-name="아메리카노" data-price="5000">+</button></div></div>
+</div>
+
+<!-- 식사 -->
+<div class="section" id="meal">
+  <div class="sec-title">식사</div>
+  <div class="menu-item"><div class="menu-info"><div class="menu-name">라면</div><div class="menu-desc">컵라면 / 계란 포함</div><div class="menu-price">5,000원</div></div><div class="qty-control"><button class="qty-btn minus" onclick="updateQty(this,-1)">−</button><span class="qty-num">0</span><button class="qty-btn plus" onclick="updateQty(this,1)" data-name="라면" data-price="5000">+</button></div></div>
+  <div class="menu-item"><div class="menu-info"><div class="menu-name">컵밥 (참치마요)</div><div class="menu-desc">전자레인지 조리</div><div class="menu-price">6,000원</div></div><div class="qty-control"><button class="qty-btn minus" onclick="updateQty(this,-1)">−</button><span class="qty-num">0</span><button class="qty-btn plus" onclick="updateQty(this,1)" data-name="컵밥(참치마요)" data-price="6000">+</button></div></div>
+  <div class="menu-item"><div class="menu-info"><div class="menu-name">샌드위치</div><div class="menu-desc">햄 & 치즈</div><div class="menu-price">7,000원</div></div><div class="qty-control"><button class="qty-btn minus" onclick="updateQty(this,-1)">−</button><span class="qty-num">0</span><button class="qty-btn plus" onclick="updateQty(this,1)" data-name="샌드위치" data-price="7000">+</button></div></div>
+  <div class="menu-item"><div class="menu-info"><div class="menu-name">토스트 세트</div><div class="menu-desc">음료 포함</div><div class="menu-price">9,000원</div></div><div class="qty-control"><button class="qty-btn minus" onclick="updateQty(this,-1)">−</button><span class="qty-num">0</span><button class="qty-btn plus" onclick="updateQty(this,1)" data-name="토스트 세트" data-price="9000">+</button></div></div>
+</div>
+
+<!-- 간식 -->
+<div class="section" id="snack">
+  <div class="sec-title">간식</div>
+  <div class="menu-item"><div class="menu-info"><div class="menu-name">아이스크림</div><div class="menu-desc">바닐라 / 초코</div><div class="menu-price">4,000원</div></div><div class="qty-control"><button class="qty-btn minus" onclick="updateQty(this,-1)">−</button><span class="qty-num">0</span><button class="qty-btn plus" onclick="updateQty(this,1)" data-name="아이스크림" data-price="4000">+</button></div></div>
+  <div class="menu-item"><div class="menu-info"><div class="menu-name">컵라면 (스낵)</div><div class="menu-desc">새우깡 / 포카칩</div><div class="menu-price">3,000원</div></div><div class="qty-control"><button class="qty-btn minus" onclick="updateQty(this,-1)">−</button><span class="qty-num">0</span><button class="qty-btn plus" onclick="updateQty(this,1)" data-name="과자" data-price="3000">+</button></div></div>
+  <div class="menu-item"><div class="menu-info"><div class="menu-name">초콜릿</div><div class="menu-desc">다양한 종류</div><div class="menu-price">4,000원</div></div><div class="qty-control"><button class="qty-btn minus" onclick="updateQty(this,-1)">−</button><span class="qty-num">0</span><button class="qty-btn plus" onclick="updateQty(this,1)" data-name="초콜릿" data-price="4000">+</button></div></div>
+  <div class="menu-item"><div class="menu-info"><div class="menu-name">컵 아이스크림</div><div class="menu-desc">하겐다즈</div><div class="menu-price">7,000원</div></div><div class="qty-control"><button class="qty-btn minus" onclick="updateQty(this,-1)">−</button><span class="qty-num">0</span><button class="qty-btn plus" onclick="updateQty(this,1)" data-name="하겐다즈" data-price="7000">+</button></div></div>
+</div>
+
+<!-- 안주 -->
+<div class="section" id="anju">
+  <div class="sec-title">안주</div>
+  <div class="menu-item"><div class="menu-info"><div class="menu-name">마른안주 세트</div><div class="menu-desc">오징어 / 땅콩 / 육포</div><div class="menu-price">12,000원</div></div><div class="qty-control"><button class="qty-btn minus" onclick="updateQty(this,-1)">−</button><span class="qty-num">0</span><button class="qty-btn plus" onclick="updateQty(this,1)" data-name="마른안주 세트" data-price="12000">+</button></div></div>
+  <div class="menu-item"><div class="menu-info"><div class="menu-name">치킨 (순살)</div><div class="menu-desc">500g</div><div class="menu-price">18,000원</div></div><div class="qty-control"><button class="qty-btn minus" onclick="updateQty(this,-1)">−</button><span class="qty-num">0</span><button class="qty-btn plus" onclick="updateQty(this,1)" data-name="치킨(순살)" data-price="18000">+</button></div></div>
+  <div class="menu-item"><div class="menu-info"><div class="menu-name">피자 (8인치)</div><div class="menu-desc">치즈 / 페퍼로니</div><div class="menu-price">22,000원</div></div><div class="qty-control"><button class="qty-btn minus" onclick="updateQty(this,-1)">−</button><span class="qty-num">0</span><button class="qty-btn plus" onclick="updateQty(this,1)" data-name="피자(8인치)" data-price="22000">+</button></div></div>
+  <div class="menu-item"><div class="menu-info"><div class="menu-name">과일 플레이트</div><div class="menu-desc">제철 과일 모둠</div><div class="menu-price">15,000원</div></div><div class="qty-control"><button class="qty-btn minus" onclick="updateQty(this,-1)">−</button><span class="qty-num">0</span><button class="qty-btn plus" onclick="updateQty(this,1)" data-name="과일 플레이트" data-price="15000">+</button></div></div>
+  <div class="menu-item"><div class="menu-info"><div class="menu-name">나초 & 살사소스</div><div class="menu-desc">맥주 안주 최고</div><div class="menu-price">9,000원</div></div><div class="qty-control"><button class="qty-btn minus" onclick="updateQty(this,-1)">−</button><span class="qty-num">0</span><button class="qty-btn plus" onclick="updateQty(this,1)" data-name="나초&살사소스" data-price="9000">+</button></div></div>
+</div>
+
+<div style="height:80px"></div>
+
+<div class="cart-bar" id="cartBar">
+  <div>
+    <div class="cart-info" id="cartCount">0개</div>
+    <div class="cart-total" id="cartTotal">0원</div>
+  </div>
+  <button class="cart-btn" onclick="openModal()">주문하기</button>
+</div>
+
+<div class="modal-overlay" id="modalOverlay">
+  <div class="modal">
+    <div id="orderContent">
+      <h2>🛎️ 룸서비스 주문 확인</h2>
+      <div id="orderList"></div>
+      <div class="order-total"><span>합계</span><span id="modalTotal">0원</span></div>
+      <textarea class="req-input" id="reqInput" placeholder="요청사항 (예: 컵 2개 주세요)" rows="2"></textarea>
+      <div id="loadingMsg" style="display:none;text-align:center;padding:12px;color:#887a50;font-size:13px;">⏳ 주문 전송 중...</div>
+      <button class="confirm-btn" onclick="confirmOrder()">🛎️ 주문 완료</button>
+      <button class="cancel-btn" onclick="closeModal()">취소</button>
+    </div>
+    <div class="success-msg" id="successMsg">
+      <div class="icon">✅</div>
+      <h3>주문이 접수되었습니다!</h3>
+      <p>잠시 후 객실로 가져다 드리겠습니다</p>
+      <br>
+      <button class="confirm-btn" onclick="resetOrder()">추가 주문하기</button>
+    </div>
+  </div>
+</div>
+
+<!-- Firebase -->
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+  import { getFirestore, collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyBHX6xer7Yy_kLFDPiuWrJO2l_PTQ6M0Ts",
+    authDomain: "supercrispy-staff.firebaseapp.com",
+    projectId: "supercrispy-staff",
+    storageBucket: "supercrispy-staff.firebasestorage.app",
+    messagingSenderId: "1015813214645",
+    appId: "1:1015813214645:web:9bca5550b065a2c1c0c9fc"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const db = getFirestore(app);
+
+  window.saveHotelOrder = async function(orderData) {
+    try {
+      await addDoc(collection(db, "hotel_orders"), {
+        ...orderData,
+        status: "new",
+        createdAt: serverTimestamp()
+      });
+      return true;
+    } catch (e) {
+      console.error(e);
+      return false;
+    }
+  };
+</script>
+
+<script>
+  // URL에서 객실 번호 가져오기
+  const urlParams = new URLSearchParams(window.location.search);
+  const roomNum = urlParams.get('room') || '101';
+  document.getElementById('roomDisplay').textContent = roomNum;
+
+  let cart = {};
+
+  function showSection(id, el) {
+    document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    document.getElementById(id).classList.add('active');
+    el.classList.add('active');
+  }
+
+  function updateQty(btn, delta) {
+    const plusBtn = delta > 0 ? btn : btn.parentElement.querySelector('.plus');
+    const name = plusBtn.dataset.name;
+    const price = parseInt(plusBtn.dataset.price);
+    const qtyEl = btn.parentElement.querySelector('.qty-num');
+    let qty = parseInt(qtyEl.textContent) + delta;
+    if (qty < 0) qty = 0;
+    qtyEl.textContent = qty;
+    if (qty === 0) delete cart[name];
+    else cart[name] = { price, qty };
+    updateCartBar();
+  }
+
+  function updateCartBar() {
+    const bar = document.getElementById('cartBar');
+    const total = Object.values(cart).reduce((s, i) => s + i.price * i.qty, 0);
+    const count = Object.values(cart).reduce((s, i) => s + i.qty, 0);
+    if (count > 0) {
+      bar.classList.add('visible');
+      document.getElementById('cartCount').textContent = count + '개';
+      document.getElementById('cartTotal').textContent = total.toLocaleString() + '원';
+    } else {
+      bar.classList.remove('visible');
+    }
+  }
+
+  function openModal() {
+    const list = document.getElementById('orderList');
+    list.innerHTML = '';
+    let total = 0;
+    Object.entries(cart).forEach(([name, item]) => {
+      const sub = item.price * item.qty;
+      total += sub;
+      list.innerHTML += `<div class="order-item"><span>${name} x${item.qty}</span><span class="order-price">${sub.toLocaleString()}원</span></div>`;
+    });
+    document.getElementById('modalTotal').textContent = total.toLocaleString() + '원';
+    document.getElementById('modalOverlay').classList.add('visible');
+    document.getElementById('orderContent').style.display = 'block';
+    document.getElementById('successMsg').style.display = 'none';
+    document.getElementById('loadingMsg').style.display = 'none';
+  }
+
+  function closeModal() {
+    document.getElementById('modalOverlay').classList.remove('visible');
+  }
+
+  async function confirmOrder() {
+    document.getElementById('loadingMsg').style.display = 'block';
+
+    const items = Object.entries(cart).map(([name, item]) => ({
+      name, price: item.price, qty: item.qty, subtotal: item.price * item.qty
+    }));
+    const total = items.reduce((s, i) => s + i.subtotal, 0);
+    const request = document.getElementById('reqInput').value;
+
+    const orderData = {
+      room: roomNum,
+      items,
+      total,
+      request,
+      orderTime: new Date().toLocaleString('ko-KR')
+    };
+
+    if (window.saveHotelOrder) await window.saveHotelOrder(orderData);
+
+    document.getElementById('loadingMsg').style.display = 'none';
+    document.getElementById('orderContent').style.display = 'none';
+    document.getElementById('successMsg').style.display = 'block';
+  }
+
+  function resetOrder() {
+    cart = {};
+    document.querySelectorAll('.qty-num').forEach(el => el.textContent = '0');
+    updateCartBar();
+    closeModal();
+  }
+</script>
+</body>
+</html>
