@@ -241,6 +241,8 @@ h1,h2,h3,h4 { font-weight: 700; line-height: 1.25; }
 .sol-grid {
   display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px;
 }
+/* 7번째 카드 혼자 남을 때 가운데 정렬 */
+.sol-card:last-child:nth-child(3n+1) { grid-column: 2; }
 .sol-card {
   background: var(--card); border: 1px solid var(--border);
   border-radius: var(--radius); padding: 28px;
@@ -261,18 +263,19 @@ h1,h2,h3,h4 { font-weight: 700; line-height: 1.25; }
 .sol-top { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 20px; }
 .sol-icon { font-size: 36px; line-height: 1; }
 .sol-industry { font-size: 10px; font-weight: 700; letter-spacing: 2px; padding: 4px 10px; border-radius: 20px; }
-.ind-f  { background: rgba(249,115,22,0.15); color: #FB923C; border: 1px solid rgba(249,115,22,0.25); }
-.ind-h  { background: rgba(139,92,246,0.15); color: #A78BFA; border: 1px solid rgba(139,92,246,0.25); }
-.ind-t  { background: rgba(20,184,166,0.15); color: #2DD4BF; border: 1px solid rgba(20,184,166,0.25); }
-.ind-r  { background: rgba(245,166,35,0.15); color: #FBBF24; border: 1px solid rgba(245,166,35,0.25); }
-.ind-a  { background: rgba(100,180,255,0.12); color: #60A5FA; border: 1px solid rgba(100,180,255,0.25); }
-.ind-e  { background: rgba(16,185,129,0.12); color: #34D399; border: 1px solid rgba(16,185,129,0.25); }
-.sol-title { font-size: 18px; font-weight: 700; color: #fff; margin-bottom: 6px; line-height: 1.3; }
-.sol-subtitle { font-size: 12px; color: var(--blue); font-weight: 600; margin-bottom: 12px; }
-.sol-desc { font-size: 13px; color: var(--text2); line-height: 1.7; margin-bottom: 18px; }
-.sol-features { display: flex; flex-direction: column; gap: 6px; }
+.ind-f   { background: rgba(249,115,22,0.15); color: #FB923C; border: 1px solid rgba(249,115,22,0.25); }
+.ind-h   { background: rgba(139,92,246,0.15); color: #A78BFA; border: 1px solid rgba(139,92,246,0.25); }
+.ind-t   { background: rgba(20,184,166,0.15); color: #2DD4BF; border: 1px solid rgba(20,184,166,0.25); }
+.ind-r   { background: rgba(245,166,35,0.15); color: #FBBF24; border: 1px solid rgba(245,166,35,0.25); }
+.ind-a   { background: rgba(100,180,255,0.12); color: #60A5FA; border: 1px solid rgba(100,180,255,0.25); }
+.ind-e   { background: rgba(16,185,129,0.12); color: #34D399; border: 1px solid rgba(16,185,129,0.25); }
+.ind-edu { background: rgba(6,182,212,0.12); color: #22D3EE; border: 1px solid rgba(6,182,212,0.25); }
+.sol-title { font-size: 17px; font-weight: 700; color: #fff; margin-bottom: 5px; line-height: 1.35; }
+.sol-subtitle { font-size: 13px; color: var(--blue); font-weight: 600; margin-bottom: 12px; }
+.sol-desc { font-size: 14px; color: var(--text2); line-height: 1.75; margin-bottom: 16px; }
+.sol-features { display: flex; flex-direction: column; gap: 7px; }
 .sol-feat {
-  display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--text2);
+  display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--text2);
 }
 .sol-feat::before { content: ''; display:block; width:4px; height:4px; border-radius:50%; background:var(--blue); flex-shrink:0; }
 .sol-link {
@@ -329,7 +332,7 @@ h1,h2,h3,h4 { font-weight: 700; line-height: 1.25; }
 .diff-pill:hover { border-color: var(--blue); transform: translateX(4px); }
 .diff-pill-icon { font-size: 28px; flex-shrink: 0; margin-top: 2px; }
 .diff-pill-h { font-size: 15px; font-weight: 700; color: #fff; margin-bottom: 4px; }
-.diff-pill-p { font-size: 13px; color: var(--text2); line-height: 1.6; }
+.diff-pill-p { font-size: 14px; color: var(--text2); line-height: 1.65; }
 
 /* ════════════════════ CASES ════════════════════ */
 #cases { background: var(--bg); }
@@ -341,14 +344,14 @@ h1,h2,h3,h4 { font-weight: 700; line-height: 1.25; }
 }
 .case-card:hover { transform: translateY(-4px); border-color: rgba(30,111,255,0.3); }
 .case-ind { font-size: 22px; margin-bottom: 12px; }
-.case-industry { font-size: 11px; font-weight: 700; letter-spacing: 2px; color: var(--text2); text-transform: uppercase; margin-bottom: 8px; }
+.case-industry { font-size: 12px; font-weight: 700; letter-spacing: 2px; color: var(--text2); text-transform: uppercase; margin-bottom: 8px; }
 .case-title { font-size: 16px; font-weight: 700; color: #fff; margin-bottom: 10px; line-height: 1.35; }
-.case-body { font-size: 13px; color: var(--text2); line-height: 1.7; margin-bottom: 18px; }
+.case-body { font-size: 14px; color: var(--text2); line-height: 1.7; margin-bottom: 18px; }
 .case-metrics { display: flex; gap: 20px; flex-wrap: wrap; }
 .case-metric {}
 .case-metric-val { font-family: 'Black Han Sans', sans-serif; font-size: 22px; color: var(--blue); line-height: 1; }
 .case-metric-val.g { color: var(--green); }
-.case-metric-label { font-size: 11px; color: var(--text2); margin-top: 2px; }
+.case-metric-label { font-size: 12px; color: var(--text2); margin-top: 2px; }
 .case-card::after {
   content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px;
   background: linear-gradient(90deg, var(--blue), transparent);
@@ -706,6 +709,24 @@ h1,h2,h3,h4 { font-weight: 700; line-height: 1.25; }
           <div class="sol-feat">비회원·만료 회원 자동 차단</div>
           <div class="sol-feat">출석률 통계 및 재등록 알림</div>
           <div class="sol-feat">회원권 종류별 시설 접근 권한 관리</div>
+        </div>
+        <a href="#contact" class="sol-link">도입 문의</a>
+      </div>
+
+      <!-- 7. 학원 출결관리 -->
+      <div class="sol-card reveal reveal-d6">
+        <div class="sol-top">
+          <div class="sol-icon">🎓</div>
+          <span class="sol-industry ind-edu">교육업종</span>
+        </div>
+        <div class="sol-title">학원 출결관리</div>
+        <div class="sol-subtitle">QR 한 번으로 등원부터 알림까지</div>
+        <div class="sol-desc">학생이 QR을 찍는 순간 학부모에게 알림톡이 자동 발송되고, 원장님 대시보드에 출결 현황이 실시간으로 반영됩니다.</div>
+        <div class="sol-features">
+          <div class="sol-feat">학생 QR 출석체크</div>
+          <div class="sol-feat">학부모 자동 알림톡 발송</div>
+          <div class="sol-feat">원장님 실시간 출결 대시보드</div>
+          <div class="sol-feat">미출석 자동 감지 및 알림</div>
         </div>
         <a href="#contact" class="sol-link">도입 문의</a>
       </div>
