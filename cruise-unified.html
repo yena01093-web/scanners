@@ -1,0 +1,779 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>도담삼봉 유람선 통합시스템</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600;700&family=Noto+Sans+KR:wght@400;500;700;900&family=Playfair+Display:ital,wght@0,700;1,500&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+<script src="https://pay.nicepay.co.kr/v1/js/"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+
+/* ── MODE BAR ── */
+#modeBar{position:fixed;top:0;left:0;right:0;height:46px;background:#091520;display:flex;align-items:center;justify-content:space-between;padding:0 16px;z-index:999;border-bottom:1px solid rgba(200,169,81,.3)}
+.mb-brand{font-family:'Playfair Display',serif;font-size:14px;color:#C8A951;letter-spacing:1px}
+#modeToggle{background:rgba(200,169,81,.12);border:1px solid rgba(200,169,81,.4);color:#C8A951;font-family:'Noto Sans KR',sans-serif;font-size:12px;font-weight:700;padding:6px 14px;border-radius:4px;cursor:pointer;letter-spacing:1px;transition:background .2s}
+#modeToggle:hover{background:rgba(200,169,81,.25)}
+body{padding-top:46px;font-family:'Noto Sans KR',sans-serif}
+
+/* ════════════════════════ POS ════════════════════════ */
+#posView{background:#f0f4f8;min-height:calc(100vh - 46px)}
+.pos-hdr{background:#1e3a5f;color:#fff;padding:13px 18px;display:flex;align-items:center;justify-content:space-between}
+.pos-hdr h1{font-size:17px;font-weight:900}
+.pos-hdr p{font-size:11px;opacity:.7;margin-top:2px}
+.pos-clock{font-family:'IBM Plex Mono',monospace;font-size:15px;font-weight:700}
+.pos-tabs{display:flex;background:#fff;border-bottom:2px solid #e2e8f0}
+.pos-tab{flex:1;padding:12px;text-align:center;font-size:13px;font-weight:700;cursor:pointer;color:#64748b;border-bottom:3px solid transparent;transition:all .15s}
+.pos-tab.active{color:#2563eb;border-bottom-color:#2563eb}
+.pos-content{padding:13px;display:flex;flex-direction:column;gap:11px}
+.pos-card{background:#fff;border-radius:12px;padding:14px;border:1px solid #e2e8f0}
+.pos-stitle{font-size:11px;font-weight:700;color:#64748b;margin-bottom:10px;letter-spacing:.5px;text-transform:uppercase}
+
+/* voyage grid */
+.vgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:7px}
+.vbtn{padding:10px 4px;border-radius:8px;border:2px solid #e2e8f0;background:#fff;font-size:12px;font-weight:700;cursor:pointer;text-align:center;transition:all .15s;line-height:1.3}
+.vbtn.active{background:#2563eb;border-color:#2563eb;color:#fff}
+.vbtn.full{background:#fee2e2;border-color:#dc2626;cursor:not-allowed}
+.vbtn .vt{font-size:13px;font-weight:900;display:block}
+.vbtn .vr{font-size:10px;color:#64748b;margin-top:2px}
+.vbtn.active .vr{color:rgba(255,255,255,.8)}
+.vbtn.full .vr{color:#dc2626}
+
+/* ticket rows */
+.trow{display:flex;align-items:center;padding:10px 0;border-bottom:1px solid #e2e8f0}
+.trow:last-child{border-bottom:none}
+.tinfo{flex:1}
+.tname{font-size:14px;font-weight:700;color:#1e293b}
+.tprice{font-size:12px;color:#64748b;margin-top:2px}
+.tdisc{font-size:11px;color:#16a34a;font-weight:700}
+.qwrap{display:flex;align-items:center;gap:8px}
+.qbtn{width:32px;height:32px;border-radius:8px;border:2px solid #e2e8f0;background:#fff;font-size:18px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .15s}
+.qbtn:active{background:#2563eb;border-color:#2563eb;color:#fff}
+.qval{font-family:'IBM Plex Mono',monospace;font-size:16px;font-weight:700;min-width:24px;text-align:center}
+
+/* summary */
+.scard{background:#1e3a5f;border-radius:12px;padding:15px;color:#fff}
+.srow{display:flex;justify-content:space-between;padding:4px 0;font-size:13px}
+.stotal{display:flex;justify-content:space-between;padding:10px 0 0;border-top:1px solid rgba(255,255,255,.2);font-size:19px;font-weight:900;margin-top:6px}
+.ssub{font-size:11px;opacity:.7;margin-top:4px}
+
+/* pay buttons */
+.payrow{display:flex;gap:8px}
+.paybtn{flex:1;padding:15px;border:none;border-radius:12px;font-size:15px;font-weight:700;cursor:pointer;font-family:'Noto Sans KR',sans-serif;transition:opacity .15s}
+.paybtn.cash{background:#f1f5f9;color:#1e293b;border:2px solid #e2e8f0}
+.paybtn.card{background:#2563eb;color:#fff}
+.paybtn.card:disabled{background:#94a3b8;cursor:not-allowed}
+
+/* stats */
+.scard2{background:#fff;border-radius:12px;padding:15px;border:1px solid #e2e8f0;margin-bottom:11px}
+.scard2 h3{font-size:12px;font-weight:700;color:#64748b;margin-bottom:11px}
+.srow2{display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid #e2e8f0;font-size:13px}
+.srow2:last-child{border-bottom:none}
+.sval{font-family:'IBM Plex Mono',monospace;font-weight:700;color:#2563eb}
+
+/* settings */
+.setr{display:flex;align-items:center;justify-content:space-between;padding:9px 0;border-bottom:1px solid #e2e8f0}
+.setr:last-child{border-bottom:none}
+.setl{font-size:13px;font-weight:600}
+.seti{background:#f0f4f8;border:1px solid #e2e8f0;border-radius:8px;color:#1e293b;font-family:'IBM Plex Mono',monospace;font-size:13px;font-weight:700;padding:7px 10px;width:110px;text-align:right;outline:none}
+.seti:focus{border-color:#2563eb}
+.btn-save{width:100%;background:#2563eb;border:none;border-radius:10px;color:#fff;font-size:14px;font-weight:700;padding:13px;cursor:pointer;font-family:'Noto Sans KR',sans-serif;margin-top:10px}
+.btn-reset{width:100%;background:#dc2626;border:none;border-radius:10px;color:#fff;font-size:14px;font-weight:700;padding:13px;cursor:pointer;font-family:'Noto Sans KR',sans-serif}
+
+/* ════════════════════════ ADMIN ════════════════════════ */
+#adminView{background:#0B1622;min-height:calc(100vh - 46px)}
+.adm-hdr{background:linear-gradient(180deg,#0D2540 0%,#0F1E30 100%);border-bottom:1px solid rgba(135,185,210,.15);padding:0 18px}
+.adm-hdr-inner{max-width:900px;margin:0 auto;padding:13px 0;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.adm-brand{font-family:'Playfair Display',serif;font-size:18px;color:#C8A951;letter-spacing:1px;line-height:1.2}
+.adm-brandsub{font-size:9px;letter-spacing:3px;color:#7A99B0;text-transform:uppercase;margin-top:2px}
+.adm-ddisp{font-family:'Share Tech Mono',monospace;font-size:12px;color:#7BBFCF;letter-spacing:1px;text-align:right}
+.adm-tdisp{font-size:10px;color:#7A99B0;letter-spacing:2px;text-transform:uppercase;margin-top:2px}
+.adm-dnav{max-width:900px;margin:0 auto;padding:13px 18px 0;display:flex;align-items:center;gap:10px}
+.adm-dlabel{font-size:10px;letter-spacing:3px;color:#7A99B0;text-transform:uppercase;white-space:nowrap}
+input[type="date"].adm-dp{background:#132435;border:1px solid rgba(135,185,210,.15);border-radius:4px;color:#E8EEF4;font-family:'Share Tech Mono',monospace;font-size:14px;padding:7px 11px;outline:none;cursor:pointer}
+input[type="date"].adm-dp:focus{border-color:#C8A951}
+.adm-page{max-width:900px;margin:0 auto;padding:14px 18px;display:flex;flex-direction:column;gap:13px}
+.adm-sum{background:#0F1E30;border:1px solid rgba(135,185,210,.15);border-radius:8px;padding:17px 20px;display:flex;align-items:center;gap:18px;flex-wrap:wrap}
+.adm-si{text-align:center;flex:1;min-width:68px}
+.adm-sv{font-family:'Playfair Display',serif;font-size:28px;color:#C8A951;line-height:1}
+.adm-sv.g{color:#4CAF82}.adm-sv.r{color:#D05A4A}
+.adm-sl{font-size:9px;letter-spacing:3px;color:#7A99B0;text-transform:uppercase;margin-top:4px}
+.adm-sdiv{width:1px;height:34px;background:rgba(135,185,210,.15)}
+.adm-vgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(248px,1fr));gap:11px}
+.adm-vc{background:#132435;border:1px solid rgba(135,185,210,.15);border-radius:8px;overflow:hidden;transition:transform .15s,box-shadow .15s}
+.adm-vc:hover{transform:translateY(-2px);box-shadow:0 6px 22px rgba(0,0,0,.3)}
+.adm-vc.so{border-color:rgba(208,90,74,.3)}
+.adm-stripe{height:3px;background:#4CAF82;transition:background .3s}
+.adm-stripe.w{background:#E8A030}.adm-stripe.d{background:#D05A4A}.adm-stripe.f{background:#555}
+.adm-ch{padding:12px 13px 8px;display:flex;align-items:flex-start;justify-content:space-between}
+.adm-ct{font-family:'Playfair Display',serif;font-size:25px;color:#E8EEF4;line-height:1}
+.adm-ca{font-size:10px;color:#7A99B0;letter-spacing:2px;margin-top:2px}
+.adm-cbadge{font-size:9px;letter-spacing:2px;padding:3px 8px;border-radius:3px;text-transform:uppercase;font-weight:600}
+.bo{background:rgba(76,175,130,.15);color:#4CAF82;border:1px solid rgba(76,175,130,.3)}
+.bw{background:rgba(232,160,48,.15);color:#E8A030;border:1px solid rgba(232,160,48,.3)}
+.bs{background:rgba(208,90,74,.12);color:#D05A4A;border:1px solid rgba(208,90,74,.25)}
+.adm-cs{padding:0 13px 9px;display:flex;align-items:baseline;gap:5px}
+.adm-sr{font-family:'Playfair Display',serif;font-size:36px;color:#C8A951;line-height:1;transition:all .3s}
+.adm-sr.lo{color:#E8A030}.adm-sr.ze{color:#D05A4A}
+.adm-sd{font-size:12px;color:#7A99B0;font-family:'Share Tech Mono',monospace}
+.adm-dots{padding:0 13px 9px;display:grid;grid-template-columns:repeat(20,1fr);gap:2px}
+.adm-dot{aspect-ratio:1;border-radius:2px;background:rgba(135,185,210,.1);border:1px solid rgba(135,185,210,.08);transition:background .25s}
+.adm-dot.s{background:#7BBFCF;border-color:#7BBFCF}
+.adm-dot.s.w{background:#E8A030;border-color:#E8A030}
+.adm-dot.s.d{background:#D05A4A;border-color:#D05A4A}
+.adm-cprog{padding:0 13px 3px}
+.pt{background:rgba(255,255,255,.05);border-radius:2px;height:4px;overflow:hidden}
+.pf{height:100%;border-radius:2px;background:#7BBFCF;transition:width .5s ease,background .3s}
+.pf.w{background:#E8A030}.pf.d{background:#D05A4A}
+.adm-ca2{padding:9px 13px;border-top:1px solid rgba(135,185,210,.1);display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+.adm-qi{background:rgba(255,255,255,.05);border:1px solid rgba(135,185,210,.15);border-radius:4px;color:#E8EEF4;font-family:'Share Tech Mono',monospace;font-size:13px;padding:6px 7px;width:52px;outline:none;-moz-appearance:textfield;text-align:center}
+.adm-qi::-webkit-outer-spin-button,.adm-qi::-webkit-inner-spin-button{-webkit-appearance:none}
+.adm-qi:focus{border-color:#C8A951}
+.abtn{font-family:'Noto Sans KR',sans-serif;font-size:12px;padding:7px 9px;border:none;border-radius:4px;cursor:pointer;transition:opacity .15s,transform .1s;font-weight:700;white-space:nowrap}
+.abtn:active{transform:scale(.96)}
+.abtn.sell{background:#C8A951;color:#0B1622;flex:1}
+.abtn.cr{background:rgba(123,191,207,.1);color:#7BBFCF;border:1px solid rgba(123,191,207,.3)}
+.abtn.co{background:rgba(208,90,74,.1);color:#D05A4A;border:1px solid rgba(208,90,74,.3)}
+.abtn:disabled{opacity:.3;cursor:not-allowed}
+.adm-addsec{text-align:center;padding:5px 0}
+.adm-addbtn{font-family:'Noto Sans KR',sans-serif;font-size:13px;padding:9px 22px;background:rgba(255,255,255,.03);border:1px dashed rgba(135,185,210,.15);color:#7A99B0;border-radius:6px;cursor:pointer;transition:color .2s,border-color .2s;letter-spacing:1px}
+.adm-addbtn:hover{color:#7BBFCF;border-color:#7BBFCF}
+.adm-log{background:#0F1E30;border:1px solid rgba(135,185,210,.15);border-radius:8px;overflow:hidden}
+.adm-logh{padding:12px 17px;border-bottom:1px solid rgba(135,185,210,.15);display:flex;justify-content:space-between;align-items:center}
+.adm-logt{font-family:'Playfair Display',serif;font-size:15px;color:#C8A951;letter-spacing:1px}
+.adm-loga{display:flex;gap:10px}
+.adm-logb{font-size:10px;letter-spacing:2px;color:#7A99B0;text-transform:uppercase;background:none;border:none;cursor:pointer;padding:3px 5px;border-radius:3px;transition:color .2s}
+.adm-logb:hover{color:#D05A4A}
+.adm-loglist{max-height:250px;overflow-y:auto}
+.adm-loglist::-webkit-scrollbar{width:4px}
+.adm-loglist::-webkit-scrollbar-thumb{background:rgba(135,185,210,.15);border-radius:2px}
+.adm-loge{padding:26px;text-align:center;font-size:11px;letter-spacing:3px;color:#7A99B0;text-transform:uppercase;opacity:.5}
+.adm-logi{display:flex;align-items:center;padding:8px 17px;border-bottom:1px solid rgba(135,185,210,.05);gap:9px;animation:logIn .2s ease;font-size:12px}
+@keyframes logIn{from{opacity:0;transform:translateX(-5px)}to{opacity:1;transform:none}}
+.adm-lts{font-family:'Share Tech Mono',monospace;font-size:10px;color:#C8A951;min-width:44px}
+.adm-lvoy{background:rgba(123,191,207,.12);color:#7BBFCF;font-size:10px;padding:2px 7px;border-radius:3px;white-space:nowrap;min-width:46px;text-align:center}
+.adm-ldesc{flex:1;color:#E8EEF4}
+.adm-lmeth{font-size:10px;color:#7A99B0;white-space:nowrap}
+.adm-lch{font-family:'Share Tech Mono',monospace;font-size:11px;min-width:34px;text-align:right}
+.adm-lch.p{color:#4CAF82}.adm-lch.m{color:#D05A4A}
+.adm-lrem{font-family:'Share Tech Mono',monospace;font-size:10px;color:#7A99B0;min-width:42px;text-align:right}
+
+/* ════════════════════════ MODALS ════════════════════════ */
+.rcpt-bg{position:fixed;inset:0;background:rgba(0,0,0,.72);z-index:1500;display:flex;align-items:center;justify-content:center;padding:20px}
+.rcpt{background:#fff;border-radius:16px;padding:22px;width:100%;max-width:340px;text-align:center}
+.rcpt-title{font-size:19px;font-weight:900;color:#1e3a5f;margin-bottom:4px}
+.rcpt-sub{font-size:12px;color:#64748b;margin-bottom:13px}
+.rcpt-body{background:#f8fafc;border-radius:10px;padding:13px;margin-bottom:13px;text-align:left}
+.rrow{display:flex;justify-content:space-between;font-size:13px;padding:3px 0}
+.rmeth{font-size:11px;font-weight:700;padding:2px 8px;border-radius:3px}
+.rmeth.card{background:#dbeafe;color:#1d4ed8}
+.rmeth.cash{background:#dcfce7;color:#15803d}
+.rtotal{display:flex;justify-content:space-between;font-size:15px;font-weight:900;padding:9px 0 0;border-top:1px solid #e2e8f0;margin-top:7px;color:#1e3a5f}
+.rcpt-no{font-family:'IBM Plex Mono',monospace;font-size:24px;font-weight:900;color:#2563eb;margin:11px 0}
+.rcpt-close{width:100%;background:#1e3a5f;border:none;border-radius:10px;color:#fff;font-size:14px;font-weight:700;padding:13px;cursor:pointer;font-family:'Noto Sans KR',sans-serif}
+
+.so-bg{position:fixed;inset:0;background:rgba(7,14,25,.92);z-index:1500;display:none;align-items:center;justify-content:center;backdrop-filter:blur(8px)}
+.so-bg.show{display:flex}
+.so-box{text-align:center;animation:popIn .4s cubic-bezier(.34,1.56,.64,1);padding:20px}
+@keyframes popIn{from{transform:scale(.6) translateY(30px);opacity:0}to{transform:none;opacity:1}}
+.so-icon{font-size:60px;margin-bottom:10px}
+.so-title{font-family:'Playfair Display',serif;font-size:46px;color:#D05A4A;letter-spacing:4px;line-height:1;margin-bottom:6px}
+.so-voy{font-family:'Share Tech Mono',monospace;font-size:14px;color:#C8A951;letter-spacing:3px;margin-bottom:4px}
+.so-sub{font-size:10px;letter-spacing:3px;color:#7A99B0;text-transform:uppercase;margin-bottom:22px}
+.so-close{font-family:'Noto Sans KR',sans-serif;font-size:13px;letter-spacing:2px;padding:11px 34px;background:transparent;border:1px solid #C8A951;color:#C8A951;border-radius:4px;cursor:pointer;transition:background .2s}
+.so-close:hover{background:rgba(200,169,81,.1)}
+
+.pay-ld{position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:1400;display:none;align-items:center;justify-content:center}
+.pay-ld.show{display:flex}
+.pay-ld-box{background:#fff;border-radius:16px;padding:30px;text-align:center}
+.pay-ld-box p{font-size:14px;font-weight:700;color:#1e293b;margin-top:12px}
+.spinner{width:38px;height:38px;border:4px solid #e2e8f0;border-top-color:#2563eb;border-radius:50%;animation:spin .8s linear infinite;margin:0 auto}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+.gtoast{position:fixed;top:56px;left:50%;transform:translateX(-50%);background:#1e293b;color:#fff;border-radius:8px;padding:9px 18px;font-size:13px;font-weight:700;z-index:2000;white-space:nowrap;pointer-events:none;transition:opacity .25s}
+.gtoast.hide{opacity:0}
+
+@media(max-width:500px){
+  .adm-vgrid{grid-template-columns:1fr}
+  .adm-sum{gap:9px}
+  .adm-sv{font-size:22px}
+  .vgrid{grid-template-columns:repeat(2,1fr)}
+}
+</style>
+</head>
+<body>
+
+<!-- MODE BAR -->
+<div id="modeBar">
+  <div class="mb-brand">⛵ 도담삼봉 유람선</div>
+  <button id="modeToggle" onclick="toggleMode()">관리자 전환</button>
+</div>
+
+<!-- ══════════════ POS VIEW ══════════════ -->
+<div id="posView">
+  <div class="pos-hdr">
+    <div><h1>⛵ 도담삼봉 유람선</h1><p>충북 단양군 매포읍 삼봉로 644-13</p></div>
+    <div class="pos-clock" id="posClock">00:00</div>
+  </div>
+  <div class="pos-tabs">
+    <div class="pos-tab active" onclick="showPosTab('ticket',this)">🎫 매표</div>
+    <div class="pos-tab" onclick="showPosTab('stats',this)">📊 현황</div>
+    <div class="pos-tab" onclick="showPosTab('settings',this)">⚙️ 설정</div>
+  </div>
+
+  <!-- 매표 -->
+  <div id="posTabTicket">
+    <div class="pos-content">
+      <div class="pos-card"><div class="pos-stitle">운항 시간 선택</div><div class="vgrid" id="posVoyageGrid"></div></div>
+      <div class="pos-card"><div class="pos-stitle">티켓 선택</div><div id="posTicketRows"></div></div>
+      <div class="scard">
+        <div class="srow"><span>선택 운항</span><span id="posSumVoyage">—</span></div>
+        <div id="posSumItems"></div>
+        <div class="stotal"><span>합계</span><span id="posSumTotal">0원</span></div>
+        <div class="ssub" id="posSumPeople">총 0명</div>
+      </div>
+      <div class="payrow">
+        <button class="paybtn cash" onclick="posPay('cash')">💵 현금</button>
+        <button class="paybtn card" id="posCardBtn" onclick="posPay('card')" disabled>💳 카드결제</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 현황 -->
+  <div id="posTabStats" style="display:none">
+    <div class="pos-content">
+      <div class="scard2"><h3>오늘 운항별 현황</h3><div id="posVStats"></div></div>
+      <div class="scard2"><h3>티켓 종류별 판매</h3><div id="posTStats"></div></div>
+      <div class="scard2"><h3>오늘 총 매출</h3><div style="font-family:'IBM Plex Mono',monospace;font-size:28px;font-weight:900;color:#1e3a5f;text-align:center;padding:12px 0" id="posTotalRev">0원</div></div>
+      <button class="btn-reset" onclick="posResetToday()">🔄 오늘 데이터 초기화</button>
+    </div>
+  </div>
+
+  <!-- 설정 -->
+  <div id="posTabSettings" style="display:none">
+    <div class="pos-content">
+      <div class="pos-card"><div class="pos-stitle">운항 시간</div><div id="posVTimes"></div></div>
+      <div class="pos-card"><div class="pos-stitle">티켓 가격</div><div id="posPrices"></div><button class="btn-save" onclick="posSaveSettings()">💾 저장</button></div>
+      <div class="pos-card"><div class="pos-stitle">정원</div>
+        <div class="setr"><div class="setl">최대 정원</div><input class="seti" type="number" id="posMaxCap" value="100"></div>
+        <button class="btn-save" onclick="posSaveSettings()">💾 저장</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════ ADMIN VIEW ══════════════ -->
+<div id="adminView" style="display:none">
+  <div class="adm-hdr">
+    <div class="adm-hdr-inner">
+      <div><div class="adm-brand">단양 도담삼봉유람선</div><div class="adm-brandsub">Seat Management Dashboard</div></div>
+      <div><div class="adm-ddisp" id="admHeaderDate">—</div><div class="adm-tdisp" id="admHeaderTotal">전체 0 / 0석 판매</div></div>
+    </div>
+  </div>
+  <div class="adm-dnav">
+    <span class="adm-dlabel">운항일</span>
+    <input type="date" class="adm-dp" id="admDatePicker">
+  </div>
+  <div class="adm-page">
+    <div class="adm-sum">
+      <div class="adm-si"><div class="adm-sv" id="admSold">0</div><div class="adm-sl">총 판매석</div></div>
+      <div class="adm-sdiv"></div>
+      <div class="adm-si"><div class="adm-sv g" id="admRemain">0</div><div class="adm-sl">총 잔여석</div></div>
+      <div class="adm-sdiv"></div>
+      <div class="adm-si"><div class="adm-sv" id="admVoyages">0</div><div class="adm-sl">운항 회차</div></div>
+      <div class="adm-sdiv"></div>
+      <div class="adm-si"><div class="adm-sv r" id="admSoldout">0</div><div class="adm-sl">매진 회차</div></div>
+    </div>
+    <div class="adm-vgrid" id="admVoyageGrid"></div>
+    <div class="adm-addsec"><button class="adm-addbtn" onclick="admAddVoyage()">+ 회차 추가</button></div>
+    <div class="adm-log">
+      <div class="adm-logh">
+        <span class="adm-logt">판매 로그</span>
+        <div class="adm-loga">
+          <button class="adm-logb" style="color:#E8A030" onclick="admResetDay()">오늘 초기화</button>
+          <button class="adm-logb" onclick="admClearLog()">기록 지우기</button>
+        </div>
+      </div>
+      <div class="adm-loglist" id="admLogList"><div class="adm-loge">판매 내역이 없습니다</div></div>
+    </div>
+  </div>
+</div>
+
+<!-- RECEIPT MODAL -->
+<div id="rcptModal" style="display:none" class="rcpt-bg">
+  <div class="rcpt">
+    <div class="rcpt-title">⛵ 승선권</div>
+    <div class="rcpt-sub">도담삼봉 유람선 · 충북 단양군</div>
+    <div class="rcpt-body" id="rcptBody"></div>
+    <div class="rcpt-no" id="rcptNo">#0000</div>
+    <button class="rcpt-close" onclick="closeRcpt()">확인 (다음 손님)</button>
+  </div>
+</div>
+
+<!-- SOLDOUT MODAL -->
+<div class="so-bg" id="soModal">
+  <div class="so-box">
+    <div class="so-icon">🚢</div>
+    <div class="so-title">매진</div>
+    <div class="so-voy" id="soVoyText">—</div>
+    <div class="so-sub">전석 판매 완료</div>
+    <button class="so-close" onclick="closeSoModal()">확인</button>
+  </div>
+</div>
+
+<!-- PAYMENT LOADING -->
+<div class="pay-ld" id="payLd">
+  <div class="pay-ld-box"><div class="spinner"></div><p>결제창을 여는 중...</p></div>
+</div>
+
+<div class="gtoast hide" id="gToast"></div>
+
+<script>
+'use strict';
+
+// ─── NICE Payments 클라이언트 키 ───
+const NICE_CLIENT_KEY = '[weaqHgKedW3agP8qYgBjlYvbRckIE457WuNeqCz9C/QKMOHexbDveHyBT5dNaF4EUjuJaiwOBreFgJXdAxfI6g==]';
+
+// ─── TICKET TYPES ───
+const TT = [
+  {key:'adult',    name:'성인',    discount:0},
+  {key:'youth',    name:'청소년',  discount:0},
+  {key:'child',    name:'어린이',  discount:0},
+  {key:'disabled', name:'장애인',  discount:10},
+  {key:'local',    name:'단양군민', discount:10},
+];
+
+// ─── SHARED STORE ───
+const Store = {
+  today(){ return new Date().toISOString().slice(0,10); },
+  getSettings(){
+    return JSON.parse(localStorage.getItem('cruise_cfg')||'null') || {
+      prices:{adult:8000,youth:6000,child:4000,disabled:7200,local:7200},
+      voyageTimes:null, maxCapacity:100
+    };
+  },
+  setSettings(s){ localStorage.setItem('cruise_cfg', JSON.stringify(s)); },
+  getVoyages(date){
+    const d = date||this.today();
+    const s = localStorage.getItem('cruise_v_'+d);
+    return s ? JSON.parse(s) : this._defVoyages(d);
+  },
+  setVoyages(vv, date){ localStorage.setItem('cruise_v_'+(date||this.today()), JSON.stringify(vv)); },
+  getLogs(date){
+    const s = localStorage.getItem('cruise_log_'+(date||this.today()));
+    return s ? JSON.parse(s) : [];
+  },
+  setLogs(ll, date){ localStorage.setItem('cruise_log_'+(date||this.today()), JSON.stringify(ll)); },
+  addLog(e, date){ const ll=this.getLogs(date); ll.push(e); this.setLogs(ll, date); },
+  nextTicket(){ const n=(parseInt(localStorage.getItem('cruise_tkn')||'1000')+1); localStorage.setItem('cruise_tkn',n); return n; },
+  _defVoyages(dateStr){
+    const day=new Date(dateStr+'T00:00:00').getDay();
+    const wknd = day===0||day===6;
+    const s=this.getSettings();
+    const times = s.voyageTimes || (wknd
+      ?['10:00','11:00','12:00','13:30','14:30','15:30','16:30','17:30']
+      :['11:00','12:00','13:30','14:30','15:30','16:30']);
+    return times.map(t=>({time:t, ampm:parseInt(t)<12?'오전':'오후', max:s.maxCapacity, sold:0}));
+  }
+};
+
+// ─── STATE ───
+let currentMode='pos';
+let posVoyage=null;
+let posQty={adult:0,youth:0,child:0,disabled:0,local:0};
+let admDate=new Date().toISOString().slice(0,10);
+
+// ─── TOAST ───
+let tTimer;
+function toast(msg){
+  const el=document.getElementById('gToast');
+  el.textContent=msg; el.classList.remove('hide');
+  clearTimeout(tTimer);
+  tTimer=setTimeout(()=>el.classList.add('hide'),2600);
+}
+
+// ─── MODE TOGGLE ───
+function toggleMode(){
+  if(currentMode==='pos'){
+    currentMode='admin';
+    document.getElementById('posView').style.display='none';
+    document.getElementById('adminView').style.display='block';
+    document.getElementById('modeToggle').textContent='POS 전환';
+    admInit();
+  } else {
+    currentMode='pos';
+    document.getElementById('posView').style.display='block';
+    document.getElementById('adminView').style.display='none';
+    document.getElementById('modeToggle').textContent='관리자 전환';
+    posRenderVoyages();
+  }
+}
+
+// ─── POS: TABS ───
+function showPosTab(tab, el){
+  ['Ticket','Stats','Settings'].forEach(t=>{
+    document.getElementById('posTab'+t).style.display=(t.toLowerCase()===tab?'block':'none');
+  });
+  document.querySelectorAll('.pos-tab').forEach((e,i)=>{
+    e.classList.toggle('active',['ticket','stats','settings'][i]===tab);
+  });
+  if(tab==='stats') posRenderStats();
+  if(tab==='settings') posRenderSettings();
+}
+
+// ─── POS: RENDER ───
+function posRenderVoyages(){
+  const vv=Store.getVoyages();
+  document.getElementById('posVoyageGrid').innerHTML=vv.map(v=>{
+    const rem=v.max-v.sold, full=rem<=0, act=posVoyage===v.time;
+    return `<button class="vbtn${act?' active':''}${full?' full':''}" onclick="posSelVoyage('${v.time}')" ${full?'disabled':''}>
+      <span class="vt">${v.time}</span>
+      <span class="vr">${full?'마감':'잔여 '+rem+'명'}</span></button>`;
+  }).join('');
+}
+
+function posRenderTickets(){
+  const s=Store.getSettings();
+  document.getElementById('posTicketRows').innerHTML=TT.map(tt=>{
+    const fp=Math.round(s.prices[tt.key]*(1-tt.discount/100));
+    return `<div class="trow">
+      <div class="tinfo">
+        <div class="tname">${tt.name}</div>
+        <div class="tprice">${fp.toLocaleString()}원${tt.discount?`<span class="tdisc"> (${tt.discount}% 할인)</span>`:''}</div>
+      </div>
+      <div class="qwrap">
+        <button class="qbtn" onclick="posChgQty('${tt.key}',-1)">−</button>
+        <div class="qval" id="pq-${tt.key}">0</div>
+        <button class="qbtn" onclick="posChgQty('${tt.key}',1)">+</button>
+      </div></div>`;
+  }).join('');
+}
+
+function posSelVoyage(t){
+  const vv=Store.getVoyages(), v=vv.find(x=>x.time===t);
+  if(!v||v.sold>=v.max) return;
+  posVoyage=t; posRenderVoyages(); posUpdateSum();
+}
+
+function posChgQty(key,d){
+  posQty[key]=Math.max(0,posQty[key]+d);
+  if(posVoyage){
+    const vv=Store.getVoyages(), v=vv.find(x=>x.time===posVoyage);
+    if(v && v.sold+posPeople()>v.max){posQty[key]-=d;toast('⚠️ 정원 초과입니다');return;}
+  }
+  document.getElementById('pq-'+key).textContent=posQty[key];
+  posUpdateSum();
+}
+
+function posPeople(){ return Object.values(posQty).reduce((a,b)=>a+b,0); }
+function posTotal(){
+  const s=Store.getSettings();
+  return TT.reduce((sum,tt)=>sum+Math.round(s.prices[tt.key]*(1-tt.discount/100))*posQty[tt.key],0);
+}
+
+function posUpdateSum(){
+  document.getElementById('posSumVoyage').textContent=posVoyage||'—';
+  const s=Store.getSettings();
+  let items='';
+  TT.forEach(tt=>{
+    if(posQty[tt.key]>0){
+      const fp=Math.round(s.prices[tt.key]*(1-tt.discount/100));
+      items+=`<div class="srow"><span>${tt.name} × ${posQty[tt.key]}</span><span>${(fp*posQty[tt.key]).toLocaleString()}원</span></div>`;
+    }
+  });
+  document.getElementById('posSumItems').innerHTML=items;
+  document.getElementById('posSumTotal').textContent=posTotal().toLocaleString()+'원';
+  document.getElementById('posSumPeople').textContent='총 '+posPeople()+'명';
+  document.getElementById('posCardBtn').disabled=!posVoyage||posPeople()===0;
+}
+
+// ─── POS: PAYMENT ───
+function posPay(method){
+  if(!posVoyage){toast('운항 시간을 선택해주세요');return;}
+  if(posPeople()===0){toast('티켓을 선택해주세요');return;}
+  const sale={voyage:posVoyage,qty:{...posQty},total:posTotal(),people:posPeople(),date:Store.today()};
+  if(method==='cash') posCompleteSale(sale,'cash');
+  else posPayCard();
+}
+
+function posPayCard(){
+  const sale={voyage:posVoyage,qty:{...posQty},total:posTotal(),people:posPeople(),date:Store.today()};
+  const orderId='CRUISE_'+Date.now();
+  sale.orderId=orderId;
+  sessionStorage.setItem('cruise_pending',JSON.stringify(sale));
+
+  const items=TT.filter(t=>posQty[t.key]>0);
+  const gname=`도담삼봉유람선 ${posVoyage}${items.length>0?' '+items[0].name+(items.length>1?' 외 '+(items.length-1)+'건':''):''}`;
+
+  document.getElementById('payLd').classList.add('show');
+  try{
+    AUTHNICE.requestPay({
+      clientId: NICE_CLIENT_KEY,
+      method: 'card',
+      orderId: orderId,
+      amount: sale.total,
+      goodsName: gname,
+      returnUrl: location.origin+location.pathname+'?pay=ok&orderId='+encodeURIComponent(orderId),
+      fnError: function(r){
+        document.getElementById('payLd').classList.remove('show');
+        sessionStorage.removeItem('cruise_pending');
+        toast('결제 오류: '+(r.errorMsg||'알 수 없는 오류'));
+      }
+    });
+  } catch(e){
+    document.getElementById('payLd').classList.remove('show');
+    sessionStorage.removeItem('cruise_pending');
+    toast('결제창 실행 오류. 다시 시도해주세요.');
+  }
+}
+
+function posCompleteSale(sale, method){
+  const vv=Store.getVoyages(sale.date);
+  const vi=vv.findIndex(v=>v.time===sale.voyage);
+  if(vi===-1){toast('운항 정보를 찾을 수 없습니다');return;}
+
+  vv[vi].sold=Math.min(vv[vi].sold+sale.people, vv[vi].max);
+  Store.setVoyages(vv, sale.date);
+
+  const ts=new Date().toLocaleTimeString('ko-KR',{hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false});
+  const tkn=Store.nextTicket();
+  Store.addLog({ts, time:sale.voyage, desc:method==='card'?'카드결제':'현금결제',
+    method, change:sale.people, remain:vv[vi].max-vv[vi].sold,
+    amount:sale.total, ticketNo:tkn, qty:{...sale.qty}}, sale.date);
+
+  showRcpt(method, sale, tkn);
+
+  if(vv[vi].sold>=vv[vi].max){
+    document.getElementById('soVoyText').textContent=vv[vi].ampm+' '+vv[vi].time+' 출발';
+    document.getElementById('soModal').classList.add('show');
+  }
+
+  // reset
+  posQty={adult:0,youth:0,child:0,disabled:0,local:0};
+  posVoyage=null;
+  posRenderVoyages(); posRenderTickets(); posUpdateSum();
+}
+
+// ─── POS: STATS ───
+function posRenderStats(){
+  const vv=Store.getVoyages(), logs=Store.getLogs();
+  document.getElementById('posVStats').innerHTML=vv.map(v=>
+    `<div class="srow2"><span>${v.time}</span><span class="sval">${v.sold} / ${v.max}명</span></div>`).join('');
+  const tk={};
+  logs.forEach(l=>{ if(l.qty) Object.entries(l.qty).forEach(([k,v])=>{tk[k]=(tk[k]||0)+v;}); });
+  document.getElementById('posTStats').innerHTML=TT.map(tt=>
+    `<div class="srow2"><span>${tt.name}</span><span class="sval">${tk[tt.key]||0}명</span></div>`).join('');
+  const rev=logs.filter(l=>l.change>0).reduce((s,l)=>s+(l.amount||0),0);
+  document.getElementById('posTotalRev').textContent=rev.toLocaleString()+'원';
+}
+
+// ─── POS: SETTINGS ───
+function posRenderSettings(){
+  const s=Store.getSettings();
+  const times=s.voyageTimes||Store.getVoyages().map(v=>v.time);
+  document.getElementById('posVTimes').innerHTML=
+    times.map((t,i)=>`<div class="setr"><div class="setl">${i+1}회차</div><input class="seti" type="time" id="pvt${i}" value="${t}"></div>`).join('')+
+    `<button class="btn-save" onclick="posSaveSettings()" style="margin-top:8px">💾 저장</button>`;
+  document.getElementById('posPrices').innerHTML=TT.map(tt=>
+    `<div class="setr"><div class="setl">${tt.name}${tt.discount?' ('+tt.discount+'% 할인)':''}</div>
+    <input class="seti" type="number" id="pp-${tt.key}" value="${s.prices[tt.key]}"></div>`).join('');
+  document.getElementById('posMaxCap').value=s.maxCapacity;
+}
+
+function posSaveSettings(){
+  const s=Store.getSettings();
+  const times=s.voyageTimes||Store.getVoyages().map(v=>v.time);
+  const nt=times.map((_,i)=>{const el=document.getElementById('pvt'+i);return el?el.value:null;}).filter(Boolean);
+  if(nt.length>0) s.voyageTimes=nt;
+  TT.forEach(tt=>{const el=document.getElementById('pp-'+tt.key);if(el) s.prices[tt.key]=parseInt(el.value)||s.prices[tt.key];});
+  const cap=parseInt(document.getElementById('posMaxCap').value);
+  if(cap>0) s.maxCapacity=cap;
+  Store.setSettings(s);
+  toast('저장됐어요 ✓');
+  posRenderVoyages(); posRenderTickets(); posUpdateSum();
+}
+
+function posResetToday(){
+  if(!confirm('오늘 데이터를 초기화합니까?')) return;
+  const t=Store.today();
+  localStorage.removeItem('cruise_v_'+t);
+  localStorage.removeItem('cruise_log_'+t);
+  posQty={adult:0,youth:0,child:0,disabled:0,local:0}; posVoyage=null;
+  posRenderVoyages(); posRenderTickets(); posUpdateSum(); posRenderStats();
+  toast('초기화 완료');
+}
+
+// ─── RECEIPT MODAL ───
+function showRcpt(method, sale, tkn){
+  const s=Store.getSettings();
+  const ts=new Date().toLocaleTimeString('ko-KR',{hour:'2-digit',minute:'2-digit',hour12:false});
+  let items='';
+  TT.forEach(tt=>{
+    const q=(sale.qty||{})[tt.key]||0;
+    if(q>0){const p=Math.round(s.prices[tt.key]*(1-tt.discount/100));
+      items+=`<div class="rrow"><span>${tt.name} × ${q}</span><span>${(p*q).toLocaleString()}원</span></div>`;}
+  });
+  document.getElementById('rcptBody').innerHTML=
+    `<div class="rrow"><span>운항</span><span>${sale.voyage}</span></div>
+     <div class="rrow"><span>결제</span><span><span class="rmeth ${method}">${method==='card'?'카드':'현금'}</span></span></div>
+     <div class="rrow"><span>인원</span><span>${sale.people}명</span></div>
+     <div class="rrow"><span>발권시간</span><span>${ts}</span></div>
+     <hr style="border:none;border-top:1px solid #e2e8f0;margin:7px 0">
+     ${items}
+     <div class="rtotal"><span>합계</span><span>${sale.total.toLocaleString()}원</span></div>`;
+  document.getElementById('rcptNo').textContent='#'+tkn;
+  document.getElementById('rcptModal').style.display='flex';
+}
+function closeRcpt(){ document.getElementById('rcptModal').style.display='none'; }
+function closeSoModal(){ document.getElementById('soModal').classList.remove('show'); }
+
+// ─── ADMIN: INIT ───
+function admInit(){
+  const dp=document.getElementById('admDatePicker');
+  if(!dp._bound){ dp._bound=true; dp.addEventListener('change',()=>{admDate=dp.value;admRenderAll();}); }
+  admDate=dp.value||Store.today(); dp.value=admDate;
+  admRenderAll();
+}
+
+function admRenderAll(){ admRenderHeader(); admRenderSum(); admRenderGrid(); admRenderLog(); }
+
+function admRenderHeader(){
+  const d=new Date(admDate+'T00:00:00');
+  const days=['일','월','화','수','목','금','토'], day=d.getDay(), wknd=day===0||day===6;
+  document.getElementById('admHeaderDate').textContent=
+    `${d.getFullYear()}.${String(d.getMonth()+1).padStart(2,'0')}.${String(d.getDate()).padStart(2,'0')} (${days[day]}) ${wknd?'🟠 주말':'🔵 주중'}`;
+  const vv=Store.getVoyages(admDate);
+  document.getElementById('admHeaderTotal').textContent=
+    `전체 ${vv.reduce((a,v)=>a+v.sold,0)} / ${vv.reduce((a,v)=>a+v.max,0)}석 판매`;
+}
+
+function admRenderSum(){
+  const vv=Store.getVoyages(admDate);
+  document.getElementById('admSold').textContent=vv.reduce((a,v)=>a+v.sold,0);
+  document.getElementById('admRemain').textContent=vv.reduce((a,v)=>a+(v.max-v.sold),0);
+  document.getElementById('admVoyages').textContent=vv.length;
+  document.getElementById('admSoldout').textContent=vv.filter(v=>v.sold>=v.max).length;
+}
+
+function admRenderGrid(){
+  const vv=Store.getVoyages(admDate);
+  document.getElementById('admVoyageGrid').innerHTML=vv.map((v,i)=>admCardHTML(v,i)).join('');
+}
+
+function admCardHTML(v,i){
+  const rem=v.max-v.sold, pct=Math.round(v.sold/v.max*100);
+  const full=rem===0, warn=pct>=70&&!full, dang=pct>=90&&!full;
+  const sc=full?'f':dang?'d':warn?'w':'', rc=full?'ze':(dang||warn)?'lo':'';
+  const bc=full?'bs':warn?'bw':'bo', bt=full?'매진':warn?`잔여 ${rem}`:'예약가능';
+  const dots=Array.from({length:v.max},(_,k)=>{
+    let c='adm-dot'; if(k<v.sold) c+=full?' s d':dang?' s w':' s'; return `<div class="${c}"></div>`;}).join('');
+  const pc=(full||dang)?'d':warn?'w':'';
+  return `<div class="adm-vc${full?' so':''}" id="avc-${i}">
+    <div class="adm-stripe ${sc}"></div>
+    <div class="adm-ch">
+      <div><div class="adm-ct">${v.time}</div><div class="adm-ca">${v.ampm} 출발</div></div>
+      <div class="adm-cbadge ${bc}">${bt}</div>
+    </div>
+    <div class="adm-cs"><span class="adm-sr ${rc}">${rem}</span><span class="adm-sd">/ ${v.max}석</span></div>
+    <div class="adm-dots">${dots}</div>
+    <div class="adm-cprog"><div class="pt"><div class="pf ${pc}" style="width:${pct}%"></div></div></div>
+    <div class="adm-ca2">
+      <input type="number" class="adm-qi" id="aqi-${i}" value="1" min="1" max="${v.max}">
+      <button class="abtn sell" onclick="admSell(${i})" ${full?'disabled':''}>+ 판매</button>
+      <button class="abtn cr" onclick="admCancel(${i},'예약취소')" ${v.sold===0?'disabled':''}>예약취소</button>
+      <button class="abtn co" onclick="admCancel(${i},'현장취소')" ${v.sold===0?'disabled':''}>현장취소</button>
+    </div>
+  </div>`;
+}
+
+function admRenderLog(){
+  const logs=Store.getLogs(admDate);
+  const list=document.getElementById('admLogList');
+  if(!logs.length){list.innerHTML='<div class="adm-loge">판매 내역이 없습니다</div>';return;}
+  list.innerHTML=[...logs].reverse().map(l=>`
+    <div class="adm-logi">
+      <span class="adm-lts">${l.ts}</span>
+      <span class="adm-lvoy">${l.time}</span>
+      <span class="adm-ldesc" style="color:${l.desc==='예약취소'?'#7BBFCF':l.desc==='현장취소'?'#D05A4A':'#E8EEF4'}">${l.desc}</span>
+      ${l.method?`<span class="adm-lmeth">${l.method==='card'?'카드':'현금'}</span>`:''}
+      <span class="adm-lch ${l.change>0?'p':'m'}">${l.change>0?'+':''}${l.change}석</span>
+      <span class="adm-lrem">잔여 ${l.remain}</span>
+    </div>`).join('');
+}
+
+// ─── ADMIN: ACTIONS ───
+function admSell(i){
+  const n=parseInt(document.getElementById('aqi-'+i).value)||1;
+  const vv=Store.getVoyages(admDate), v=vv[i];
+  const actual=Math.min(n,v.max-v.sold); if(actual<=0) return;
+  v.sold+=actual; Store.setVoyages(vv,admDate);
+  const ts=new Date().toLocaleTimeString('ko-KR',{hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false});
+  Store.addLog({ts,time:v.time,desc:'판매',method:'현장',change:actual,remain:v.max-v.sold,amount:0},admDate);
+  admRenderAll();
+  if(v.sold>=v.max){document.getElementById('soVoyText').textContent=v.ampm+' '+v.time+' 출발';document.getElementById('soModal').classList.add('show');}
+}
+
+function admCancel(i,type){
+  const n=parseInt(document.getElementById('aqi-'+i).value)||1;
+  const vv=Store.getVoyages(admDate), v=vv[i];
+  const actual=Math.min(n,v.sold); if(actual<=0) return;
+  v.sold-=actual; Store.setVoyages(vv,admDate);
+  const ts=new Date().toLocaleTimeString('ko-KR',{hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false});
+  Store.addLog({ts,time:v.time,desc:type,method:'',change:-actual,remain:v.max-v.sold,amount:0},admDate);
+  admRenderAll();
+}
+
+function admAddVoyage(){
+  const t=prompt('회차 시간 (예: 18:00)');
+  if(!t||!/^\d{1,2}:\d{2}$/.test(t)) return;
+  const max=parseInt(prompt('정원','100'))||100;
+  const vv=Store.getVoyages(admDate);
+  vv.push({time:t,ampm:parseInt(t)<12?'오전':'오후',max,sold:0});
+  vv.sort((a,b)=>a.time.localeCompare(b.time));
+  Store.setVoyages(vv,admDate); admRenderAll();
+}
+
+function admResetDay(){
+  if(!confirm('오늘 스케줄을 초기화할까요?')) return;
+  localStorage.removeItem('cruise_v_'+admDate);
+  localStorage.removeItem('cruise_log_'+admDate);
+  admRenderAll();
+}
+
+function admClearLog(){
+  if(!confirm('로그를 지울까요?')) return;
+  Store.setLogs([],admDate); admRenderLog();
+}
+
+// ─── PAYMENT RETURN HANDLER ───
+function checkPayReturn(){
+  const p=new URLSearchParams(location.search);
+  if(p.get('pay')!=='ok') return false;
+  history.replaceState({},'',location.pathname);
+  const pstr=sessionStorage.getItem('cruise_pending');
+  if(!pstr) return false;
+  sessionStorage.removeItem('cruise_pending');
+  const sale=JSON.parse(pstr);
+  if(p.get('orderId') && p.get('orderId')!==sale.orderId){toast('결제 검증 실패');return false;}
+  const rc=p.get('resultCode');
+  if(rc && rc!=='0000'){toast('결제 실패: '+(p.get('resultMsg')||'취소됨'));return false;}
+  posCompleteSale(sale,'card');
+  return true;
+}
+
+// ─── CLOCK ───
+function tick(){
+  const n=new Date(), h=String(n.getHours()).padStart(2,'0'), m=String(n.getMinutes()).padStart(2,'0');
+  document.getElementById('posClock').textContent=h+':'+m;
+}
+
+// ─── INIT ───
+(function(){
+  document.getElementById('admDatePicker').value=Store.today();
+  checkPayReturn();
+  posRenderVoyages(); posRenderTickets(); posUpdateSum();
+  setInterval(tick,1000); tick();
+})();
+</script>
+</body>
+</html>
