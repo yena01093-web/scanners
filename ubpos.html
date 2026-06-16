@@ -1,0 +1,1148 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>UBPOS — 사장님과 함께 성장하는 스마트 POS</title>
+<meta name="description" content="업종별 맞춤형 AI POS 시스템. QR오더, 룸서비스, 승선권, 재고관리, 근태, 안면인식까지 전 업종 원스톱 솔루션.">
+<meta property="og:title" content="UBPOS — 사장님과 함께 성장하는 스마트 POS">
+<meta property="og:description" content="범용 POS가 아닌 내 업종에 딱 맞는 AI 시스템">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Black+Han+Sans&family=Noto+Sans+KR:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+<style>
+/* ── RESET & BASE ── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --bg:      #070F1A;
+  --bg2:     #0B1825;
+  --bg3:     #0F2235;
+  --card:    #0D1E30;
+  --border:  rgba(100,180,255,0.10);
+  --blue:    #1E6FFF;
+  --bluehv:  #4D90FF;
+  --bluedim: rgba(30,111,255,0.12);
+  --gold:    #F5A623;
+  --green:   #10B981;
+  --red:     #EF4444;
+  --text:    #E2EBF4;
+  --text2:   #8DAFC8;
+  --text3:   #4A6A80;
+  --white:   #FFFFFF;
+  --radius:  14px;
+}
+html { scroll-behavior: smooth; }
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Noto Sans KR', sans-serif;
+  font-size: 16px;
+  line-height: 1.6;
+  overflow-x: hidden;
+}
+a { text-decoration: none; color: inherit; }
+img { display: block; max-width: 100%; }
+button { cursor: pointer; font-family: inherit; }
+
+/* ── TYPOGRAPHY ── */
+.serif-bold { font-family: 'Black Han Sans', sans-serif; }
+h1,h2,h3,h4 { font-weight: 700; line-height: 1.25; }
+
+/* ── UTILITY ── */
+.container { max-width: 1160px; margin: 0 auto; padding: 0 24px; }
+.text-blue  { color: var(--blue); }
+.text-gold  { color: var(--gold); }
+.text-green { color: var(--green); }
+.badge {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 5px 13px; border-radius: 20px; font-size: 12px; font-weight: 700;
+  letter-spacing: .5px; text-transform: uppercase;
+}
+.badge-blue  { background: var(--bluedim); color: var(--bluehv); border: 1px solid rgba(30,111,255,0.3); }
+.badge-gold  { background: rgba(245,166,35,0.12); color: var(--gold); border: 1px solid rgba(245,166,35,0.3); }
+.badge-green { background: rgba(16,185,129,0.12); color: var(--green); border: 1px solid rgba(16,185,129,0.3); }
+
+.btn {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 14px 28px; border-radius: 8px; font-size: 15px; font-weight: 700;
+  border: none; transition: all .2s; letter-spacing: .3px;
+}
+.btn-primary { background: var(--blue); color: #fff; }
+.btn-primary:hover { background: var(--bluehv); transform: translateY(-2px); box-shadow: 0 8px 24px rgba(30,111,255,0.35); }
+.btn-outline { background: transparent; color: var(--text); border: 1.5px solid rgba(255,255,255,0.2); }
+.btn-outline:hover { border-color: var(--blue); color: var(--bluehv); }
+.btn-gold { background: var(--gold); color: #07111F; }
+.btn-gold:hover { filter: brightness(1.08); transform: translateY(-2px); box-shadow: 0 8px 24px rgba(245,166,35,0.35); }
+.btn-lg { padding: 17px 36px; font-size: 16px; }
+
+/* ── REVEAL ANIMATION ── */
+.reveal { opacity: 0; transform: translateY(28px); transition: opacity .6s ease, transform .6s ease; }
+.reveal.visible { opacity: 1; transform: none; }
+.reveal-d1 { transition-delay: .1s; }
+.reveal-d2 { transition-delay: .2s; }
+.reveal-d3 { transition-delay: .3s; }
+.reveal-d4 { transition-delay: .4s; }
+.reveal-d5 { transition-delay: .5s; }
+.reveal-d6 { transition-delay: .6s; }
+
+/* ════════════════════ NAV ════════════════════ */
+#nav {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 900;
+  padding: 0 24px; height: 66px;
+  display: flex; align-items: center;
+  transition: background .3s, box-shadow .3s;
+}
+#nav.scrolled {
+  background: rgba(7,15,26,0.96);
+  backdrop-filter: blur(16px);
+  box-shadow: 0 1px 0 rgba(100,180,255,0.1);
+}
+.nav-inner {
+  max-width: 1160px; margin: 0 auto; width: 100%;
+  display: flex; align-items: center; justify-content: space-between;
+}
+.nav-logo {
+  font-family: 'Black Han Sans', sans-serif;
+  font-size: 22px; letter-spacing: 2px; color: #fff;
+}
+.nav-logo span { color: var(--blue); }
+.nav-links { display: flex; gap: 32px; align-items: center; }
+.nav-links a { font-size: 14px; font-weight: 500; color: var(--text2); transition: color .2s; }
+.nav-links a:hover { color: #fff; }
+.nav-cta { display: flex; gap: 10px; }
+.nav-burger { display: none; flex-direction: column; gap: 5px; background: none; border: none; padding: 4px; }
+.nav-burger span { display: block; width: 24px; height: 2px; background: var(--text); border-radius: 2px; transition: all .3s; }
+
+/* ════════════════════ HERO ════════════════════ */
+#hero {
+  min-height: 100vh; padding-top: 66px;
+  display: flex; align-items: center;
+  position: relative; overflow: hidden;
+  background:
+    radial-gradient(ellipse 70% 60% at 80% 40%, rgba(30,111,255,0.18) 0%, transparent 60%),
+    radial-gradient(ellipse 50% 50% at 10% 80%, rgba(16,185,129,0.08) 0%, transparent 50%),
+    var(--bg);
+}
+.hero-grid {
+  display: grid; grid-template-columns: 1fr 1fr;
+  gap: 60px; align-items: center;
+  max-width: 1160px; margin: 0 auto; padding: 80px 24px;
+}
+.hero-eyebrow {
+  font-size: 12px; font-weight: 700; letter-spacing: 3px;
+  text-transform: uppercase; color: var(--blue);
+  margin-bottom: 18px; display: flex; align-items: center; gap: 10px;
+}
+.hero-eyebrow::before { content:''; display:block; width:28px; height:2px; background:var(--blue); }
+.hero-h1 {
+  font-family: 'Black Han Sans', sans-serif;
+  font-size: clamp(34px, 4.5vw, 54px);
+  color: #fff; line-height: 1.2; margin-bottom: 14px;
+}
+.hero-h1 .accent { color: var(--blue); }
+.hero-sub {
+  font-size: 17px; color: var(--text2); line-height: 1.75;
+  margin-bottom: 36px; max-width: 440px;
+}
+.hero-btns { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 52px; }
+.hero-stats { display: flex; gap: 32px; flex-wrap: wrap; }
+.hstat { text-align: left; }
+.hstat-num {
+  font-family: 'Black Han Sans', sans-serif;
+  font-size: 32px; color: #fff; line-height: 1;
+}
+.hstat-num span { font-size: 18px; color: var(--blue); }
+.hstat-label { font-size: 12px; color: var(--text2); margin-top: 4px; letter-spacing: .5px; }
+.hstat-div { width: 1px; background: rgba(255,255,255,0.1); align-self: stretch; }
+
+/* Hero visual side */
+.hero-visual { position: relative; }
+.hero-card-main {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  padding: 28px;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 24px 60px rgba(0,0,0,0.5);
+}
+.hero-card-main::before {
+  content: '';
+  position: absolute; top: 0; left: 0; right: 0; height: 3px;
+  background: linear-gradient(90deg, var(--blue), #00D2FF);
+}
+.hc-title { font-size: 11px; letter-spacing: 3px; text-transform: uppercase; color: var(--text2); margin-bottom: 18px; }
+.hc-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 20px; }
+.hc-item {
+  background: var(--bg2); border: 1px solid var(--border); border-radius: 10px;
+  padding: 14px 16px; display: flex; align-items: center; gap: 12px;
+}
+.hc-icon { font-size: 22px; }
+.hc-info {}
+.hc-label { font-size: 11px; color: var(--text2); }
+.hc-val { font-size: 15px; font-weight: 700; color: var(--text); }
+.hc-chart { display: flex; gap: 4px; align-items: flex-end; height: 44px; margin-top: 16px; }
+.hc-bar { flex: 1; background: var(--bluedim); border-radius: 3px 3px 0 0; border: 1px solid rgba(30,111,255,0.2); transition: height .3s; }
+.hc-bar.hi { background: var(--blue); border-color: var(--blue); }
+.hero-card-float {
+  position: absolute; bottom: -20px; right: -20px;
+  background: #0B2444; border: 1px solid rgba(30,111,255,0.3);
+  border-radius: 12px; padding: 14px 18px; font-size: 13px; font-weight: 700;
+  color: var(--text); white-space: nowrap;
+  box-shadow: 0 12px 32px rgba(0,0,0,0.4);
+}
+.hero-card-float .float-icon { font-size: 20px; margin-bottom: 4px; }
+.hero-card-float .float-up { font-size: 11px; color: var(--green); }
+
+/* Animated dots background */
+.hero-dots {
+  position: absolute; inset: 0; pointer-events: none; overflow: hidden; opacity: .35;
+}
+.hero-dots::before {
+  content: '';
+  position: absolute; inset: 0;
+  background-image: radial-gradient(circle, rgba(100,180,255,0.4) 1px, transparent 1px);
+  background-size: 32px 32px;
+  mask-image: radial-gradient(ellipse 60% 60% at 80% 40%, black 0%, transparent 70%);
+}
+
+/* ════════════════════ TRUST BAR ════════════════════ */
+#trust {
+  border-top: 1px solid var(--border); border-bottom: 1px solid var(--border);
+  padding: 28px 0; background: var(--bg2);
+}
+.trust-inner {
+  max-width: 1160px; margin: 0 auto; padding: 0 24px;
+  display: flex; align-items: center; justify-content: space-between; gap: 20px; flex-wrap: wrap;
+}
+.trust-item { text-align: center; flex: 1; min-width: 100px; }
+.trust-num {
+  font-family: 'Black Han Sans', sans-serif; font-size: 28px; color: #fff;
+}
+.trust-num sup { font-size: 16px; color: var(--blue); }
+.trust-label { font-size: 11px; color: var(--text2); margin-top: 2px; letter-spacing: 1px; }
+.trust-div { width: 1px; height: 36px; background: var(--border); }
+
+/* ════════════════════ SECTION COMMON ════════════════════ */
+.section { padding: 100px 0; }
+.section-eyebrow {
+  font-size: 11px; font-weight: 700; letter-spacing: 3px; text-transform: uppercase;
+  color: var(--blue); margin-bottom: 14px; display: flex; align-items: center; gap: 8px;
+}
+.section-eyebrow::before { content:''; display:block; width:20px; height:2px; background:var(--blue); }
+.section-h2 {
+  font-family: 'Black Han Sans', sans-serif;
+  font-size: clamp(28px, 3.5vw, 42px); color: #fff; margin-bottom: 16px; line-height: 1.2;
+}
+.section-desc { font-size: 16px; color: var(--text2); max-width: 560px; line-height: 1.8; }
+.section-head { margin-bottom: 56px; }
+
+/* ════════════════════ SOLUTIONS ════════════════════ */
+#solutions { background: var(--bg); }
+.sol-grid {
+  display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px;
+}
+.sol-card {
+  background: var(--card); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 28px;
+  position: relative; overflow: hidden;
+  transition: transform .25s, box-shadow .25s, border-color .25s;
+}
+.sol-card:hover {
+  transform: translateY(-6px);
+  border-color: rgba(30,111,255,0.35);
+  box-shadow: 0 16px 48px rgba(0,0,0,0.4), 0 0 0 1px rgba(30,111,255,0.12);
+}
+.sol-card::after {
+  content: ''; position: absolute; inset: 0; pointer-events: none;
+  background: linear-gradient(135deg, rgba(30,111,255,0.05) 0%, transparent 60%);
+  opacity: 0; transition: opacity .25s;
+}
+.sol-card:hover::after { opacity: 1; }
+.sol-top { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 20px; }
+.sol-icon { font-size: 36px; line-height: 1; }
+.sol-industry { font-size: 10px; font-weight: 700; letter-spacing: 2px; padding: 4px 10px; border-radius: 20px; }
+.ind-f  { background: rgba(249,115,22,0.15); color: #FB923C; border: 1px solid rgba(249,115,22,0.25); }
+.ind-h  { background: rgba(139,92,246,0.15); color: #A78BFA; border: 1px solid rgba(139,92,246,0.25); }
+.ind-t  { background: rgba(20,184,166,0.15); color: #2DD4BF; border: 1px solid rgba(20,184,166,0.25); }
+.ind-r  { background: rgba(245,166,35,0.15); color: #FBBF24; border: 1px solid rgba(245,166,35,0.25); }
+.ind-a  { background: rgba(100,180,255,0.12); color: #60A5FA; border: 1px solid rgba(100,180,255,0.25); }
+.ind-e  { background: rgba(16,185,129,0.12); color: #34D399; border: 1px solid rgba(16,185,129,0.25); }
+.sol-title { font-size: 18px; font-weight: 700; color: #fff; margin-bottom: 6px; line-height: 1.3; }
+.sol-subtitle { font-size: 12px; color: var(--blue); font-weight: 600; margin-bottom: 12px; }
+.sol-desc { font-size: 13px; color: var(--text2); line-height: 1.7; margin-bottom: 18px; }
+.sol-features { display: flex; flex-direction: column; gap: 6px; }
+.sol-feat {
+  display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--text2);
+}
+.sol-feat::before { content: ''; display:block; width:4px; height:4px; border-radius:50%; background:var(--blue); flex-shrink:0; }
+.sol-link {
+  display: inline-flex; align-items: center; gap: 6px;
+  margin-top: 20px; font-size: 13px; font-weight: 700; color: var(--blue);
+  transition: gap .2s;
+}
+.sol-link:hover { gap: 10px; }
+.sol-link::after { content: '→'; }
+
+/* ════════════════════ DIFFERENTIATION ════════════════════ */
+#diff { background: var(--bg2); position: relative; overflow: hidden; }
+#diff::before {
+  content: ''; position: absolute;
+  top: -200px; right: -200px; width: 600px; height: 600px;
+  background: radial-gradient(circle, rgba(30,111,255,0.12) 0%, transparent 70%);
+  pointer-events: none;
+}
+.diff-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 80px; align-items: center; }
+.diff-left {}
+.diff-compare {
+  background: var(--bg3); border: 1px solid var(--border); border-radius: var(--radius);
+  overflow: hidden; margin-top: 36px;
+}
+.diff-compare-head {
+  display: grid; grid-template-columns: 1fr 1fr 1fr;
+  background: var(--bg2); border-bottom: 1px solid var(--border);
+}
+.diff-col-label {
+  padding: 14px 18px; font-size: 12px; font-weight: 700; letter-spacing: 1px;
+  text-transform: uppercase; color: var(--text2); text-align: center;
+}
+.diff-col-label.ub { color: var(--blue); }
+.diff-row {
+  display: grid; grid-template-columns: 1fr 1fr 1fr;
+  border-bottom: 1px solid var(--border);
+}
+.diff-row:last-child { border-bottom: none; }
+.diff-cell {
+  padding: 13px 18px; font-size: 13px; text-align: center;
+  color: var(--text2); display: flex; align-items: center; justify-content: center;
+}
+.diff-cell.feature { text-align: left; justify-content: flex-start; font-weight: 600; color: var(--text); }
+.diff-cell .yes { color: var(--green); font-weight: 700; }
+.diff-cell .no  { color: var(--text3); }
+.diff-cell .part { color: var(--gold); font-size: 12px; }
+.diff-right {}
+.diff-pill-list { display: flex; flex-direction: column; gap: 16px; margin-top: 36px; }
+.diff-pill {
+  display: flex; gap: 18px; align-items: flex-start;
+  background: var(--bg3); border: 1px solid var(--border); border-radius: 12px;
+  padding: 20px 22px; transition: border-color .2s, transform .2s;
+}
+.diff-pill:hover { border-color: var(--blue); transform: translateX(4px); }
+.diff-pill-icon { font-size: 28px; flex-shrink: 0; margin-top: 2px; }
+.diff-pill-h { font-size: 15px; font-weight: 700; color: #fff; margin-bottom: 4px; }
+.diff-pill-p { font-size: 13px; color: var(--text2); line-height: 1.6; }
+
+/* ════════════════════ CASES ════════════════════ */
+#cases { background: var(--bg); }
+.case-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; }
+.case-card {
+  background: var(--card); border: 1px solid var(--border); border-radius: var(--radius);
+  padding: 26px; position: relative; overflow: hidden;
+  transition: transform .2s, border-color .2s;
+}
+.case-card:hover { transform: translateY(-4px); border-color: rgba(30,111,255,0.3); }
+.case-ind { font-size: 22px; margin-bottom: 12px; }
+.case-industry { font-size: 11px; font-weight: 700; letter-spacing: 2px; color: var(--text2); text-transform: uppercase; margin-bottom: 8px; }
+.case-title { font-size: 16px; font-weight: 700; color: #fff; margin-bottom: 10px; line-height: 1.35; }
+.case-body { font-size: 13px; color: var(--text2); line-height: 1.7; margin-bottom: 18px; }
+.case-metrics { display: flex; gap: 20px; flex-wrap: wrap; }
+.case-metric {}
+.case-metric-val { font-family: 'Black Han Sans', sans-serif; font-size: 22px; color: var(--blue); line-height: 1; }
+.case-metric-val.g { color: var(--green); }
+.case-metric-label { font-size: 11px; color: var(--text2); margin-top: 2px; }
+.case-card::after {
+  content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px;
+  background: linear-gradient(90deg, var(--blue), transparent);
+  opacity: 0; transition: opacity .2s;
+}
+.case-card:hover::after { opacity: 1; }
+
+/* ════════════════════ CTA BANNER ════════════════════ */
+#cta-banner {
+  padding: 80px 0;
+  background: linear-gradient(135deg, #0B1E3A 0%, #07111F 50%, #0A1A30 100%);
+  border-top: 1px solid var(--border); border-bottom: 1px solid var(--border);
+  text-align: center; position: relative; overflow: hidden;
+}
+#cta-banner::before {
+  content: ''; position: absolute;
+  top: -100px; left: 50%; transform: translateX(-50%);
+  width: 800px; height: 400px;
+  background: radial-gradient(ellipse, rgba(30,111,255,0.15) 0%, transparent 70%);
+  pointer-events: none;
+}
+.cta-banner-h {
+  font-family: 'Black Han Sans', sans-serif;
+  font-size: clamp(26px, 4vw, 44px); color: #fff;
+  margin-bottom: 14px; position: relative;
+}
+.cta-banner-p { font-size: 16px; color: var(--text2); margin-bottom: 36px; position: relative; }
+.cta-banner-btns { display: flex; gap: 14px; justify-content: center; flex-wrap: wrap; position: relative; }
+
+/* ════════════════════ CONTACT FORM ════════════════════ */
+#contact { background: var(--bg2); }
+.contact-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 80px; align-items: start; }
+.contact-left {}
+.contact-info { display: flex; flex-direction: column; gap: 22px; margin-top: 36px; }
+.cinfo-item { display: flex; gap: 16px; align-items: flex-start; }
+.cinfo-icon {
+  width: 44px; height: 44px; border-radius: 10px;
+  background: var(--bluedim); border: 1px solid rgba(30,111,255,0.2);
+  display: flex; align-items: center; justify-content: center; font-size: 20px;
+  flex-shrink: 0;
+}
+.cinfo-label { font-size: 11px; color: var(--text2); margin-bottom: 2px; }
+.cinfo-val { font-size: 15px; font-weight: 700; color: #fff; }
+.contact-form {
+  background: var(--bg3); border: 1px solid var(--border); border-radius: 18px;
+  padding: 36px; position: relative; overflow: hidden;
+}
+.contact-form::before {
+  content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px;
+  background: linear-gradient(90deg, var(--blue), #00D2FF, var(--green));
+}
+.form-title { font-size: 20px; font-weight: 700; color: #fff; margin-bottom: 6px; }
+.form-sub { font-size: 13px; color: var(--text2); margin-bottom: 26px; }
+.form-group { margin-bottom: 18px; }
+.form-label { font-size: 12px; font-weight: 700; color: var(--text2); letter-spacing: .5px; margin-bottom: 8px; display: block; }
+.form-input, .form-select, .form-textarea {
+  width: 100%; background: var(--bg2); border: 1.5px solid var(--border);
+  border-radius: 8px; color: var(--text); font-family: inherit;
+  font-size: 14px; padding: 13px 16px; outline: none;
+  transition: border-color .2s, box-shadow .2s;
+  -webkit-appearance: none;
+}
+.form-input::placeholder { color: var(--text3); }
+.form-input:focus, .form-select:focus, .form-textarea:focus {
+  border-color: var(--blue); box-shadow: 0 0 0 3px rgba(30,111,255,0.12);
+}
+.form-select { cursor: pointer; }
+.form-select option { background: var(--bg2); }
+.form-textarea { resize: vertical; min-height: 90px; }
+.form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.form-submit { width: 100%; margin-top: 8px; justify-content: center; }
+.form-terms { font-size: 11px; color: var(--text3); margin-top: 12px; text-align: center; }
+.form-success {
+  display: none; text-align: center; padding: 30px;
+  font-size: 15px; font-weight: 700; color: var(--green);
+}
+.form-success .success-icon { font-size: 48px; margin-bottom: 12px; }
+
+/* ════════════════════ FOOTER ════════════════════ */
+#footer {
+  background: #040C14; border-top: 1px solid var(--border);
+  padding: 48px 0 28px;
+}
+.footer-inner {
+  max-width: 1160px; margin: 0 auto; padding: 0 24px;
+}
+.footer-top {
+  display: flex; justify-content: space-between; gap: 40px;
+  padding-bottom: 36px; border-bottom: 1px solid var(--border); flex-wrap: wrap;
+}
+.footer-brand .logo { font-family: 'Black Han Sans', sans-serif; font-size: 20px; letter-spacing: 2px; color: #fff; margin-bottom: 10px; }
+.footer-brand .logo span { color: var(--blue); }
+.footer-brand p { font-size: 13px; color: var(--text2); max-width: 260px; line-height: 1.6; }
+.footer-links { display: flex; gap: 60px; flex-wrap: wrap; }
+.footer-col h4 { font-size: 12px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; color: var(--text2); margin-bottom: 16px; }
+.footer-col ul { list-style: none; display: flex; flex-direction: column; gap: 10px; }
+.footer-col ul li a { font-size: 13px; color: var(--text3); transition: color .2s; }
+.footer-col ul li a:hover { color: var(--text); }
+.footer-bottom {
+  display: flex; justify-content: space-between; align-items: center;
+  padding-top: 24px; flex-wrap: wrap; gap: 12px;
+}
+.footer-copy { font-size: 12px; color: var(--text3); }
+.footer-legal { display: flex; gap: 20px; }
+.footer-legal a { font-size: 12px; color: var(--text3); transition: color .2s; }
+.footer-legal a:hover { color: var(--text); }
+
+/* ════════════════════ MOBILE MENU ════════════════════ */
+#mobileMenu {
+  display: none; position: fixed; inset: 0; z-index: 950;
+  background: rgba(7,15,26,0.98); flex-direction: column;
+  align-items: center; justify-content: center; gap: 32px;
+}
+#mobileMenu.open { display: flex; }
+#mobileMenu a { font-size: 22px; font-weight: 700; color: var(--text); }
+#mobileMenu a:hover { color: var(--blue); }
+.menu-close {
+  position: absolute; top: 20px; right: 24px;
+  background: none; border: none; color: var(--text); font-size: 28px; cursor: pointer;
+}
+
+/* ════════════════════ RESPONSIVE ════════════════════ */
+@media (max-width: 1024px) {
+  .sol-grid { grid-template-columns: repeat(2, 1fr); }
+  .case-grid { grid-template-columns: repeat(2, 1fr); }
+  .diff-grid { grid-template-columns: 1fr; gap: 40px; }
+  .contact-grid { grid-template-columns: 1fr; gap: 40px; }
+  .hero-grid { grid-template-columns: 1fr; gap: 40px; }
+  .hero-visual { display: none; }
+}
+@media (max-width: 768px) {
+  .sol-grid { grid-template-columns: 1fr; }
+  .case-grid { grid-template-columns: 1fr; }
+  .nav-links, .nav-cta { display: none; }
+  .nav-burger { display: flex; }
+  .section { padding: 70px 0; }
+  .form-row { grid-template-columns: 1fr; }
+  .footer-links { gap: 32px; }
+  .trust-inner { justify-content: center; }
+  .trust-div { display: none; }
+}
+@media (max-width: 480px) {
+  .hero-stats { flex-direction: column; gap: 16px; }
+  .hstat-div { display: none; }
+}
+</style>
+</head>
+<body>
+
+<!-- ══ NAV ══ -->
+<nav id="nav">
+  <div class="nav-inner">
+    <a href="#" class="nav-logo">UB<span>POS</span></a>
+    <div class="nav-links">
+      <a href="#solutions">솔루션</a>
+      <a href="#diff">차별점</a>
+      <a href="#cases">실증사례</a>
+      <a href="#contact">상담신청</a>
+    </div>
+    <div class="nav-cta">
+      <a href="#contact" class="btn btn-primary" style="padding:10px 22px;font-size:14px">무료 상담</a>
+    </div>
+    <button class="nav-burger" onclick="toggleMenu()" aria-label="메뉴">
+      <span></span><span></span><span></span>
+    </button>
+  </div>
+</nav>
+
+<!-- ══ MOBILE MENU ══ -->
+<div id="mobileMenu">
+  <button class="menu-close" onclick="toggleMenu()">✕</button>
+  <a href="#solutions" onclick="toggleMenu()">솔루션</a>
+  <a href="#diff" onclick="toggleMenu()">차별점</a>
+  <a href="#cases" onclick="toggleMenu()">실증사례</a>
+  <a href="#contact" onclick="toggleMenu()">상담신청</a>
+  <a href="#contact" class="btn btn-primary btn-lg" onclick="toggleMenu()">무료 상담 신청</a>
+</div>
+
+<!-- ══ HERO ══ -->
+<section id="hero">
+  <div class="hero-dots"></div>
+  <div class="hero-grid">
+    <div class="hero-left">
+      <div class="hero-eyebrow reveal">AI 기반 업종 맞춤 솔루션</div>
+      <h1 class="hero-h1 reveal reveal-d1">
+        사장님과 함께<br>
+        성장하는<br>
+        <span class="accent">스마트 POS</span>
+      </h1>
+      <p class="hero-sub reveal reveal-d2">
+        범용 POS의 시대는 끝났습니다.<br>
+        UBPOS는 요식업, 숙박업, 관광레저, 도소매<br>
+        각 업종의 현장에서 태어난 맞춤형 AI 시스템입니다.
+      </p>
+      <div class="hero-btns reveal reveal-d3">
+        <a href="#contact" class="btn btn-primary btn-lg">무료 상담 신청 →</a>
+        <a href="#solutions" class="btn btn-outline btn-lg">솔루션 보기</a>
+      </div>
+      <div class="hero-stats reveal reveal-d4">
+        <div class="hstat">
+          <div class="hstat-num"><span id="cnt1">0</span><span>+</span></div>
+          <div class="hstat-label">도입 가맹점</div>
+        </div>
+        <div class="hstat-div"></div>
+        <div class="hstat">
+          <div class="hstat-num"><span id="cnt2">0</span><span>개</span></div>
+          <div class="hstat-label">지원 업종</div>
+        </div>
+        <div class="hstat-div"></div>
+        <div class="hstat">
+          <div class="hstat-num"><span id="cnt3">0</span><span>%</span></div>
+          <div class="hstat-label">고객 만족도</div>
+        </div>
+      </div>
+    </div>
+    <div class="hero-visual reveal reveal-d2">
+      <div class="hero-card-main">
+        <div class="hc-title">오늘의 매장 현황</div>
+        <div class="hc-grid">
+          <div class="hc-item"><div class="hc-icon">🍽️</div><div class="hc-info"><div class="hc-label">현재 주문</div><div class="hc-val">12건</div></div></div>
+          <div class="hc-item"><div class="hc-icon">💳</div><div class="hc-info"><div class="hc-label">오늘 매출</div><div class="hc-val">₩284만</div></div></div>
+          <div class="hc-item"><div class="hc-icon">👥</div><div class="hc-info"><div class="hc-label">방문 고객</div><div class="hc-val">87명</div></div></div>
+          <div class="hc-item"><div class="hc-icon">📦</div><div class="hc-info"><div class="hc-label">재고 알림</div><div class="hc-val">2건</div></div></div>
+        </div>
+        <div style="font-size:11px;color:var(--text2);margin-bottom:8px;letter-spacing:2px">주간 매출 추이</div>
+        <div class="hc-chart">
+          <div class="hc-bar" style="height:55%"></div>
+          <div class="hc-bar" style="height:70%"></div>
+          <div class="hc-bar" style="height:48%"></div>
+          <div class="hc-bar" style="height:80%"></div>
+          <div class="hc-bar" style="height:65%"></div>
+          <div class="hc-bar hi" style="height:90%"></div>
+          <div class="hc-bar hi" style="height:95%"></div>
+        </div>
+      </div>
+      <div class="hero-card-float">
+        <div class="float-icon">🤖</div>
+        <div style="font-weight:700;color:#fff">AI 재고 자동 발주</div>
+        <div class="float-up">▲ 업무시간 32% 절감</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══ TRUST BAR ══ -->
+<div id="trust">
+  <div class="trust-inner">
+    <div class="trust-item reveal">
+      <div class="trust-num"><sup>약</sup><span id="t1">0</span><sup>+</sup></div>
+      <div class="trust-label">도입 가맹점 수</div>
+    </div>
+    <div class="trust-div"></div>
+    <div class="trust-item reveal reveal-d1">
+      <div class="trust-num"><span id="t2">0</span><sup>종</sup></div>
+      <div class="trust-label">지원 업종</div>
+    </div>
+    <div class="trust-div"></div>
+    <div class="trust-item reveal reveal-d2">
+      <div class="trust-num"><span id="t3">0</span><sup>%</sup></div>
+      <div class="trust-label">업무 효율 향상 (평균)</div>
+    </div>
+    <div class="trust-div"></div>
+    <div class="trust-item reveal reveal-d3">
+      <div class="trust-num"><span id="t4">0</span><sup>배</sup></div>
+      <div class="trust-label">테이블 회전율 개선</div>
+    </div>
+    <div class="trust-div"></div>
+    <div class="trust-item reveal reveal-d4">
+      <div class="trust-num"><span id="t5">24</span><sup>h</sup></div>
+      <div class="trust-label">기술 지원 운영</div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ SOLUTIONS ══ -->
+<section id="solutions" class="section">
+  <div class="container">
+    <div class="section-head">
+      <div class="section-eyebrow reveal">SOLUTIONS</div>
+      <h2 class="section-h2 reveal reveal-d1">업종별 맞춤 솔루션</h2>
+      <p class="section-desc reveal reveal-d2">각 업종의 현장 고충에서 출발한 솔루션.<br>처음부터 그 업종만을 위해 설계했습니다.</p>
+    </div>
+    <div class="sol-grid">
+
+      <!-- 1. QR오더&페이 -->
+      <div class="sol-card reveal">
+        <div class="sol-top">
+          <div class="sol-icon">🍽️</div>
+          <span class="sol-industry ind-f">요식업</span>
+        </div>
+        <div class="sol-title">QR오더 &amp; 페이</div>
+        <div class="sol-subtitle">테이블에서 주문부터 결제까지 원스톱</div>
+        <div class="sol-desc">스마트폰으로 QR 스캔 한 번. 메뉴 확인·주문·결제가 즉시 주방으로 전달됩니다. 직원 콜 없이 피크타임을 공략하세요.</div>
+        <div class="sol-features">
+          <div class="sol-feat">QR스캔 → 주문 → 결제 원스톱 프로세스</div>
+          <div class="sol-feat">주방 KDS 실시간 자동 연동</div>
+          <div class="sol-feat">카드·간편결제(NICE페이먼츠) 지원</div>
+          <div class="sol-feat">다국어 메뉴 자동 번역 (AI)</div>
+        </div>
+        <a href="#contact" class="sol-link">도입 문의</a>
+      </div>
+
+      <!-- 2. 룸서비스 + 채널매니저 -->
+      <div class="sol-card reveal reveal-d1">
+        <div class="sol-top">
+          <div class="sol-icon">🏨</div>
+          <span class="sol-industry ind-h">숙박업</span>
+        </div>
+        <div class="sol-title">룸서비스 QR오더 + 채널매니저</div>
+        <div class="sol-subtitle">객실에서 편하게, 예약은 자동으로</div>
+        <div class="sol-desc">객실 내 QR로 인룸다이닝 주문. 에어비앤비·부킹닷컴 등 OTA 채널 예약을 한 화면에서 실시간 동기화합니다.</div>
+        <div class="sol-features">
+          <div class="sol-feat">객실 QR → 룸서비스 주문 직결</div>
+          <div class="sol-feat">OTA 다채널 예약 통합 캘린더</div>
+          <div class="sol-feat">빈방·가격 자동 동기화</div>
+          <div class="sol-feat">체크인/아웃 POS 프론트 연동</div>
+        </div>
+        <a href="#contact" class="sol-link">도입 문의</a>
+      </div>
+
+      <!-- 3. 승선권예약시스템 -->
+      <div class="sol-card reveal reveal-d2">
+        <div class="sol-top">
+          <div class="sol-icon">⛵</div>
+          <span class="sol-industry ind-t">관광레저업</span>
+        </div>
+        <div class="sol-title">승선권 예약 시스템</div>
+        <div class="sol-subtitle">회차별 좌석 실시간 관리</div>
+        <div class="sol-desc">유람선·도선장 특화 좌석 예약 POS. 회차별 정원·판매 현황을 대시보드로 한눈에, QR 탑승 체크인까지.</div>
+        <div class="sol-features">
+          <div class="sol-feat">회차별 좌석 실시간 현황 대시보드</div>
+          <div class="sol-feat">카드 결제 완료 시 좌석 자동 차감</div>
+          <div class="sol-feat">매진 알림 및 대기자 관리</div>
+          <div class="sol-feat">성인/청소년/경로 등 요금 차등 적용</div>
+        </div>
+        <a href="#contact" class="sol-link">도입 문의</a>
+      </div>
+
+      <!-- 4. AI바코드재고관리 -->
+      <div class="sol-card reveal reveal-d3">
+        <div class="sol-top">
+          <div class="sol-icon">📦</div>
+          <span class="sol-industry ind-r">도소매</span>
+        </div>
+        <div class="sol-title">AI 바코드 재고관리</div>
+        <div class="sol-subtitle">입출고 자동화, 발주 예측까지</div>
+        <div class="sol-desc">바코드 스캔 한 번으로 재고 입출고 기록. AI가 판매 추세를 분석해 최적 발주 시기와 수량을 추천합니다.</div>
+        <div class="sol-features">
+          <div class="sol-feat">바코드/QR 스캔 입출고 자동 기록</div>
+          <div class="sol-feat">AI 기반 발주 시기·수량 예측</div>
+          <div class="sol-feat">재고 부족·유통기한 자동 알림</div>
+          <div class="sol-feat">PC·태블릿·모바일 멀티 기기 지원</div>
+        </div>
+        <a href="#contact" class="sol-link">도입 문의</a>
+      </div>
+
+      <!-- 5. 근태관리 -->
+      <div class="sol-card reveal reveal-d4">
+        <div class="sol-top">
+          <div class="sol-icon">⏱️</div>
+          <span class="sol-industry ind-a">전 업종</span>
+        </div>
+        <div class="sol-title">스마트 근태관리</div>
+        <div class="sol-subtitle">출퇴근 기록부터 급여 정산까지</div>
+        <div class="sol-desc">QR·안면인식 출퇴근 체크인으로 종이 서명 없는 근태관리. 근무시간 자동 집계 및 급여 연동 리포트를 제공합니다.</div>
+        <div class="sol-features">
+          <div class="sol-feat">QR·안면인식 출퇴근 체크인</div>
+          <div class="sol-feat">지각·조퇴·초과근무 자동 분류</div>
+          <div class="sol-feat">월별 근무시간 집계 리포트</div>
+          <div class="sol-feat">급여 계산 연동 (시급·주급 지원)</div>
+        </div>
+        <a href="#contact" class="sol-link">도입 문의</a>
+      </div>
+
+      <!-- 6. AI안면인식출입관리 -->
+      <div class="sol-card reveal reveal-d5">
+        <div class="sol-top">
+          <div class="sol-icon">👤</div>
+          <span class="sol-industry ind-e">피트니스/교육</span>
+        </div>
+        <div class="sol-title">AI 안면인식 출입관리</div>
+        <div class="sol-subtitle">카드 없이, 얼굴로 빠르게</div>
+        <div class="sol-desc">카드·QR 없이 카메라 앞에 서면 0.3초 안에 회원 인증 완료. 비회원 진입 차단·출석 통계·미출석 알림을 자동화합니다.</div>
+        <div class="sol-features">
+          <div class="sol-feat">0.3초 AI 안면인식 회원 인증</div>
+          <div class="sol-feat">비회원·만료 회원 자동 차단</div>
+          <div class="sol-feat">출석률 통계 및 재등록 알림</div>
+          <div class="sol-feat">회원권 종류별 시설 접근 권한 관리</div>
+        </div>
+        <a href="#contact" class="sol-link">도입 문의</a>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- ══ DIFFERENTIATION ══ -->
+<section id="diff" class="section">
+  <div class="container">
+    <div class="diff-grid">
+      <div class="diff-left">
+        <div class="section-eyebrow reveal">WHY UBPOS</div>
+        <h2 class="section-h2 reveal reveal-d1">범용 POS가 아닌<br><span class="text-blue">맞춤형 AI 시스템</span></h2>
+        <p class="section-desc reveal reveal-d2">세상의 모든 업종에 쓰는 POS는 아무 업종에도 최적화되지 않습니다. UBPOS는 처음부터 업종별로 따로 설계했습니다.</p>
+        <div class="diff-compare reveal reveal-d3">
+          <div class="diff-compare-head">
+            <div class="diff-col-label">기능</div>
+            <div class="diff-col-label">일반 POS</div>
+            <div class="diff-col-label ub">UBPOS</div>
+          </div>
+          <div class="diff-row">
+            <div class="diff-cell feature">업종 맞춤 UI</div>
+            <div class="diff-cell"><span class="no">✕</span></div>
+            <div class="diff-cell"><span class="yes">✓</span></div>
+          </div>
+          <div class="diff-row">
+            <div class="diff-cell feature">AI 수요 예측</div>
+            <div class="diff-cell"><span class="no">✕</span></div>
+            <div class="diff-cell"><span class="yes">✓</span></div>
+          </div>
+          <div class="diff-row">
+            <div class="diff-cell feature">OTA 채널 연동</div>
+            <div class="diff-cell"><span class="no">✕</span></div>
+            <div class="diff-cell"><span class="yes">✓</span></div>
+          </div>
+          <div class="diff-row">
+            <div class="diff-cell feature">안면인식 출입</div>
+            <div class="diff-cell"><span class="no">✕</span></div>
+            <div class="diff-cell"><span class="yes">✓</span></div>
+          </div>
+          <div class="diff-row">
+            <div class="diff-cell feature">현장 맞춤 개발</div>
+            <div class="diff-cell"><span class="part">유료 추가</span></div>
+            <div class="diff-cell"><span class="yes">기본 포함</span></div>
+          </div>
+          <div class="diff-row">
+            <div class="diff-cell feature">도입 기간</div>
+            <div class="diff-cell"><span class="part">2~4주</span></div>
+            <div class="diff-cell"><span class="yes">최소 3일</span></div>
+          </div>
+        </div>
+      </div>
+      <div class="diff-right">
+        <div style="margin-bottom:16px" class="reveal">
+          <span class="badge badge-blue">UBPOS 3대 원칙</span>
+        </div>
+        <div class="diff-pill-list">
+          <div class="diff-pill reveal reveal-d1">
+            <div class="diff-pill-icon">🎯</div>
+            <div>
+              <div class="diff-pill-h">업종 전문성</div>
+              <div class="diff-pill-p">요식업 사장님이 쓰는 화면과 숙박업 사장님이 쓰는 화면은 다릅니다. 업종 현장의 동선에서 설계를 시작합니다.</div>
+            </div>
+          </div>
+          <div class="diff-pill reveal reveal-d2">
+            <div class="diff-pill-icon">🤖</div>
+            <div>
+              <div class="diff-pill-h">AI로 자동화</div>
+              <div class="diff-pill-p">재고 발주 예측, 수요 분석, 안면인식, 이상 매출 탐지까지. 사장님이 판단해야 할 일을 AI가 먼저 걸러드립니다.</div>
+            </div>
+          </div>
+          <div class="diff-pill reveal reveal-d3">
+            <div class="diff-pill-icon">🔗</div>
+            <div>
+              <div class="diff-pill-h">연결로 완성</div>
+              <div class="diff-pill-p">POS 혼자는 절반입니다. KDS·프린터·OTA·근태·재고·결제가 하나로 연결될 때 진짜 효율이 나옵니다.</div>
+            </div>
+          </div>
+          <div class="diff-pill reveal reveal-d4">
+            <div class="diff-pill-icon">📞</div>
+            <div>
+              <div class="diff-pill-h">현장 밀착 지원</div>
+              <div class="diff-pill-p">도입 후 사라지지 않습니다. 장비 교체부터 소프트웨어 업데이트, 직원 교육까지 책임집니다.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══ CASES ══ -->
+<section id="cases" class="section">
+  <div class="container">
+    <div class="section-head">
+      <div class="section-eyebrow reveal">CASE STUDIES</div>
+      <h2 class="section-h2 reveal reveal-d1">현장의 실증 사례</h2>
+      <p class="section-desc reveal reveal-d2">실제 현장에서 측정된 변화입니다.</p>
+    </div>
+    <div class="case-grid">
+
+      <div class="case-card reveal">
+        <div class="case-ind">🍜</div>
+        <div class="case-industry">요식업 · 한식당</div>
+        <div class="case-title">테이블 QR 도입 후 피크타임 회전율 개선</div>
+        <div class="case-body">주문 대기로 인한 테이블 공석 문제를 QR오더로 해결. 직원 1명이 서빙에만 집중하면서 주방 처리 속도도 향상됐습니다.</div>
+        <div class="case-metrics">
+          <div class="case-metric"><div class="case-metric-val g">+38%</div><div class="case-metric-label">테이블 회전율</div></div>
+          <div class="case-metric"><div class="case-metric-val">-2명</div><div class="case-metric-label">주문 담당 인력</div></div>
+        </div>
+      </div>
+
+      <div class="case-card reveal reveal-d1">
+        <div class="case-ind">🏩</div>
+        <div class="case-industry">숙박업 · 펜션</div>
+        <div class="case-title">채널매니저 도입 후 예약 중복 오류 제로</div>
+        <div class="case-body">여러 OTA에 수기 입력하다 발생하던 이중 예약 사고가 완전히 사라졌습니다. 빈방도 자동 노출됩니다.</div>
+        <div class="case-metrics">
+          <div class="case-metric"><div class="case-metric-val g">0건</div><div class="case-metric-label">예약 중복 오류</div></div>
+          <div class="case-metric"><div class="case-metric-val">+22%</div><div class="case-metric-label">객실 가동률</div></div>
+        </div>
+      </div>
+
+      <div class="case-card reveal reveal-d2">
+        <div class="case-ind">⛵</div>
+        <div class="case-industry">관광레저 · 유람선</div>
+        <div class="case-title">승선권 POS 도입으로 매표 대기 줄 해소</div>
+        <div class="case-body">종이 대장 수기 기록에서 전산화로 전환. 회차별 잔여 좌석 실시간 확인으로 현장 혼선이 사라졌습니다.</div>
+        <div class="case-metrics">
+          <div class="case-metric"><div class="case-metric-val g">-65%</div><div class="case-metric-label">매표 대기시간</div></div>
+          <div class="case-metric"><div class="case-metric-val">100%</div><div class="case-metric-label">좌석 정확도</div></div>
+        </div>
+      </div>
+
+      <div class="case-card reveal reveal-d3">
+        <div class="case-ind">🏪</div>
+        <div class="case-industry">도소매 · 소형 마트</div>
+        <div class="case-title">AI 재고관리로 폐기 손실 50% 감소</div>
+        <div class="case-body">유통기한 관리와 자동 발주 추천으로 과잉 재고와 품절이 동시에 줄었습니다. 월 재고실사 시간도 크게 단축됐습니다.</div>
+        <div class="case-metrics">
+          <div class="case-metric"><div class="case-metric-val g">-51%</div><div class="case-metric-label">식품 폐기 손실</div></div>
+          <div class="case-metric"><div class="case-metric-val">-4h</div><div class="case-metric-label">월 재고실사 시간</div></div>
+        </div>
+      </div>
+
+      <div class="case-card reveal reveal-d4">
+        <div class="case-ind">💪</div>
+        <div class="case-industry">피트니스 · 헬스클럽</div>
+        <div class="case-title">안면인식 출입으로 프런트 없이도 운영</div>
+        <div class="case-body">카운터 무인 운영 시간대 도입. 회원 본인 확인이 카메라 한 대로 끝나 무인 운영 시간이 하루 4시간 늘었습니다.</div>
+        <div class="case-metrics">
+          <div class="case-metric"><div class="case-metric-val g">+4h</div><div class="case-metric-label">무인 운영 확대</div></div>
+          <div class="case-metric"><div class="case-metric-val">0.3s</div><div class="case-metric-label">인식 속도</div></div>
+        </div>
+      </div>
+
+      <div class="case-card reveal reveal-d5">
+        <div class="case-ind">📚</div>
+        <div class="case-industry">교육 · 학원</div>
+        <div class="case-title">QR 출석 체크로 학부모 알림 자동화</div>
+        <div class="case-body">등원·하원 시 QR 찍으면 학부모 문자 자동 발송. 선생님의 출석 수기 기록이 사라지고 출석 리포트가 자동 생성됩니다.</div>
+        <div class="case-metrics">
+          <div class="case-metric"><div class="case-metric-val g">100%</div><div class="case-metric-label">출석 알림 자동화</div></div>
+          <div class="case-metric"><div class="case-metric-val">-30분</div><div class="case-metric-label">일일 행정 시간</div></div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- ══ CTA BANNER ══ -->
+<section id="cta-banner">
+  <div class="container">
+    <div class="reveal">
+      <span class="badge badge-gold" style="margin-bottom:20px">지금 바로 시작하세요</span>
+    </div>
+    <h2 class="cta-banner-h reveal reveal-d1">우리 업장에 딱 맞는 시스템이<br>궁금하신가요?</h2>
+    <p class="cta-banner-p reveal reveal-d2">업종과 규모를 알려주시면 맞춤 솔루션과 도입 비용을 안내해드립니다.<br>상담은 무료이며, 방문 데모도 가능합니다.</p>
+    <div class="cta-banner-btns reveal reveal-d3">
+      <a href="#contact" class="btn btn-gold btn-lg">무료 상담 신청 →</a>
+      <a href="tel:01000000000" class="btn btn-outline btn-lg">📞 전화 상담</a>
+    </div>
+  </div>
+</section>
+
+<!-- ══ CONTACT FORM ══ -->
+<section id="contact" class="section">
+  <div class="container">
+    <div class="contact-grid">
+      <div class="contact-left">
+        <div class="section-eyebrow reveal">CONTACT</div>
+        <h2 class="section-h2 reveal reveal-d1">무료 상담 신청</h2>
+        <p class="section-desc reveal reveal-d2">
+          솔루션 선택부터 도입 비용, 설치 일정까지<br>
+          전문 컨설턴트가 직접 안내드립니다.
+        </p>
+        <div class="contact-info reveal reveal-d3">
+          <div class="cinfo-item">
+            <div class="cinfo-icon">📞</div>
+            <div>
+              <div class="cinfo-label">전화 상담</div>
+              <div class="cinfo-val">1588-0000</div>
+            </div>
+          </div>
+          <div class="cinfo-item">
+            <div class="cinfo-icon">💬</div>
+            <div>
+              <div class="cinfo-label">카카오 채널</div>
+              <div class="cinfo-val">@ubpos</div>
+            </div>
+          </div>
+          <div class="cinfo-item">
+            <div class="cinfo-icon">✉️</div>
+            <div>
+              <div class="cinfo-label">이메일</div>
+              <div class="cinfo-val">info@ubpos.kr</div>
+            </div>
+          </div>
+          <div class="cinfo-item">
+            <div class="cinfo-icon">🕐</div>
+            <div>
+              <div class="cinfo-label">운영시간</div>
+              <div class="cinfo-val">평일 09:00 – 18:00</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="reveal reveal-d2">
+        <div class="contact-form">
+          <div class="form-title">상담 신청서</div>
+          <div class="form-sub">입력하신 정보는 상담 목적으로만 사용됩니다.</div>
+          <form id="contactForm" onsubmit="submitForm(event)">
+            <div class="form-row">
+              <div class="form-group">
+                <label class="form-label">성함 *</label>
+                <input class="form-input" type="text" placeholder="홍길동" required>
+              </div>
+              <div class="form-group">
+                <label class="form-label">연락처 *</label>
+                <input class="form-input" type="tel" placeholder="010-0000-0000" required>
+              </div>
+            </div>
+            <div class="form-group">
+              <label class="form-label">사업자번호</label>
+              <input class="form-input" type="text" placeholder="000-00-00000">
+            </div>
+            <div class="form-group">
+              <label class="form-label">업종 *</label>
+              <select class="form-select form-input" required>
+                <option value="" disabled selected>업종을 선택해주세요</option>
+                <option>요식업 (음식점·카페·배달)</option>
+                <option>숙박업 (호텔·모텔·펜션·게스트하우스)</option>
+                <option>관광레저 (유람선·관광지·체험시설)</option>
+                <option>도소매 (마트·편의점·잡화)</option>
+                <option>피트니스 (헬스·수영·필라테스)</option>
+                <option>교육 (학원·공부방·유치원)</option>
+                <option>기타</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">관심 솔루션</label>
+              <select class="form-select form-input">
+                <option value="" disabled selected>관심 솔루션을 선택해주세요 (선택)</option>
+                <option>QR오더 &amp; 페이</option>
+                <option>룸서비스 QR오더 + 채널매니저</option>
+                <option>승선권 예약 시스템</option>
+                <option>AI 바코드 재고관리</option>
+                <option>근태관리</option>
+                <option>AI 안면인식 출입관리</option>
+                <option>전체 통합 솔루션</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">문의 내용</label>
+              <textarea class="form-textarea form-input" placeholder="궁금한 점이나 현재 불편한 사항을 알려주시면 맞춤 상담을 드립니다."></textarea>
+            </div>
+            <button type="submit" class="btn btn-primary btn-lg form-submit">상담 신청하기 →</button>
+            <div class="form-terms">제출 시 개인정보 수집·이용에 동의하는 것으로 간주합니다.</div>
+          </form>
+          <div class="form-success" id="formSuccess">
+            <div class="success-icon">✅</div>
+            <div>상담 신청이 접수됐습니다!</div>
+            <div style="font-size:13px;color:var(--text2);font-weight:400;margin-top:8px">1영업일 이내 연락드리겠습니다.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══ FOOTER ══ -->
+<footer id="footer">
+  <div class="footer-inner">
+    <div class="footer-top">
+      <div class="footer-brand">
+        <div class="logo">UB<span>POS</span></div>
+        <p>사장님과 함께 성장하는<br>업종별 맞춤 AI POS 시스템</p>
+      </div>
+      <div class="footer-links">
+        <div class="footer-col">
+          <h4>솔루션</h4>
+          <ul>
+            <li><a href="#solutions">QR오더 &amp; 페이</a></li>
+            <li><a href="#solutions">룸서비스 + 채널매니저</a></li>
+            <li><a href="#solutions">승선권 예약 시스템</a></li>
+            <li><a href="#solutions">AI 재고관리</a></li>
+            <li><a href="#solutions">근태관리</a></li>
+            <li><a href="#solutions">안면인식 출입관리</a></li>
+          </ul>
+        </div>
+        <div class="footer-col">
+          <h4>회사</h4>
+          <ul>
+            <li><a href="#">회사 소개</a></li>
+            <li><a href="#cases">실증사례</a></li>
+            <li><a href="#contact">파트너 문의</a></li>
+          </ul>
+        </div>
+        <div class="footer-col">
+          <h4>지원</h4>
+          <ul>
+            <li><a href="#">공지사항</a></li>
+            <li><a href="#">사용 가이드</a></li>
+            <li><a href="#contact">기술 지원</a></li>
+          </ul>
+        </div>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <div class="footer-copy">© 2025 UBPOS. All rights reserved.</div>
+      <div class="footer-legal">
+        <a href="#">개인정보처리방침</a>
+        <a href="#">이용약관</a>
+      </div>
+    </div>
+  </div>
+</footer>
+
+<script>
+// ── NAV SCROLL ──
+window.addEventListener('scroll', () => {
+  document.getElementById('nav').classList.toggle('scrolled', window.scrollY > 20);
+});
+
+// ── MOBILE MENU ──
+function toggleMenu() {
+  document.getElementById('mobileMenu').classList.toggle('open');
+}
+
+// ── REVEAL ON SCROLL ──
+const revealEls = document.querySelectorAll('.reveal');
+const ro = new IntersectionObserver((entries) => {
+  entries.forEach(e => { if(e.isIntersecting) { e.target.classList.add('visible'); ro.unobserve(e.target); } });
+}, { threshold: 0.1, rootMargin: '0px 0px -40px 0px' });
+revealEls.forEach(el => ro.observe(el));
+
+// ── COUNTER ANIMATION ──
+function animateCount(id, target, suffix, duration) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  const start = performance.now();
+  function step(now) {
+    const t = Math.min((now - start) / duration, 1);
+    const eased = 1 - Math.pow(1 - t, 3);
+    el.textContent = Math.round(eased * target);
+    if (t < 1) requestAnimationFrame(step);
+    else el.textContent = target;
+  }
+  requestAnimationFrame(step);
+}
+
+let counted = false;
+const trustObs = new IntersectionObserver((entries) => {
+  if (entries[0].isIntersecting && !counted) {
+    counted = true;
+    animateCount('cnt1', 120, '+', 1600);
+    animateCount('cnt2', 6, '개', 1000);
+    animateCount('cnt3', 97, '%', 1600);
+    animateCount('t1', 120, '+', 1600);
+    animateCount('t2', 6, '종', 1000);
+    animateCount('t3', 35, '%', 1600);
+    animateCount('t4', 1.8, '배', 1200);
+  }
+}, { threshold: 0.3 });
+const trustEl = document.getElementById('trust');
+if (trustEl) trustObs.observe(trustEl);
+
+// ── FORM SUBMIT ──
+function submitForm(e) {
+  e.preventDefault();
+  const form = document.getElementById('contactForm');
+  form.style.display = 'none';
+  document.getElementById('formSuccess').style.display = 'block';
+}
+
+// ── SMOOTH ANCHOR ──
+document.querySelectorAll('a[href^="#"]').forEach(a => {
+  a.addEventListener('click', e => {
+    const target = document.querySelector(a.getAttribute('href'));
+    if (target) { e.preventDefault(); target.scrollIntoView({ behavior: 'smooth', block: 'start' }); }
+  });
+});
+</script>
+</body>
+</html>
