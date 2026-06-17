@@ -415,10 +415,6 @@ header{background:var(--card);border-bottom:1px solid var(--border);padding:12px
       <div class="sett-sec-ttl">헬스장 정보</div>
       <div class="form-group"><label class="form-label">이름</label><input class="form-input" id="stGym" placeholder="GYM PRO"></div>
     </div>
-    <div class="sett-sec">
-      <div class="sett-sec-ttl">Firebase Config</div>
-      <textarea class="cfg-ta" id="stCfg" placeholder="Firebase Config JSON"></textarea>
-    </div>
     <button class="btn btn-p btn-w" onclick="saveSett()" style="margin-bottom:8px">저장</button>
     <button class="btn btn-s btn-w" onclick="closeSett()">닫기</button>
   </div>
@@ -536,44 +532,30 @@ function subAll(){
 }
 
 // ══════════════════════════════════════════════
-//  SETUP & SETTINGS
+//  FIREBASE CONFIG (hardcoded)
 // ══════════════════════════════════════════════
-function checkSetup(){
-  document.getElementById('setup').style.display = cfg.fb ? 'none' : 'flex';
-  if(cfg.fb){ initFb(cfg.fb); }
-  document.getElementById('gym-name-hdr').textContent = cfg.gymName||'';
-}
+const FB_CONFIG = {
+  apiKey: "AIzaSyAeegIHOoGONYVSG89pE50X74LqbhlgGPs",
+  authDomain: "gym-attendance-452d4.firebaseapp.com",
+  projectId: "gym-attendance-452d4",
+  storageBucket: "gym-attendance-452d4.firebasestorage.app",
+  messagingSenderId: "456640045807",
+  appId: "1:456640045807:web:749af5e61bc55ae93ef11a"
+};
 
-function saveSetup(){
-  const raw = document.getElementById('s-cfg').value.trim();
-  const err = document.getElementById('s-err');
-  err.style.display = 'none';
-  let fc;
-  try{ fc = JSON.parse(raw); }catch(e){ err.textContent='JSON 오류. 다시 복사해주세요.'; err.style.display='block'; return; }
-  if(!fc.apiKey||!fc.projectId){ err.textContent='apiKey와 projectId가 필요합니다.'; err.style.display='block'; return; }
-  cfg.fb = fc;
-  cfg.gymName = document.getElementById('s-gym').value.trim() || 'GYM PRO';
-  saveCfg();
-  document.getElementById('setup').style.display = 'none';
-  document.getElementById('gym-name-hdr').textContent = cfg.gymName;
-  if(!initFb(fc)) showAlert('Firebase 연결 실패',true);
-  else{ showAlert('설정 완료! 👋'); loadModels(); }
-}
-
+// ══════════════════════════════════════════════
+//  SETTINGS
+// ══════════════════════════════════════════════
 function openSett(){
   document.getElementById('stGym').value = cfg.gymName||'';
-  document.getElementById('stCfg').value = cfg.fb ? JSON.stringify(cfg.fb,null,2) : '';
   updFbUI();
   document.getElementById('settOverlay').classList.add('visible');
 }
 function closeSett(){ document.getElementById('settOverlay').classList.remove('visible'); }
 function saveSett(){
   cfg.gymName = document.getElementById('stGym').value.trim()||cfg.gymName||'GYM PRO';
-  const raw = document.getElementById('stCfg').value.trim();
-  if(raw){ try{ cfg.fb=JSON.parse(raw); }catch(e){ showAlert('Config JSON 오류',true); return; } }
   saveCfg();
   document.getElementById('gym-name-hdr').textContent = cfg.gymName;
-  if(cfg.fb && !fbOk) initFb(cfg.fb);
   closeSett(); showAlert('설정 저장됨');
 }
 
@@ -1132,12 +1114,10 @@ setInterval(updateTime,1000); updateTime();
 //  BOOT
 // ══════════════════════════════════════════════
 (function boot(){
-  document.getElementById('gym-name-hdr').textContent=cfg.gymName||'';
-  checkSetup();
-  if(cfg.fb){
-    // Start loading models after brief delay (let Firebase init first)
-    setTimeout(loadModels, 800);
-  }
+  document.getElementById('setup').style.display = 'none';
+  document.getElementById('gym-name-hdr').textContent = cfg.gymName||'';
+  initFb(FB_CONFIG);
+  setTimeout(loadModels, 800);
 })();
 </script>
 </body>
