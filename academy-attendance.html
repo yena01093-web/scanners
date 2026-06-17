@@ -1,0 +1,797 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>UBPOS 출결관리</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Black+Han+Sans&family=Noto+Sans+KR:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:#070F1A; --bg2:#0B1825; --bg3:#0F2235; --card:#0D1E30; --card2:#112540;
+  --blue:#1E6FFF; --blue2:#2979FF; --gold:#F5A623; --green:#10B981;
+  --red:#EF4444; --cyan:#22D3EE;
+  --text1:#F0F4FF; --text2:#8A9BB5; --text3:#5A7090;
+  --border:rgba(255,255,255,0.07);
+  --nav-h:60px; --bot-h:68px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;background:var(--bg);color:var(--text1);font-family:'Noto Sans KR',sans-serif;font-size:14px;-webkit-font-smoothing:antialiased}
+
+/* TOP NAV */
+.top-nav{position:fixed;top:0;left:0;right:0;z-index:100;height:var(--nav-h);background:rgba(7,15,26,0.96);backdrop-filter:blur(12px);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 16px;justify-content:space-between}
+.nav-brand{font-family:'Black Han Sans',sans-serif;font-size:17px;color:var(--blue)}
+.nav-sub{font-size:11px;color:var(--text2);margin-left:7px}
+.nav-right{display:flex;align-items:center;gap:8px}
+.nav-date{font-size:12px;color:var(--text2)}
+.btn-ico{background:none;border:1px solid var(--border);color:var(--text2);padding:5px 9px;border-radius:7px;cursor:pointer;font-size:13px;transition:all .2s}
+.btn-ico:hover{border-color:var(--blue);color:var(--blue)}
+
+/* BOTTOM NAV */
+.bot-nav{position:fixed;bottom:0;left:0;right:0;z-index:100;height:var(--bot-h);background:rgba(11,24,37,0.97);backdrop-filter:blur(12px);border-top:1px solid var(--border);display:flex}
+.bnav{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;cursor:pointer;background:none;border:none;color:var(--text3);padding:0;transition:color .2s}
+.bnav.on{color:var(--blue)}
+.bnav:hover{color:var(--text1)}
+.bnav-i{font-size:21px;line-height:1}
+.bnav-t{font-size:10px;font-weight:700;letter-spacing:.3px}
+
+/* MAIN */
+.main{padding:calc(var(--nav-h) + 14px) 14px calc(var(--bot-h) + 14px);max-width:540px;margin:0 auto;min-height:100vh}
+.view{display:none}
+.view.on{display:block}
+
+/* CARDS */
+.card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:16px;margin-bottom:12px}
+.card-ttl{font-size:11px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:1.5px;margin-bottom:13px}
+
+/* STATS */
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;margin-bottom:12px}
+.stat{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:13px 8px;text-align:center}
+.stat-n{font-size:26px;font-weight:700;line-height:1;margin-bottom:3px}
+.stat-l{font-size:11px;color:var(--text2);font-weight:600}
+.c-g{color:var(--green)} .c-r{color:var(--red)} .c-b{color:var(--blue)} .c-go{color:var(--gold)}
+
+/* STUDENT ROW (dashboard) */
+.sr{display:flex;align-items:center;padding:10px 0;border-bottom:1px solid var(--border)}
+.sr:last-child{border-bottom:none}
+.sr-av{width:34px;height:34px;border-radius:50%;background:var(--bg3);display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;color:var(--blue);flex-shrink:0;margin-right:10px}
+.sr-info{flex:1;min-width:0}
+.sr-name{font-size:14px;font-weight:600;margin-bottom:1px}
+.sr-time{font-size:11px;color:var(--text2)}
+.badge{font-size:11px;font-weight:700;padding:3px 9px;border-radius:20px;flex-shrink:0}
+.b-p{background:rgba(16,185,129,.14);color:var(--green);border:1px solid rgba(16,185,129,.3)}
+.b-d{background:rgba(90,112,144,.1);color:var(--text2);border:1px solid var(--border)}
+.b-a{background:rgba(239,68,68,.13);color:var(--red);border:1px solid rgba(239,68,68,.3)}
+.b-u{background:rgba(90,112,144,.08);color:var(--text3);border:1px solid var(--border)}
+
+/* FORM */
+.fg{margin-bottom:11px}
+.fl{font-size:12px;font-weight:600;color:var(--text2);margin-bottom:5px;display:block}
+.fi{width:100%;background:var(--bg2);border:1px solid var(--border);color:var(--text1);border-radius:8px;padding:9px 12px;font-size:14px;font-family:inherit;outline:none;transition:border-color .2s}
+.fi:focus{border-color:var(--blue)}
+.fi::placeholder{color:var(--text3)}
+.frow{display:grid;grid-template-columns:1fr 1fr;gap:9px}
+
+/* BUTTONS */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:5px;padding:9px 16px;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;border:none;transition:all .2s;font-family:inherit}
+.btn-p{background:var(--blue);color:#fff}
+.btn-p:hover{background:var(--blue2)}
+.btn-s{background:var(--bg3);color:var(--text1);border:1px solid var(--border)}
+.btn-s:hover{border-color:var(--blue)}
+.btn-d{background:rgba(239,68,68,.13);color:var(--red);border:1px solid rgba(239,68,68,.3)}
+.btn-d:hover{background:rgba(239,68,68,.23)}
+.btn-go{background:rgba(245,166,35,.12);color:var(--gold);border:1px solid rgba(245,166,35,.3)}
+.btn-go:hover{background:rgba(245,166,35,.22)}
+.btn-w{width:100%}
+.btn-sm{padding:5px 11px;font-size:11px;border-radius:6px}
+
+/* STUDENT MANAGE LIST */
+.sml{display:flex;align-items:center;padding:11px 0;border-bottom:1px solid var(--border)}
+.sml:last-child{border-bottom:none}
+.sml-info{flex:1;min-width:0}
+.sml-name{font-size:14px;font-weight:600;margin-bottom:2px}
+.sml-phone{font-size:12px;color:var(--text2)}
+.sml-act{display:flex;gap:6px}
+
+/* QR SCAN */
+.scan-area{background:#000;border-radius:14px;overflow:hidden;position:relative;aspect-ratio:1;border:2px solid var(--bg3);margin-bottom:12px}
+.scan-video{width:100%;height:100%;object-fit:cover;display:block}
+#scan-canvas{display:none}
+.scan-overlay{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none}
+.scan-frame{width:58%;height:58%;border:2px solid rgba(30,111,255,.55);border-radius:10px;box-shadow:0 0 0 9999px rgba(0,0,0,.42);position:relative}
+.sf-corner{position:absolute;width:18px;height:18px;border-color:var(--blue);border-style:solid}
+.sf-tl{top:-2px;left:-2px;border-width:3px 0 0 3px;border-radius:4px 0 0 0}
+.sf-tr{top:-2px;right:-2px;border-width:3px 3px 0 0;border-radius:0 4px 0 0}
+.sf-bl{bottom:-2px;left:-2px;border-width:0 0 3px 3px;border-radius:0 0 0 4px}
+.sf-br{bottom:-2px;right:-2px;border-width:0 3px 3px 0;border-radius:0 0 4px 0}
+.scan-line{position:absolute;left:5%;right:5%;height:2px;background:linear-gradient(90deg,transparent,var(--blue),transparent);animation:sl 2s ease-in-out infinite}
+@keyframes sl{0%{top:5%}50%{top:90%}100%{top:5%}}
+.scan-status{background:var(--card);border-radius:10px;padding:13px;text-align:center;margin-bottom:12px;border:1px solid var(--border)}
+.scan-status.ok{border-color:rgba(16,185,129,.4);background:rgba(16,185,129,.07)}
+.scan-status.err{border-color:rgba(239,68,68,.4);background:rgba(239,68,68,.07)}
+.ss-ico{font-size:30px;margin-bottom:7px}
+.ss-msg{font-size:15px;font-weight:700;margin-bottom:3px}
+.ss-sub{font-size:12px;color:var(--text2)}
+
+/* NOTIF LOG */
+.ni{display:flex;align-items:flex-start;gap:10px;padding:11px 0;border-bottom:1px solid var(--border)}
+.ni:last-child{border-bottom:none}
+.nd{width:7px;height:7px;border-radius:50%;flex-shrink:0;margin-top:5px}
+.nd-in{background:var(--green)} .nd-out{background:var(--blue)} .nd-ab{background:var(--red)}
+.ni-c{flex:1;min-width:0}
+.ni-t{font-size:13px;font-weight:600;margin-bottom:2px}
+.ni-m{font-size:12px;color:var(--text2);line-height:1.5;margin-bottom:2px}
+.ni-s{font-size:11px;color:var(--text3)}
+
+/* CLOCK */
+.clock-box{background:linear-gradient(135deg,var(--bg3),rgba(30,111,255,.12));border:1px solid rgba(30,111,255,.2);border-radius:14px;padding:16px;margin-bottom:12px;text-align:center}
+.clock{font-size:34px;font-weight:700;font-variant-numeric:tabular-nums;letter-spacing:2px}
+.clock-date{font-size:13px;color:var(--text2);margin-top:3px}
+
+/* ABSENT ALERT */
+.abs-alert{background:rgba(239,68,68,.07);border:1px solid rgba(239,68,68,.25);border-radius:12px;padding:13px 15px;margin-bottom:12px;display:flex;align-items:center;justify-content:space-between}
+.aa-txt{font-size:13px;font-weight:600;color:var(--red)}
+.aa-sub{font-size:11px;color:rgba(239,68,68,.65);margin-top:2px}
+
+/* OR DIVIDER */
+.or{display:flex;align-items:center;gap:10px;margin:12px 0;color:var(--text3);font-size:12px}
+.or::before,.or::after{content:'';flex:1;height:1px;background:var(--border)}
+
+/* MODAL */
+.overlay{position:fixed;inset:0;z-index:200;background:rgba(0,0,0,.72);backdrop-filter:blur(4px);display:none;align-items:center;justify-content:center;padding:18px}
+.overlay.on{display:flex}
+.modal{background:var(--bg2);border:1px solid var(--border);border-radius:18px;padding:22px;max-width:360px;width:100%}
+.modal-hd{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
+.modal-ttl{font-size:16px;font-weight:700}
+.modal-x{background:none;border:none;color:var(--text2);font-size:19px;cursor:pointer;padding:2px 7px;border-radius:6px}
+.modal-x:hover{background:var(--bg3)}
+.qr-wrap{background:#fff;border-radius:10px;padding:14px;display:flex;align-items:center;justify-content:center;margin-bottom:12px}
+.qr-name{text-align:center;font-size:16px;font-weight:700;margin-bottom:6px}
+.qr-hint{text-align:center;font-size:12px;color:var(--text2)}
+
+/* SETUP SCREEN */
+#setup{position:fixed;inset:0;z-index:300;background:var(--bg);display:flex;align-items:center;justify-content:center;padding:20px;overflow-y:auto}
+.setup-box{background:var(--card);border:1px solid var(--border);border-radius:20px;padding:26px 22px;max-width:440px;width:100%}
+.setup-logo{font-family:'Black Han Sans',sans-serif;font-size:21px;color:var(--blue);margin-bottom:5px}
+.setup-sub{font-size:13px;color:var(--text2);margin-bottom:20px;line-height:1.5}
+.setup-step{background:var(--bg2);border-radius:9px;padding:13px;margin-bottom:11px;border:1px solid var(--border)}
+.sst-n{font-size:11px;font-weight:700;color:var(--blue);letter-spacing:1px;margin-bottom:5px}
+.sst-t{font-size:12px;color:var(--text2);line-height:1.65}
+.sst-t a{color:var(--blue);text-decoration:none}
+.sst-t code{color:var(--gold);background:rgba(245,166,35,.1);padding:1px 5px;border-radius:4px;font-family:monospace}
+.cfg-ta{width:100%;background:var(--bg);border:1px solid var(--border);color:var(--text1);border-radius:8px;padding:9px 12px;font-size:12px;font-family:monospace;outline:none;resize:vertical;min-height:110px;transition:border-color .2s}
+.cfg-ta:focus{border-color:var(--blue)}
+.err-msg{color:var(--red);font-size:12px;margin-top:8px;display:none}
+
+/* SETTINGS */
+.sett-body{max-height:72vh;overflow-y:auto;padding-right:2px}
+.sett-sec{margin-bottom:18px}
+.sett-sec-ttl{font-size:11px;font-weight:700;color:var(--text2);letter-spacing:1px;text-transform:uppercase;margin-bottom:9px}
+.fb-badge{display:flex;align-items:center;gap:6px;font-size:12px;padding:7px 11px;border-radius:8px;margin-bottom:11px}
+.fb-badge.on{background:rgba(16,185,129,.09);color:var(--green);border:1px solid rgba(16,185,129,.2)}
+.fb-badge.off{background:rgba(239,68,68,.09);color:var(--red);border:1px solid rgba(239,68,68,.2)}
+.fb-dot{width:6px;height:6px;border-radius:50%;background:currentColor}
+
+/* SECTION HDR */
+.sec-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+.sec-ttl{font-size:16px;font-weight:700}
+
+/* EMPTY */
+.empty{text-align:center;padding:36px 16px;color:var(--text3)}
+.empty-i{font-size:34px;margin-bottom:8px}
+.empty-t{font-size:13px}
+
+/* TOAST */
+#toast{position:fixed;bottom:calc(var(--bot-h) + 12px);left:50%;transform:translateX(-50%) translateY(16px);background:var(--card2);color:var(--text1);padding:9px 17px;border-radius:28px;font-size:13px;font-weight:600;pointer-events:none;z-index:999;opacity:0;transition:all .22s;white-space:nowrap;border:1px solid var(--border);box-shadow:0 8px 24px rgba(0,0,0,.4)}
+#toast.on{opacity:1;transform:translateX(-50%) translateY(0)}
+
+@media(max-width:380px){.frow{grid-template-columns:1fr}.stats{gap:7px}.stat-n{font-size:22px}}
+</style>
+</head>
+<body>
+
+<!-- ── SETUP SCREEN ── -->
+<div id="setup" style="display:none">
+  <div class="setup-box">
+    <div class="setup-logo">🎓 UBPOS 출결관리</div>
+    <div class="setup-sub">Firebase Firestore와 연동해 실시간 출결을 관리합니다.<br>최초 1회 설정이 필요합니다.</div>
+
+    <div class="setup-step">
+      <div class="sst-n">STEP 1 — Firebase 프로젝트 생성</div>
+      <div class="sst-t"><a href="https://console.firebase.google.com" target="_blank">Firebase Console</a>에서 프로젝트 이름 <code>academy-attendance</code>으로 생성 → Firestore Database 활성화 → 규칙을 테스트 모드(30일)로 설정</div>
+    </div>
+    <div class="setup-step">
+      <div class="sst-n">STEP 2 — 웹 앱 등록</div>
+      <div class="sst-t">프로젝트 설정(⚙) → 일반 → 내 앱 → 웹 앱(<code>&lt;/&gt;</code>) 추가 → 앱 등록 → SDK 구성에서 <code>firebaseConfig</code> 객체 복사</div>
+    </div>
+    <div class="setup-step">
+      <div class="sst-n">STEP 3 — Config 붙여넣기</div>
+      <div class="sst-t">아래 필드에 복사한 JSON을 붙여넣고 저장하세요</div>
+    </div>
+
+    <div class="fg" style="margin-top:16px">
+      <label class="fl">학원 이름</label>
+      <input class="fi" id="s-acad" placeholder="예: 영재수학학원">
+    </div>
+    <div class="fg">
+      <label class="fl">Firebase Config (JSON)</label>
+      <textarea class="cfg-ta" id="s-cfg" placeholder='{
+  "apiKey": "AIza...",
+  "authDomain": "academy-attendance.firebaseapp.com",
+  "projectId": "academy-attendance",
+  "storageBucket": "academy-attendance.appspot.com",
+  "messagingSenderId": "123456789",
+  "appId": "1:123456789:web:abc..."
+}'></textarea>
+      <div class="err-msg" id="s-err"></div>
+    </div>
+    <button class="btn btn-p btn-w" onclick="saveSetup()">저장하고 시작하기</button>
+  </div>
+</div>
+
+<!-- ── TOP NAV ── -->
+<nav class="top-nav">
+  <div><span class="nav-brand">🎓 출결관리</span><span class="nav-sub" id="acad-nm"></span></div>
+  <div class="nav-right">
+    <span class="nav-date" id="nav-dt"></span>
+    <button class="btn-ico" onclick="openSett()">⚙</button>
+  </div>
+</nav>
+
+<!-- ── MAIN ── -->
+<div class="main">
+
+  <!-- DASHBOARD -->
+  <div class="view on" id="v-dash">
+    <div class="clock-box">
+      <div class="clock" id="clock">00:00:00</div>
+      <div class="clock-date" id="clock-dt"></div>
+    </div>
+    <div class="stats">
+      <div class="stat"><div class="stat-n c-g" id="st-p">0</div><div class="stat-l">출석</div></div>
+      <div class="stat"><div class="stat-n c-r" id="st-a">0</div><div class="stat-l">미출석</div></div>
+      <div class="stat"><div class="stat-n c-b" id="st-d">0</div><div class="stat-l">하원</div></div>
+    </div>
+    <div id="abs-box" style="display:none">
+      <div class="abs-alert">
+        <div><div class="aa-txt" id="abs-txt"></div><div class="aa-sub" id="abs-sub"></div></div>
+        <button class="btn btn-d btn-sm" onclick="sendAbsent()">일괄 알림</button>
+      </div>
+    </div>
+    <div class="card">
+      <div class="sec-hdr" style="margin-bottom:0">
+        <div class="card-ttl" style="margin-bottom:0">오늘 출결 현황</div>
+        <button class="btn btn-s btn-sm" onclick="renderDash()">↺</button>
+      </div>
+      <div id="dash-list" style="margin-top:8px">
+        <div class="empty"><div class="empty-i">📋</div><div class="empty-t">등록된 학생이 없습니다</div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- STUDENTS -->
+  <div class="view" id="v-stu">
+    <div class="card">
+      <div class="card-ttl">학생 등록</div>
+      <div class="frow">
+        <div class="fg"><label class="fl">학생 이름</label><input class="fi" id="i-nm" placeholder="홍길동" onkeydown="if(event.key==='Enter')addStudent()"></div>
+        <div class="fg"><label class="fl">학부모 연락처</label><input class="fi" id="i-ph" placeholder="010-0000-0000" onkeydown="if(event.key==='Enter')addStudent()"></div>
+      </div>
+      <button class="btn btn-p btn-w" onclick="addStudent()">+ 학생 등록</button>
+    </div>
+    <div class="card">
+      <div class="sec-hdr" style="margin-bottom:0">
+        <div class="card-ttl" style="margin-bottom:0">학생 목록</div>
+        <span id="stu-cnt" style="font-size:12px;color:var(--text2)"></span>
+      </div>
+      <div id="stu-list" style="margin-top:8px">
+        <div class="empty"><div class="empty-i">👥</div><div class="empty-t">등록된 학생이 없습니다</div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SCAN -->
+  <div class="view" id="v-scan">
+    <div class="scan-status" id="ss-box">
+      <div class="ss-ico">📷</div>
+      <div class="ss-msg">QR 스캔 준비</div>
+      <div class="ss-sub">카메라가 QR코드를 감지하면 자동으로 기록됩니다</div>
+    </div>
+    <div class="scan-area">
+      <video class="scan-video" id="scan-vid" autoplay playsinline muted></video>
+      <canvas id="scan-canvas"></canvas>
+      <div class="scan-overlay">
+        <div class="scan-frame">
+          <div class="sf-corner sf-tl"></div><div class="sf-corner sf-tr"></div>
+          <div class="sf-corner sf-bl"></div><div class="sf-corner sf-br"></div>
+          <div class="scan-line"></div>
+        </div>
+      </div>
+    </div>
+    <div class="or">또는 수동 처리</div>
+    <div class="card">
+      <div class="card-ttl">수동 출결</div>
+      <div class="fg"><label class="fl">학생 선택</label>
+        <select class="fi" id="man-sel"><option value="">-- 학생 선택 --</option></select>
+      </div>
+      <div style="display:flex;gap:8px">
+        <button class="btn btn-p" style="flex:1" onclick="manualChk('in')">🟢 등원</button>
+        <button class="btn btn-s" style="flex:1" onclick="manualChk('out')">🔵 하원</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- NOTIF -->
+  <div class="view" id="v-not">
+    <div class="sec-hdr">
+      <div class="sec-ttl">알림 로그</div>
+      <button class="btn btn-s btn-sm" onclick="clearNotifs()">초기화</button>
+    </div>
+    <div class="card">
+      <div id="not-list">
+        <div class="empty"><div class="empty-i">🔔</div><div class="empty-t">발송된 알림이 없습니다</div></div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ── BOTTOM NAV ── -->
+<nav class="bot-nav">
+  <button class="bnav on" onclick="sw('dash',this)"><span class="bnav-i">🏠</span><span class="bnav-t">대시보드</span></button>
+  <button class="bnav" onclick="sw('stu',this)"><span class="bnav-i">👥</span><span class="bnav-t">학생관리</span></button>
+  <button class="bnav" onclick="sw('scan',this)"><span class="bnav-i">📷</span><span class="bnav-t">QR스캔</span></button>
+  <button class="bnav" onclick="sw('not',this)"><span class="bnav-i">🔔</span><span class="bnav-t">알림</span></button>
+</nav>
+
+<!-- QR MODAL -->
+<div class="overlay" id="qr-ov">
+  <div class="modal">
+    <div class="modal-hd"><div class="modal-ttl">학생 QR코드</div><button class="modal-x" onclick="closeQR()">✕</button></div>
+    <div class="qr-name" id="qr-nm"></div>
+    <div class="qr-wrap"><div id="qr-out"></div></div>
+    <div class="qr-hint" style="margin-bottom:12px">이 QR을 스캔하면 출결이 자동 기록됩니다</div>
+    <button class="btn btn-s btn-w" onclick="dlQR()">⬇ QR 이미지 저장</button>
+  </div>
+</div>
+
+<!-- SETTINGS MODAL -->
+<div class="overlay" id="sett-ov">
+  <div class="modal" style="max-width:440px">
+    <div class="modal-hd"><div class="modal-ttl">⚙ 설정</div><button class="modal-x" onclick="closeSett()">✕</button></div>
+    <div class="sett-body">
+      <div id="fb-badge" class="fb-badge off"><div class="fb-dot"></div><span>Firebase 연결 안됨</span></div>
+      <div class="sett-sec">
+        <div class="sett-sec-ttl">학원 정보</div>
+        <div class="fg"><label class="fl">학원 이름</label><input class="fi" id="st-nm" placeholder="영재수학학원"></div>
+        <div class="fg"><label class="fl">수업 시작 시간 (미출석 감지 기준)</label><input class="fi" id="st-tm" type="time" value="14:00"></div>
+      </div>
+      <div class="sett-sec">
+        <div class="sett-sec-ttl">Firebase 설정</div>
+        <label class="fl">Firebase Config (JSON)</label>
+        <textarea class="cfg-ta" id="st-cfg" placeholder="Firebase 콘솔에서 복사한 config JSON"></textarea>
+        <div style="font-size:11px;color:var(--text3);line-height:1.6;margin-top:5px">Firebase Console → 프로젝트 설정 → 내 앱 → SDK 설정에서 복사하세요</div>
+      </div>
+      <button class="btn btn-p btn-w" onclick="saveSett()">저장</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js"></script>
+<script>
+// ═══ STATE ═══
+let db = null, fbOk = false;
+let students = {};    // id → obj
+let atdToday = {};    // studentId → record
+let notifs = [];
+let unsubs = [];
+let scanOn = false, cooldown = false;
+let curQrId = null;
+let rafId = null, stream = null;
+
+// ═══ CONFIG ═══
+let cfg = {};
+function loadCfg(){ try{ cfg=JSON.parse(localStorage.getItem('ubpos_atd')||'{}'); }catch(e){ cfg={}; } }
+function saveCfg(){ localStorage.setItem('ubpos_atd', JSON.stringify(cfg)); }
+loadCfg();
+
+function today(){
+  const d=new Date();
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+}
+const TODAY = today();
+
+// ═══ FIREBASE ═══
+function initFb(fc){
+  try{
+    if(!firebase.apps.length) firebase.initializeApp(fc);
+    db = firebase.firestore();
+    fbOk = true;
+    updFbBadge();
+    subAll();
+    return true;
+  }catch(e){
+    console.error('Firebase init:', e);
+    fbOk = false;
+    updFbBadge();
+    return false;
+  }
+}
+
+function updFbBadge(){
+  const b = document.getElementById('fb-badge');
+  if(!b) return;
+  b.className = fbOk ? 'fb-badge on' : 'fb-badge off';
+  b.innerHTML = `<div class="fb-dot"></div><span>${fbOk?'Firebase 연결됨':'Firebase 연결 안됨'}</span>`;
+}
+
+function subAll(){
+  unsubs.forEach(u=>u());
+  unsubs=[];
+  if(!db) return;
+
+  unsubs.push(
+    db.collection('students').orderBy('createdAt').onSnapshot(s=>{
+      students={};
+      s.forEach(d=>{ students[d.id]={id:d.id,...d.data()}; });
+      renderStuList(); renderManSel(); renderDash();
+    }, e=>console.error(e))
+  );
+
+  unsubs.push(
+    db.collection('attendance').where('date','==',TODAY).onSnapshot(s=>{
+      atdToday={};
+      s.forEach(d=>{ atdToday[d.data().studentId]={id:d.id,...d.data()}; });
+      renderDash();
+    }, e=>console.error(e))
+  );
+
+  unsubs.push(
+    db.collection('notifications').orderBy('timestamp','desc').limit(60).onSnapshot(s=>{
+      notifs=[];
+      s.forEach(d=>notifs.push({id:d.id,...d.data()}));
+      renderNotifs();
+    }, e=>console.error(e))
+  );
+}
+
+// ═══ SETUP ═══
+function checkSetup(){
+  document.getElementById('setup').style.display = cfg.fb ? 'none' : 'flex';
+  if(cfg.fb) initFb(cfg.fb);
+}
+
+function saveSetup(){
+  const raw = document.getElementById('s-cfg').value.trim();
+  const err = document.getElementById('s-err');
+  err.style.display = 'none';
+  let fc;
+  try{ fc=JSON.parse(raw); }catch(e){ err.textContent='JSON 형식 오류. Firebase 콘솔에서 다시 복사해주세요.'; err.style.display='block'; return; }
+  if(!fc.apiKey||!fc.projectId){ err.textContent='apiKey와 projectId가 필요합니다.'; err.style.display='block'; return; }
+  cfg.fb = fc;
+  cfg.name = document.getElementById('s-acad').value.trim() || '학원';
+  cfg.time = '14:00';
+  saveCfg();
+  document.getElementById('setup').style.display = 'none';
+  document.getElementById('acad-nm').textContent = cfg.name;
+  document.getElementById('st-nm').value = cfg.name;
+  if(!initFb(fc)) toast('Firebase 연결 실패 — Config를 확인하세요');
+  else toast('설정 완료! 학생을 등록해 시작하세요 🎓');
+}
+
+// ═══ SETTINGS ═══
+function openSett(){
+  document.getElementById('st-nm').value = cfg.name||'';
+  document.getElementById('st-tm').value = cfg.time||'14:00';
+  document.getElementById('st-cfg').value = cfg.fb ? JSON.stringify(cfg.fb,null,2) : '';
+  updFbBadge();
+  document.getElementById('sett-ov').classList.add('on');
+}
+function closeSett(){ document.getElementById('sett-ov').classList.remove('on'); }
+function saveSett(){
+  cfg.name = document.getElementById('st-nm').value.trim() || cfg.name;
+  cfg.time = document.getElementById('st-tm').value || '14:00';
+  const raw = document.getElementById('st-cfg').value.trim();
+  if(raw){
+    try{ cfg.fb=JSON.parse(raw); }catch(e){ toast('Firebase Config JSON 오류'); return; }
+  }
+  saveCfg();
+  document.getElementById('acad-nm').textContent = cfg.name||'';
+  if(cfg.fb && !fbOk) initFb(cfg.fb);
+  closeSett(); toast('설정 저장됨');
+}
+
+// ═══ STUDENTS ═══
+async function addStudent(){
+  if(!db){ toast('Firebase가 연결되지 않았습니다'); return; }
+  const nm = document.getElementById('i-nm').value.trim();
+  const ph = document.getElementById('i-ph').value.trim();
+  if(!nm){ toast('이름을 입력하세요'); return; }
+  if(!ph){ toast('연락처를 입력하세요'); return; }
+  try{
+    await db.collection('students').add({ name:nm, parentPhone:ph, createdAt:firebase.firestore.FieldValue.serverTimestamp() });
+    document.getElementById('i-nm').value='';
+    document.getElementById('i-ph').value='';
+    document.getElementById('i-nm').focus();
+    toast(`${nm} 학생 등록 완료`);
+  }catch(e){ toast('등록 실패: '+e.message); }
+}
+
+async function delStudent(id, nm){
+  if(!confirm(`"${nm}" 학생을 삭제할까요?`)) return;
+  try{ await db.collection('students').doc(id).delete(); toast(`${nm} 삭제됨`); }
+  catch(e){ toast('삭제 실패'); }
+}
+
+function renderStuList(){
+  const el = document.getElementById('stu-list');
+  const arr = Object.values(students);
+  document.getElementById('stu-cnt').textContent = `총 ${arr.length}명`;
+  if(!arr.length){ el.innerHTML='<div class="empty"><div class="empty-i">👥</div><div class="empty-t">등록된 학생이 없습니다</div></div>'; return; }
+  el.innerHTML = arr.map(s=>`
+    <div class="sml">
+      <div class="sml-info">
+        <div class="sml-name">${x(s.name)}</div>
+        <div class="sml-phone">${x(s.parentPhone)}</div>
+      </div>
+      <div class="sml-act">
+        <button class="btn btn-go btn-sm" onclick="showQR('${s.id}')">QR</button>
+        <button class="btn btn-d btn-sm" onclick="delStudent('${s.id}','${x(s.name)}')">삭제</button>
+      </div>
+    </div>`).join('');
+}
+
+function renderManSel(){
+  const sel = document.getElementById('man-sel');
+  sel.innerHTML = '<option value="">-- 학생 선택 --</option>' +
+    Object.values(students).map(s=>`<option value="${s.id}">${x(s.name)}</option>`).join('');
+}
+
+// ═══ QR ═══
+function showQR(id){
+  const s = students[id];
+  if(!s) return;
+  curQrId = id;
+  document.getElementById('qr-nm').textContent = s.name;
+  document.getElementById('qr-out').innerHTML = '';
+  new QRCode(document.getElementById('qr-out'),{
+    text:`ubpos_atd_${id}`, width:200, height:200,
+    colorDark:'#000000', colorLight:'#ffffff', correctLevel:QRCode.CorrectLevel.M
+  });
+  document.getElementById('qr-ov').classList.add('on');
+}
+function closeQR(){ document.getElementById('qr-ov').classList.remove('on'); }
+function dlQR(){
+  const c = document.querySelector('#qr-out canvas');
+  if(!c) return;
+  const a = document.createElement('a');
+  a.download = `QR_${(students[curQrId]||{}).name||'student'}.png`;
+  a.href = c.toDataURL();
+  a.click();
+}
+
+// ═══ QR SCANNER ═══
+async function startScan(){
+  const vid = document.getElementById('scan-vid');
+  try{
+    stream = await navigator.mediaDevices.getUserMedia({ video:{ facingMode:'environment', width:640, height:640 } });
+    vid.srcObject = stream;
+    vid.play();
+    scanOn = true;
+    tick();
+  }catch(e){
+    setSS('err','❌','카메라 접근 실패','브라우저에서 카메라 권한을 허용해주세요');
+  }
+}
+
+function stopScan(){
+  scanOn = false;
+  if(rafId){ cancelAnimationFrame(rafId); rafId=null; }
+  if(stream){ stream.getTracks().forEach(t=>t.stop()); stream=null; }
+  const vid = document.getElementById('scan-vid');
+  if(vid) vid.srcObject = null;
+}
+
+function tick(){
+  if(!scanOn) return;
+  const vid = document.getElementById('scan-vid');
+  const cvs = document.getElementById('scan-canvas');
+  if(!vid||!cvs||vid.readyState!==vid.HAVE_ENOUGH_DATA){ rafId=requestAnimationFrame(tick); return; }
+  cvs.width=vid.videoWidth; cvs.height=vid.videoHeight;
+  const ctx=cvs.getContext('2d');
+  ctx.drawImage(vid,0,0,cvs.width,cvs.height);
+  const img=ctx.getImageData(0,0,cvs.width,cvs.height);
+  const code=jsQR(img.data,img.width,img.height,{inversionAttempts:'dontInvert'});
+  if(code && !cooldown && code.data.startsWith('ubpos_atd_')){
+    handleScan(code.data.replace('ubpos_atd_',''));
+  }
+  rafId=requestAnimationFrame(tick);
+}
+
+async function handleScan(sid){
+  if(cooldown) return;
+  cooldown=true; setTimeout(()=>cooldown=false,3000);
+  const s=students[sid];
+  if(!s){ setSS('err','❓','미등록 QR','등록되지 않은 학생의 QR코드입니다'); setTimeout(resetSS,2500); return; }
+  const atd=atdToday[sid];
+  await recordAtd(sid, s, (!atd||!atd.checkIn)?'in':'out');
+}
+
+async function recordAtd(sid, s, type){
+  if(!db){ toast('Firebase 연결 필요'); return; }
+  const now = firebase.firestore.FieldValue.serverTimestamp();
+  const ref = db.collection('attendance').doc(`${TODAY}_${sid}`);
+  const ts = new Date();
+  const tm = ts.toLocaleTimeString('ko-KR',{hour:'2-digit',minute:'2-digit'});
+  const lbl = type==='in'?'등원':'하원';
+  try{
+    if(type==='in'){
+      await ref.set({ studentId:sid, studentName:s.name, parentPhone:s.parentPhone, date:TODAY, checkIn:now, checkOut:null, status:'present' },{merge:true});
+    } else {
+      await ref.set({ checkOut:now, status:'departed' },{merge:true});
+    }
+    setSS('ok', type==='in'?'🟢':'🔵', `${s.name} ${lbl} 완료`, `${tm} 기록됨`);
+    setTimeout(resetSS, 2800);
+    const msg = type==='in'
+      ? `[${cfg.name||'학원'}] ${s.name} 학생이 ${tm}에 등원했습니다 🟢`
+      : `[${cfg.name||'학원'}] ${s.name} 학생이 ${tm}에 하원했습니다 🔵`;
+    await pushNotif(sid, s.name, s.parentPhone, msg, type==='in'?'checkin':'checkout');
+    toast(`📱 ${s.parentPhone}으로 알림톡 발송됨 (시뮬레이션)`);
+  }catch(e){ setSS('err','❌','기록 실패',e.message); setTimeout(resetSS,2200); }
+}
+
+async function pushNotif(sid,nm,ph,msg,type){
+  if(!db) return;
+  await db.collection('notifications').add({ studentId:sid,studentName:nm,parentPhone:ph,message:msg,type,timestamp:firebase.firestore.FieldValue.serverTimestamp() });
+}
+
+function setSS(cls,ico,msg,sub){
+  const b=document.getElementById('ss-box');
+  b.className='scan-status '+(cls||'');
+  b.innerHTML=`<div class="ss-ico">${ico}</div><div class="ss-msg">${msg}</div><div class="ss-sub">${sub}</div>`;
+}
+function resetSS(){ setSS('','📷','QR 스캔 준비','카메라가 QR코드를 감지하면 자동으로 기록됩니다'); }
+
+async function manualChk(type){
+  const sid=document.getElementById('man-sel').value;
+  if(!sid){ toast('학생을 선택하세요'); return; }
+  const s=students[sid];
+  if(!s) return;
+  await recordAtd(sid,s,type);
+  document.getElementById('man-sel').value='';
+}
+
+// ═══ DASHBOARD ═══
+function renderDash(){
+  const arr=Object.values(students);
+  if(!arr.length){
+    document.getElementById('dash-list').innerHTML='<div class="empty"><div class="empty-i">📋</div><div class="empty-t">등록된 학생이 없습니다<br><small style="color:var(--text3)">학생관리 탭에서 등록하세요</small></div></div>';
+    ['st-p','st-a','st-d'].forEach(id=>document.getElementById(id).textContent='0');
+    document.getElementById('abs-box').style.display='none';
+    return;
+  }
+
+  const ct=cfg.time||'14:00';
+  const [ch,cm]=ct.split(':').map(Number);
+  const now=new Date();
+  const past=now.getHours()>ch||(now.getHours()===ch&&now.getMinutes()>=cm);
+
+  let present=0,absent=0,departed=0;
+  const rows=arr.map(s=>{
+    const a=atdToday[s.id];
+    let badge,tm='';
+    if(!a||!a.checkIn){
+      if(past){ badge='<span class="badge b-a">미출석</span>'; } else { badge='<span class="badge b-u">미확인</span>'; }
+      absent++;
+    } else if(a.status==='departed'){
+      badge='<span class="badge b-d">하원</span>'; departed++;
+      if(a.checkOut){ const t=tsToDate(a.checkOut); tm=`하원 ${t.toLocaleTimeString('ko-KR',{hour:'2-digit',minute:'2-digit'})}`; }
+    } else {
+      badge='<span class="badge b-p">출석</span>'; present++;
+      if(a.checkIn){ const t=tsToDate(a.checkIn); tm=`등원 ${t.toLocaleTimeString('ko-KR',{hour:'2-digit',minute:'2-digit'})}`; }
+    }
+    return `<div class="sr"><div class="sr-av">${x(s.name.charAt(0))}</div><div class="sr-info"><div class="sr-name">${x(s.name)}</div><div class="sr-time">${tm||x(s.parentPhone)}</div></div>${badge}</div>`;
+  }).join('');
+
+  document.getElementById('dash-list').innerHTML=rows;
+  document.getElementById('st-p').textContent=present;
+  document.getElementById('st-a').textContent=absent;
+  document.getElementById('st-d').textContent=departed;
+
+  if(absent>0&&past){
+    document.getElementById('abs-box').style.display='block';
+    document.getElementById('abs-txt').textContent=`⚠ 미출석 학생 ${absent}명`;
+    document.getElementById('abs-sub').textContent=`수업 시작(${ct}) 이후 출석 없음`;
+  } else {
+    document.getElementById('abs-box').style.display='none';
+  }
+}
+
+async function sendAbsent(){
+  if(!db) return;
+  const ct=cfg.time||'14:00';
+  const [ch,cm]=ct.split(':').map(Number);
+  const now=new Date();
+  if(!(now.getHours()>ch||(now.getHours()===ch&&now.getMinutes()>=cm))){ toast('아직 수업 시작 전입니다'); return; }
+  let cnt=0;
+  for(const s of Object.values(students)){
+    const a=atdToday[s.id];
+    if(!a||!a.checkIn){
+      const msg=`[${cfg.name||'학원'}] ${s.name} 학생이 ${ct} 수업에 미출석입니다. 확인 부탁드립니다 ⚠`;
+      await pushNotif(s.id,s.name,s.parentPhone,msg,'absent');
+      cnt++;
+    }
+  }
+  toast(`미출석 ${cnt}명 알림 발송 완료 (시뮬레이션)`);
+}
+
+// ═══ NOTIF LOG ═══
+function renderNotifs(){
+  const el=document.getElementById('not-list');
+  if(!notifs.length){ el.innerHTML='<div class="empty"><div class="empty-i">🔔</div><div class="empty-t">발송된 알림이 없습니다</div></div>'; return; }
+  const typeMap={checkin:'등원',checkout:'하원',absent:'미출석'};
+  const dotMap={checkin:'nd-in',checkout:'nd-out',absent:'nd-ab'};
+  el.innerHTML=notifs.map(n=>{
+    const ts=n.timestamp?tsToDate(n.timestamp):new Date();
+    const tsStr=ts.toLocaleString('ko-KR',{month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'});
+    return `<div class="ni"><div class="nd ${dotMap[n.type]||'nd-in'}"></div><div class="ni-c"><div class="ni-t">${x(n.studentName)} · ${typeMap[n.type]||n.type}</div><div class="ni-m">${x(n.message)}</div><div class="ni-s">📱 ${x(n.parentPhone)} · ${tsStr}</div></div></div>`;
+  }).join('');
+}
+
+async function clearNotifs(){
+  if(!db||!notifs.length) return;
+  if(!confirm('알림 로그를 모두 삭제할까요?')) return;
+  const batch=db.batch();
+  notifs.forEach(n=>batch.delete(db.collection('notifications').doc(n.id)));
+  await batch.commit();
+  toast('알림 로그 초기화됨');
+}
+
+// ═══ VIEW SWITCH ═══
+function sw(name, btn){
+  document.querySelectorAll('.view').forEach(v=>v.classList.remove('on'));
+  document.querySelectorAll('.bnav').forEach(b=>b.classList.remove('on'));
+  document.getElementById('v-'+name).classList.add('on');
+  if(btn) btn.classList.add('on');
+  if(name==='scan') startScan();
+  else { stopScan(); resetSS(); }
+  if(name==='dash') renderDash();
+}
+
+// ═══ CLOCK ═══
+function tick2(){
+  const n=new Date();
+  const pad=v=>String(v).padStart(2,'0');
+  document.getElementById('clock').textContent=`${pad(n.getHours())}:${pad(n.getMinutes())}:${pad(n.getSeconds())}`;
+  const days=['일','월','화','수','목','금','토'];
+  const ds=`${n.getFullYear()}년 ${n.getMonth()+1}월 ${n.getDate()}일 (${days[n.getDay()]})`;
+  const cd=document.getElementById('clock-dt'); if(cd) cd.textContent=ds;
+  const nd=document.getElementById('nav-dt'); if(nd) nd.textContent=`${n.getMonth()+1}/${n.getDate()} (${days[n.getDay()]})`;
+}
+setInterval(tick2,1000); tick2();
+
+// ═══ UTILS ═══
+function x(s){ if(!s) return ''; return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function tsToDate(ts){ if(ts&&ts.toDate) return ts.toDate(); if(ts&&ts.seconds) return new Date(ts.seconds*1000); return new Date(ts); }
+
+let _tt;
+function toast(msg){ const e=document.getElementById('toast'); e.textContent=msg; e.classList.add('on'); clearTimeout(_tt); _tt=setTimeout(()=>e.classList.remove('on'),2700); }
+
+document.getElementById('qr-ov').addEventListener('click',e=>{ if(e.target===e.currentTarget) closeQR(); });
+document.getElementById('sett-ov').addEventListener('click',e=>{ if(e.target===e.currentTarget) closeSett(); });
+
+// ═══ BOOT ═══
+(function(){
+  document.getElementById('acad-nm').textContent = cfg.name||'';
+  document.getElementById('st-nm').value = cfg.name||'';
+  document.getElementById('st-tm').value = cfg.time||'14:00';
+  checkSetup();
+})();
+</script>
+</body>
+</html>
