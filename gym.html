@@ -817,13 +817,21 @@ async function runDetection(){
     if(!det){ setFaceStatus('detecting','🔍 얼굴 탐색 중...'); return; }
 
     if(!faceMatcher){
+      console.log('[FACE] faceMatcher=null — 얼굴 등록된 회원 없음');
       setFaceStatus('detecting','😊 얼굴 감지됨 (등록된 회원 없음)'); return;
     }
     const match = faceMatcher.findBestMatch(det.descriptor);
+    console.log('[FACE] 매칭:', match.label, '/ 거리:', match.distance?.toFixed(3), '/ threshold:', MATCH_THRESHOLD);
     if(match.label === 'unknown'){
-      if(!unknownCooldown || Date.now() - unknownCooldown > 5000){
-        unknownCooldown = Date.now();
+      const now = Date.now();
+      const elapsed = now - unknownCooldown;
+      console.log('[FACE] unknown 감지 — unknownCooldown:', unknownCooldown, '/ 경과ms:', elapsed);
+      if(!unknownCooldown || elapsed > 5000){
+        console.log('[FACE] → speak() 호출');
+        unknownCooldown = now;
         speak('안면인식에 실패하셨습니다');
+      } else {
+        console.log('[FACE] → 쿨다운 중 skip. 남은:', Math.max(0, 5000 - elapsed), 'ms');
       }
       setFaceStatus('detecting','❓ 미등록 얼굴'); return;
     }
@@ -1264,29 +1272,48 @@ function showPage(id, el){
 //  SPEECH
 // ══════════════════════════════════════════════
 let cachedVoices = [];
-function loadVoices(){ cachedVoices = speechSynthesis.getVoices(); }
+function loadVoices(){
+  cachedVoices = speechSynthesis.getVoices();
+  console.log('[VOICE] 목록 로드:', cachedVoices.length, '개 / ko:', cachedVoices.filter(v=>v.lang.startsWith('ko')).map(v=>v.name));
+}
 if(window.speechSynthesis){
   speechSynthesis.addEventListener('voiceschanged', loadVoices);
   loadVoices();
 }
 
+function _doSpeak(text){
+  const utt = new SpeechSynthesisUtterance(text);
+  utt.lang = 'ko-KR';
+  utt.rate = 1.0;
+  utt.pitch = 1.0;
+  utt.volume = 1.0;
+  const voices = cachedVoices.length ? cachedVoices : speechSynthesis.getVoices();
+  const koVoice = voices.find(v => v.lang.startsWith('ko'));
+  console.log('[SPEAK] _doSpeak — voices:', voices.length, '/ koVoice:', koVoice ? koVoice.name : '없음(lang=ko-KR만)');
+  if(koVoice) utt.voice = koVoice;
+  utt.onstart = () => console.log('[SPEAK] ▶ 재생 시작:', text);
+  utt.onend   = () => console.log('[SPEAK] ■ 재생 완료:', text);
+  utt.onerror = (e) => console.error('[SPEAK] ✗ 오류:', e.error, '/', text);
+  speechSynthesis.resume();
+  speechSynthesis.speak(utt);
+  console.log('[SPEAK] speak() 요청 직후 — speaking:', speechSynthesis.speaking, '/ pending:', speechSynthesis.pending);
+}
+
 function speak(text){
-  if(!window.speechSynthesis) return;
-  // Chrome 버그: cancel() 직후 즉시 speak() 하면 음성이 무음으로 드롭됨.
-  // 성공 인식 음성이 재생 중일 때 cancel() 하면 실패 음성이 씹히는 것이 원인.
-  // setTimeout으로 한 틱 뒤에 speak()를 호출해서 내부 상태 안정화.
-  speechSynthesis.cancel();
-  setTimeout(()=>{
-    const utt = new SpeechSynthesisUtterance(text);
-    utt.lang = 'ko-KR';
-    utt.rate = 1.0;
-    utt.pitch = 1.0;
-    utt.volume = 1.0;
-    const voices = cachedVoices.length ? cachedVoices : speechSynthesis.getVoices();
-    const koVoice = voices.find(v => v.lang.startsWith('ko'));
-    if(koVoice) utt.voice = koVoice;
-    speechSynthesis.speak(utt);
-  }, 150);
+  if(!window.speechSynthesis){ console.warn('[SPEAK] speechSynthesis 없음'); return; }
+  console.log('[SPEAK] 진입 — text:', text,
+    '/ speaking:', speechSynthesis.speaking,
+    '/ pending:', speechSynthesis.pending,
+    '/ paused:', speechSynthesis.paused);
+  if(speechSynthesis.speaking || speechSynthesis.pending){
+    // 다른 음성 재생·대기 중: cancel 후 200ms 뒤 재생
+    console.log('[SPEAK] 재생 중 → cancel 후 200ms 대기');
+    speechSynthesis.cancel();
+    setTimeout(() => _doSpeak(text), 200);
+  } else {
+    // 아무것도 재생 중이 아님: 바로 재생 (cancel 없이)
+    _doSpeak(text);
+  }
 }
 
 // ══════════════════════════════════════════════
