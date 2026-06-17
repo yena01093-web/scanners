@@ -2,7 +2,7 @@
   "name": "재고관리 스캐너",
   "short_name": "재고스캐너",
   "description": "바코드 스캔 & 유통기한 OCR 재고관리 앱",
-  "start_url": "./index.html",
+  "start_url": "./inventory-scanner.html",
   "display": "standalone",
   "background_color": "#0a0e1a",
   "theme_color": "#0066ff",

@@ -1,5 +1,5 @@
-const CACHE = 'inv-scanner-v1';
-const ASSETS = ['./index.html', './manifest.json'];
+const CACHE = 'inv-scanner-v2';
+const ASSETS = ['./inventory-scanner.html', './index.html', './manifest.json'];
 
 self.addEventListener('install', e => {
   e.waitUntil(caches.open(CACHE).then(c => c.addAll(ASSETS)));

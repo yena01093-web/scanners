@@ -1,0 +1,1071 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>재고관리 스캐너</title>
+<script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+<script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+:root{
+  --bg:#0a0e1a;--surface:#111827;--surface2:#1e2535;--border:#2a3347;
+  --accent:#0066ff;--accent2:#00c2ff;--green:#10b981;--red:#ef4444;
+  --yellow:#f59e0b;--text:#e2e8f0;--text2:#94a3b8;--radius:12px
+}
+html,body{height:100%;background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:14px}
+body{display:flex;flex-direction:column;max-width:480px;margin:0 auto;min-height:100vh}
+
+/* Header */
+.header{background:var(--surface);border-bottom:1px solid var(--border);padding:12px 16px;display:flex;align-items:center;gap:10px;position:sticky;top:0;z-index:100}
+.header-icon{font-size:22px}
+.header-title{font-size:16px;font-weight:700;color:var(--text)}
+.header-title span{font-size:11px;font-weight:400;color:var(--text2);display:block}
+.admin-badge{margin-left:auto;background:var(--surface2);border:1px solid var(--border);border-radius:20px;padding:4px 10px;font-size:11px;cursor:pointer;color:var(--text2)}
+.admin-badge.open{color:var(--yellow);border-color:var(--yellow)}
+
+/* Nav */
+.nav{display:flex;background:var(--surface);border-top:1px solid var(--border);position:sticky;bottom:0;z-index:100}
+.nav-btn{flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;padding:10px 4px;background:none;border:none;color:var(--text2);font-size:10px;cursor:pointer;transition:color .2s;border-top:2px solid transparent}
+.nav-btn.active{color:var(--accent);border-top-color:var(--accent)}
+.nav-btn span:first-child{font-size:20px}
+
+/* Pages */
+.page{flex:1;overflow-y:auto;display:none;padding:16px;gap:12px;flex-direction:column}
+.page.active{display:flex}
+
+/* Cards */
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:14px}
+.card-title{font-size:13px;font-weight:600;color:var(--text2);margin-bottom:10px;display:flex;align-items:center;gap:6px}
+
+/* Buttons */
+.btn{display:flex;align-items:center;justify-content:center;gap:6px;padding:11px 16px;border-radius:8px;border:none;font-size:14px;font-weight:600;cursor:pointer;transition:all .2s;width:100%}
+.btn-primary{background:var(--accent);color:#fff}
+.btn-primary:hover{background:#0055dd}
+.btn-secondary{background:var(--surface2);color:var(--text);border:1px solid var(--border)}
+.btn-secondary:hover{border-color:var(--accent)}
+.btn-danger{background:var(--red);color:#fff}
+.btn-danger:hover{background:#cc3333}
+.btn-green{background:var(--green);color:#fff}
+.btn-sm{padding:7px 12px;font-size:12px;width:auto}
+
+/* Scanner section */
+.scanner-wrap{position:relative;border-radius:var(--radius);overflow:hidden;background:#000;aspect-ratio:4/3;display:flex;align-items:center;justify-content:center}
+.scanner-wrap video{width:100%;height:100%;object-fit:cover}
+#reader{width:100%}
+#reader video{border-radius:var(--radius)}
+
+.scan-mode-tabs{display:flex;gap:6px;margin-bottom:10px}
+.mode-tab{flex:1;padding:8px;border-radius:8px;border:1px solid var(--border);background:var(--surface2);color:var(--text2);font-size:12px;font-weight:600;cursor:pointer;text-align:center}
+.mode-tab.active{background:var(--accent);color:#fff;border-color:var(--accent)}
+
+/* OCR section */
+.ocr-area{border:2px dashed var(--border);border-radius:var(--radius);padding:16px;text-align:center;cursor:pointer;transition:border-color .2s;position:relative}
+.ocr-area:hover{border-color:var(--accent)}
+.ocr-area input[type=file]{position:absolute;inset:0;opacity:0;cursor:pointer}
+.ocr-preview{width:100%;border-radius:8px;margin-top:10px;max-height:200px;object-fit:contain;display:none}
+.ocr-result{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:12px;margin-top:10px;display:none}
+.ocr-date{font-size:24px;font-weight:700;color:var(--accent2);text-align:center}
+.ocr-raw{font-size:11px;color:var(--text2);margin-top:6px;word-break:break-all}
+
+/* Input */
+.field{margin-bottom:10px}
+.field label{display:block;font-size:12px;color:var(--text2);margin-bottom:4px}
+.field input,.field select,.field textarea{width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:10px 12px;color:var(--text);font-size:14px;outline:none;transition:border-color .2s}
+.field input:focus,.field select:focus,.field textarea:focus{border-color:var(--accent)}
+.field textarea{resize:vertical;min-height:60px}
+.field select option{background:var(--surface2)}
+
+/* Badge / Tag */
+.badge{display:inline-flex;align-items:center;padding:2px 8px;border-radius:20px;font-size:11px;font-weight:600}
+.badge-green{background:rgba(16,185,129,.15);color:var(--green)}
+.badge-red{background:rgba(239,68,68,.15);color:var(--red)}
+.badge-yellow{background:rgba(245,158,11,.15);color:var(--yellow)}
+.badge-blue{background:rgba(0,102,255,.15);color:var(--accent2)}
+
+/* Product list */
+.prod-item{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:12px;display:flex;gap:10px;align-items:flex-start}
+.prod-icon{width:42px;height:42px;background:var(--surface2);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0}
+.prod-info{flex:1;min-width:0}
+.prod-name{font-size:14px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.prod-barcode{font-size:11px;color:var(--text2);font-family:monospace}
+.prod-meta{display:flex;gap:6px;flex-wrap:wrap;margin-top:4px;align-items:center}
+.prod-actions{display:flex;gap:6px;flex-shrink:0}
+.prod-qty{font-size:20px;font-weight:700;color:var(--text)}
+.prod-qty-unit{font-size:11px;color:var(--text2)}
+.qty-controls{display:flex;align-items:center;gap:8px;margin-top:6px}
+.qty-btn{width:28px;height:28px;border-radius:6px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center}
+.qty-num{min-width:36px;text-align:center;font-weight:700;font-size:15px}
+
+/* Expiry indicator */
+.expiry-bar{height:3px;border-radius:2px;margin-top:6px;background:var(--border)}
+.expiry-bar-fill{height:100%;border-radius:2px;transition:width .3s}
+
+/* Dashboard stats */
+.stats-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.stat-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:14px;text-align:center}
+.stat-num{font-size:28px;font-weight:700}
+.stat-label{font-size:11px;color:var(--text2);margin-top:2px}
+.stat-card.danger .stat-num{color:var(--red)}
+.stat-card.warn .stat-num{color:var(--yellow)}
+.stat-card.ok .stat-num{color:var(--green)}
+.stat-card.info .stat-num{color:var(--accent2)}
+
+/* Toast */
+.toast-wrap{position:fixed;top:70px;left:50%;transform:translateX(-50%);z-index:999;display:flex;flex-direction:column;gap:6px;width:90%;max-width:400px;pointer-events:none}
+.toast{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:10px 14px;font-size:13px;display:flex;align-items:center;gap:8px;pointer-events:auto;animation:slideIn .25s ease}
+@keyframes slideIn{from{opacity:0;transform:translateY(-10px)}to{opacity:1;transform:translateY(0)}}
+.toast.success{border-color:var(--green)}
+.toast.error{border-color:var(--red)}
+.toast.warn{border-color:var(--yellow)}
+
+/* Modal */
+.modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:200;display:none;align-items:center;justify-content:center;padding:16px}
+.modal-bg.open{display:flex}
+.modal{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:20px;width:100%;max-width:340px}
+.modal-title{font-size:16px;font-weight:700;margin-bottom:16px;text-align:center}
+.modal-footer{display:flex;gap:8px;margin-top:16px}
+.modal-footer .btn{flex:1}
+
+/* Keypad */
+.keypad{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:12px}
+.key{padding:14px;border-radius:8px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-size:18px;font-weight:600;cursor:pointer;text-align:center;transition:background .15s}
+.key:hover{background:var(--border)}
+.key.span2{grid-column:span 2}
+.pw-display{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:12px;text-align:center;font-size:20px;letter-spacing:6px;margin-bottom:4px;height:46px;display:flex;align-items:center;justify-content:center}
+.pw-shake{animation:shake .3s}
+@keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}
+
+/* Loader */
+.loader{display:flex;align-items:center;justify-content:center;gap:8px;padding:20px;color:var(--text2);font-size:13px}
+.spinner{width:18px;height:18px;border:2px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .7s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* Section label */
+.section-label{font-size:12px;font-weight:700;color:var(--text2);letter-spacing:.5px;text-transform:uppercase;padding:4px 0}
+
+/* Filter bar */
+.filter-bar{display:flex;gap:6px;margin-bottom:8px;flex-wrap:wrap}
+.filter-chip{padding:5px 10px;border-radius:20px;border:1px solid var(--border);background:var(--surface2);color:var(--text2);font-size:11px;cursor:pointer}
+.filter-chip.active{background:var(--accent);color:#fff;border-color:var(--accent)}
+
+/* History items */
+.hist-item{display:flex;align-items:center;gap:10px;padding:10px 12px;background:var(--surface);border:1px solid var(--border);border-radius:8px}
+.hist-icon{font-size:20px}
+.hist-info{flex:1}
+.hist-name{font-size:13px;font-weight:600}
+.hist-meta{font-size:11px;color:var(--text2)}
+.hist-badge{font-size:11px;font-weight:600}
+
+/* Empty state */
+.empty{text-align:center;padding:40px 20px;color:var(--text2)}
+.empty-icon{font-size:48px;margin-bottom:10px}
+.empty-text{font-size:13px}
+
+.row{display:flex;gap:8px}
+.row .btn{flex:1}
+.mt8{margin-top:8px}
+.mt4{margin-top:4px}
+.divider{border:none;border-top:1px solid var(--border);margin:12px 0}
+</style>
+</head>
+<body>
+
+<!-- Header -->
+<div class="header">
+  <div class="header-icon">📦</div>
+  <div class="header-title">재고관리 스캐너<span>바코드 스캔 + 유통기한 인식</span></div>
+  <div class="admin-badge" id="adminBadge" onclick="toggleAdminLock()">🔒 관리자</div>
+</div>
+
+<!-- Toast container -->
+<div class="toast-wrap" id="toastWrap"></div>
+
+<!-- Pages -->
+<!-- SCAN PAGE -->
+<div class="page active" id="page-scan">
+  <div class="scan-mode-tabs">
+    <div class="mode-tab active" id="modeTab-barcode" onclick="switchMode('barcode')">📷 바코드 스캔</div>
+    <div class="mode-tab" id="modeTab-ocr" onclick="switchMode('ocr')">🔍 유통기한 OCR</div>
+  </div>
+
+  <!-- Barcode mode -->
+  <div id="barcodeMode">
+    <div class="card">
+      <div class="card-title">📷 바코드 / QR 스캔</div>
+      <div id="reader"></div>
+      <div class="row mt8">
+        <button class="btn btn-primary" id="startScanBtn" onclick="startScan()">▶ 스캔 시작</button>
+        <button class="btn btn-secondary" id="stopScanBtn" onclick="stopScan()" style="display:none">⏹ 중지</button>
+      </div>
+    </div>
+    <div class="card" id="scanResultCard" style="display:none">
+      <div class="card-title">✅ 스캔 결과</div>
+      <div id="scanResultContent"></div>
+    </div>
+  </div>
+
+  <!-- OCR mode -->
+  <div id="ocrMode" style="display:none">
+    <div class="card">
+      <div class="card-title">🔍 유통기한 OCR 인식</div>
+      <div class="ocr-area" id="ocrArea">
+        <input type="file" accept="image/*" capture="environment" id="ocrFileInput" onchange="handleOcrImage(event)">
+        <div style="font-size:32px">📸</div>
+        <div style="margin-top:8px;font-size:13px;color:var(--text2)">클릭하여 사진 촬영 또는 파일 선택</div>
+        <img class="ocr-preview" id="ocrPreview">
+      </div>
+      <div class="ocr-result" id="ocrResult">
+        <div class="card-title">📅 인식된 유통기한</div>
+        <div class="ocr-date" id="ocrDateDisplay">-</div>
+        <div class="ocr-raw" id="ocrRawText"></div>
+      </div>
+      <div id="ocrLoader" style="display:none" class="loader"><div class="spinner"></div>OCR 분석 중...</div>
+    </div>
+    <div class="card" id="ocrRegisterCard" style="display:none">
+      <div class="card-title">📝 상품에 유통기한 적용</div>
+      <div class="field">
+        <label>바코드 (선택)</label>
+        <input type="text" id="ocrBarcode" placeholder="바코드 번호 입력 또는 스캔">
+      </div>
+      <div class="field">
+        <label>인식된 유통기한</label>
+        <input type="date" id="ocrDateInput">
+      </div>
+      <button class="btn btn-primary" onclick="applyOcrExpiry()">✅ 유통기한 적용</button>
+    </div>
+  </div>
+</div>
+
+<!-- PRODUCT LIST PAGE -->
+<div class="page" id="page-list">
+  <div class="filter-bar">
+    <div class="filter-chip active" id="filter-all" onclick="setFilter('all')">전체</div>
+    <div class="filter-chip" id="filter-expired" onclick="setFilter('expired')">⚠ 만료</div>
+    <div class="filter-chip" id="filter-soon" onclick="setFilter('soon')">⏰ 임박</div>
+    <div class="filter-chip" id="filter-low" onclick="setFilter('low')">📉 재고부족</div>
+  </div>
+  <div class="field" style="margin-bottom:8px">
+    <input type="text" id="searchInput" placeholder="🔍 상품명 또는 바코드 검색..." oninput="renderProducts()">
+  </div>
+  <div id="productList"><div class="loader"><div class="spinner"></div>로딩 중...</div></div>
+</div>
+
+<!-- ADD PRODUCT PAGE -->
+<div class="page" id="page-add">
+  <div class="card">
+    <div class="card-title">➕ 상품 등록</div>
+    <div class="field">
+      <label>상품명 *</label>
+      <input type="text" id="addName" placeholder="상품명 입력">
+    </div>
+    <div class="field">
+      <label>바코드</label>
+      <div class="row">
+        <input type="text" id="addBarcode" placeholder="바코드 번호" style="flex:1">
+        <button class="btn btn-secondary btn-sm" onclick="scanForAdd()">📷</button>
+      </div>
+    </div>
+    <div class="field">
+      <label>카테고리</label>
+      <select id="addCategory">
+        <option value="식품">🍎 식품</option>
+        <option value="음료">🥤 음료</option>
+        <option value="생활용품">🧴 생활용품</option>
+        <option value="의약품">💊 의약품</option>
+        <option value="냉장">❄️ 냉장</option>
+        <option value="냉동">🧊 냉동</option>
+        <option value="기타">📦 기타</option>
+      </select>
+    </div>
+    <div class="row">
+      <div class="field" style="flex:1;margin-bottom:0">
+        <label>수량 *</label>
+        <input type="number" id="addQty" placeholder="0" min="0" value="1">
+      </div>
+      <div class="field" style="flex:1;margin-bottom:0">
+        <label>단위</label>
+        <input type="text" id="addUnit" placeholder="개, 박스, kg..." value="개">
+      </div>
+    </div>
+    <div class="field mt8">
+      <label>유통기한</label>
+      <input type="date" id="addExpiry">
+    </div>
+    <div class="field">
+      <label>입고가 (원)</label>
+      <input type="number" id="addCost" placeholder="0" min="0">
+    </div>
+    <div class="field">
+      <label>메모</label>
+      <textarea id="addMemo" placeholder="메모 (선택)"></textarea>
+    </div>
+    <button class="btn btn-primary" onclick="addProduct()">💾 상품 등록</button>
+  </div>
+</div>
+
+<!-- HISTORY PAGE -->
+<div class="page" id="page-history">
+  <div class="section-label">입출고 이력</div>
+  <div id="historyList"><div class="loader"><div class="spinner"></div>로딩 중...</div></div>
+</div>
+
+<!-- STATS PAGE -->
+<div class="page" id="page-stats">
+  <div class="stats-grid" id="statsGrid">
+    <div class="loader" style="grid-column:span 2"><div class="spinner"></div>집계 중...</div>
+  </div>
+  <hr class="divider">
+  <div class="section-label">카테고리별 현황</div>
+  <div id="categoryStats"></div>
+  <hr class="divider">
+  <div class="section-label">데이터 관리</div>
+  <button class="btn btn-secondary mt4" onclick="requireAdmin(exportData)">📤 JSON 내보내기</button>
+  <div class="field mt8">
+    <label>JSON 가져오기</label>
+    <input type="file" accept=".json" id="importFile" onchange="importData(event)" style="display:none">
+    <button class="btn btn-secondary" onclick="requireAdmin(()=>document.getElementById('importFile').click())">📥 JSON 가져오기</button>
+  </div>
+</div>
+
+<!-- Nav -->
+<nav class="nav">
+  <button class="nav-btn active" id="nav-scan" onclick="showPage('scan',this)"><span>📷</span><span>스캔</span></button>
+  <button class="nav-btn" id="nav-list" onclick="showPage('list',this)"><span>📋</span><span>재고목록</span></button>
+  <button class="nav-btn" id="nav-add" onclick="showPage('add',this)"><span>➕</span><span>상품등록</span></button>
+  <button class="nav-btn" id="nav-history" onclick="showPage('history',this)"><span>📜</span><span>이력</span></button>
+  <button class="nav-btn" id="nav-stats" onclick="showPage('stats',this)"><span>📊</span><span>현황</span></button>
+</nav>
+
+<!-- Admin password modal -->
+<div class="modal-bg" id="pwModal">
+  <div class="modal">
+    <div class="modal-title">🔐 관리자 인증</div>
+    <div class="pw-display" id="pwDisplay">••••</div>
+    <div id="pwHint" style="font-size:11px;color:var(--text2);text-align:center;margin-bottom:4px"></div>
+    <div class="keypad">
+      <div class="key" onclick="keyPress('1')">1</div><div class="key" onclick="keyPress('2')">2</div><div class="key" onclick="keyPress('3')">3</div>
+      <div class="key" onclick="keyPress('4')">4</div><div class="key" onclick="keyPress('5')">5</div><div class="key" onclick="keyPress('6')">6</div>
+      <div class="key" onclick="keyPress('7')">7</div><div class="key" onclick="keyPress('8')">8</div><div class="key" onclick="keyPress('9')">9</div>
+      <div class="key" onclick="keyPress('clear')">✕</div><div class="key" onclick="keyPress('0')">0</div><div class="key" onclick="submitPw()">✓</div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closePwModal()">취소</button>
+    </div>
+  </div>
+</div>
+
+<!-- Product detail modal -->
+<div class="modal-bg" id="prodModal">
+  <div class="modal" style="max-height:85vh;overflow-y:auto">
+    <div class="modal-title" id="prodModalTitle">상품 정보</div>
+    <div id="prodModalBody"></div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeProdModal()">닫기</button>
+      <button class="btn btn-danger btn-sm" id="prodDeleteBtn">삭제</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ─── Firebase ───────────────────────────────────────────────────────────────
+const FB_CONFIG = {
+  apiKey: "AIzaSyBxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+  authDomain: "inventory-scanner.firebaseapp.com",
+  projectId: "inventory-scanner",
+  storageBucket: "inventory-scanner.firebasestorage.app",
+  messagingSenderId: "000000000000",
+  appId: "1:000000000000:web:000000000000000000"
+};
+
+let db = null;
+let useFirebase = false;
+
+function initFirebase() {
+  try {
+    if (FB_CONFIG.apiKey && !FB_CONFIG.apiKey.includes('xxxxxxxx')) {
+      firebase.initializeApp(FB_CONFIG);
+      db = firebase.firestore();
+      useFirebase = true;
+      subscribeProducts();
+      subscribeHistory();
+    } else {
+      loadLocalData();
+    }
+  } catch(e) {
+    loadLocalData();
+  }
+}
+
+// ─── Local storage fallback ──────────────────────────────────────────────────
+const LS_KEY = 'inv_scanner_v1';
+let localProducts = [];
+let localHistory = [];
+
+function loadLocalData() {
+  try {
+    const saved = JSON.parse(localStorage.getItem(LS_KEY) || '{}');
+    localProducts = saved.products || [];
+    localHistory = saved.history || [];
+  } catch(e) {
+    localProducts = [];
+    localHistory = [];
+  }
+  renderProducts();
+  renderHistory();
+  renderStats();
+}
+
+function saveLocalData() {
+  localStorage.setItem(LS_KEY, JSON.stringify({ products: localProducts, history: localHistory }));
+}
+
+// ─── State ───────────────────────────────────────────────────────────────────
+let currentPage = 'scan';
+let scanMode = 'barcode';
+let filterMode = 'all';
+let adminAuth = false;
+let pwBuffer = '';
+let pwCallback = null;
+let html5Scanner = null;
+let scanningActive = false;
+let scanAddMode = false;
+let ocrWorker = null;
+let editingProductId = null;
+
+const cfg = JSON.parse(localStorage.getItem('inv_scanner_cfg') || '{}');
+
+// ─── Navigation ──────────────────────────────────────────────────────────────
+function showPage(id, el) {
+  if ((id === 'add' || id === 'stats') && id === 'stats') {
+    // stats ok for all
+  }
+  if (id === 'add' && !adminAuth) {
+    requireAdmin(() => showPage(id, el));
+    return;
+  }
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('page-' + id).classList.add('active');
+  if (el) el.classList.add('active');
+  currentPage = id;
+
+  if (id === 'scan') stopScan();
+  if (id === 'list') renderProducts();
+  if (id === 'history') renderHistory();
+  if (id === 'stats') renderStats();
+}
+
+// ─── Admin ───────────────────────────────────────────────────────────────────
+function requireAdmin(cb) {
+  if (adminAuth) { cb(); return; }
+  pwCallback = cb;
+  pwBuffer = '';
+  updatePwDisplay();
+  document.getElementById('pwHint').textContent = '';
+  document.getElementById('pwModal').classList.add('open');
+}
+
+function keyPress(k) {
+  if (k === 'clear') {
+    pwBuffer = pwBuffer.slice(0, -1);
+  } else if (pwBuffer.length < 6) {
+    pwBuffer += k;
+  }
+  updatePwDisplay();
+  if (pwBuffer.length >= 4) setTimeout(submitPw, 100);
+}
+
+function updatePwDisplay() {
+  document.getElementById('pwDisplay').textContent = '•'.repeat(pwBuffer.length) || '　';
+}
+
+function submitPw() {
+  const correct = cfg.adminPw || '0000';
+  if (pwBuffer === correct) {
+    adminAuth = true;
+    updateAdminBadge();
+    closePwModal();
+    if (pwCallback) { pwCallback(); pwCallback = null; }
+  } else {
+    document.getElementById('pwDisplay').classList.add('pw-shake');
+    document.getElementById('pwHint').textContent = '비밀번호가 틀렸습니다';
+    setTimeout(() => document.getElementById('pwDisplay').classList.remove('pw-shake'), 400);
+    pwBuffer = '';
+    updatePwDisplay();
+  }
+}
+
+function closePwModal() {
+  document.getElementById('pwModal').classList.remove('open');
+  pwBuffer = '';
+  pwCallback = null;
+}
+
+function toggleAdminLock() {
+  if (adminAuth) {
+    adminAuth = false;
+    updateAdminBadge();
+    toast('관리자 잠금됨', 'warn');
+  } else {
+    requireAdmin(() => toast('관리자 인증됨', 'success'));
+  }
+}
+
+function updateAdminBadge() {
+  const b = document.getElementById('adminBadge');
+  b.textContent = adminAuth ? '🔓 관리자' : '🔒 관리자';
+  b.className = 'admin-badge' + (adminAuth ? ' open' : '');
+}
+
+// ─── Scan mode ───────────────────────────────────────────────────────────────
+function switchMode(mode) {
+  scanMode = mode;
+  stopScan();
+  document.getElementById('modeTab-barcode').classList.toggle('active', mode === 'barcode');
+  document.getElementById('modeTab-ocr').classList.toggle('active', mode === 'ocr');
+  document.getElementById('barcodeMode').style.display = mode === 'barcode' ? '' : 'none';
+  document.getElementById('ocrMode').style.display = mode === 'ocr' ? '' : 'none';
+}
+
+// ─── Barcode scanning ────────────────────────────────────────────────────────
+function startScan() {
+  if (scanningActive) return;
+  scanningActive = true;
+  document.getElementById('startScanBtn').style.display = 'none';
+  document.getElementById('stopScanBtn').style.display = '';
+  document.getElementById('scanResultCard').style.display = 'none';
+
+  html5Scanner = new Html5Qrcode('reader');
+  html5Scanner.start(
+    { facingMode: 'environment' },
+    { fps: 15, qrbox: { width: 250, height: 120 } },
+    onScanSuccess,
+    () => {}
+  ).catch(err => {
+    toast('카메라 접근 실패: ' + err, 'error');
+    stopScan();
+  });
+}
+
+function stopScan() {
+  if (!scanningActive || !html5Scanner) return;
+  scanningActive = false;
+  document.getElementById('startScanBtn').style.display = '';
+  document.getElementById('stopScanBtn').style.display = 'none';
+  try { html5Scanner.stop().catch(()=>{}); } catch(e) {}
+  html5Scanner = null;
+}
+
+function onScanSuccess(code) {
+  if (!scanAddMode) {
+    stopScan();
+    handleScannedBarcode(code);
+  } else {
+    stopScan();
+    document.getElementById('addBarcode').value = code;
+    showPage('add', document.getElementById('nav-add'));
+    toast('바코드 스캔됨: ' + code, 'success');
+  }
+}
+
+function scanForAdd() {
+  scanAddMode = true;
+  showPage('scan', document.getElementById('nav-scan'));
+  setTimeout(startScan, 300);
+}
+
+function handleScannedBarcode(code) {
+  const products = useFirebase ? allProducts : localProducts;
+  const found = products.filter(p => p.barcode === code);
+  const card = document.getElementById('scanResultCard');
+  const content = document.getElementById('scanResultContent');
+  card.style.display = '';
+
+  if (found.length === 0) {
+    content.innerHTML = `
+      <div style="text-align:center;padding:10px">
+        <div style="font-size:24px">❓</div>
+        <div style="font-weight:600;margin:6px 0">등록되지 않은 바코드</div>
+        <div style="font-size:12px;color:var(--text2);font-family:monospace;margin-bottom:12px">${code}</div>
+        <button class="btn btn-primary" onclick="prefillAdd('${code}')">➕ 신규 등록</button>
+      </div>`;
+  } else {
+    content.innerHTML = found.map(p => `
+      <div class="prod-item" style="margin-bottom:8px">
+        <div class="prod-icon">${categoryIcon(p.category)}</div>
+        <div class="prod-info">
+          <div class="prod-name">${p.name}</div>
+          <div class="prod-barcode">${p.barcode}</div>
+          <div class="prod-meta">
+            ${expiryBadge(p.expiry)}
+            <span style="color:var(--text2);font-size:11px">재고: <b style="color:var(--text)">${p.qty}${p.unit||'개'}</b></span>
+          </div>
+          <div class="qty-controls">
+            <button class="qty-btn" onclick="adjustQty('${p.id}',-1)">−</button>
+            <span class="qty-num">${p.qty}</span>
+            <button class="qty-btn" onclick="adjustQty('${p.id}',1)">+</button>
+          </div>
+        </div>
+      </div>`).join('');
+  }
+}
+
+function prefillAdd(barcode) {
+  scanAddMode = false;
+  document.getElementById('addBarcode').value = barcode;
+  showPage('add', document.getElementById('nav-add'));
+}
+
+// ─── OCR ─────────────────────────────────────────────────────────────────────
+async function handleOcrImage(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+
+  const preview = document.getElementById('ocrPreview');
+  const result = document.getElementById('ocrResult');
+  const loader = document.getElementById('ocrLoader');
+  const regCard = document.getElementById('ocrRegisterCard');
+
+  const url = URL.createObjectURL(file);
+  preview.src = url;
+  preview.style.display = '';
+  result.style.display = 'none';
+  regCard.style.display = 'none';
+  loader.style.display = '';
+
+  try {
+    const { data: { text } } = await Tesseract.recognize(file, 'kor+eng', {
+      logger: m => { if(m.status === 'recognizing text') { /* progress */ } }
+    });
+
+    loader.style.display = 'none';
+    const parsed = parseExpiry(text);
+    document.getElementById('ocrRawText').textContent = '원문: ' + text.replace(/\n/g,' ').trim().slice(0,200);
+    document.getElementById('ocrDateDisplay').textContent = parsed || '날짜를 찾지 못했습니다';
+    result.style.display = '';
+
+    if (parsed) {
+      document.getElementById('ocrDateInput').value = parsed;
+      regCard.style.display = '';
+    }
+  } catch(e) {
+    loader.style.display = 'none';
+    toast('OCR 오류: ' + e.message, 'error');
+  }
+
+  event.target.value = '';
+}
+
+function parseExpiry(text) {
+  const cleaned = text.replace(/[Oo]/g,'0').replace(/[Il|]/g,'1').replace(/[S]/g,'5');
+  const patterns = [
+    /(\d{4})[.\-\/](\d{1,2})[.\-\/](\d{1,2})/,
+    /(\d{2})[.\-\/](\d{1,2})[.\-\/](\d{1,2})/,
+    /유통기한\s*[:：]?\s*(\d{4})[.\-\/년\s](\d{1,2})[.\-\/월\s](\d{1,2})/,
+    /EXP\s*[:.]?\s*(\d{2,4})[.\-\/](\d{1,2})[.\-\/](\d{1,2})/i,
+    /BEST\s*BEFORE\s*[:.]?\s*(\d{2,4})[.\-\/](\d{1,2})[.\-\/](\d{1,2})/i,
+    /(\d{4})년\s*(\d{1,2})월\s*(\d{1,2})일/,
+    /(\d{2})\.(\d{2})\.(\d{2})/,
+  ];
+  for (const re of patterns) {
+    const m = cleaned.match(re);
+    if (m) {
+      let y = m[1], mo = m[2].padStart(2,'0'), d = m[3].padStart(2,'0');
+      if (y.length === 2) y = '20' + y;
+      const dateStr = `${y}-${mo}-${d}`;
+      const date = new Date(dateStr);
+      if (!isNaN(date) && date.getFullYear() >= 2020 && date.getFullYear() <= 2040) {
+        return dateStr;
+      }
+    }
+  }
+  return null;
+}
+
+async function applyOcrExpiry() {
+  const barcode = document.getElementById('ocrBarcode').value.trim();
+  const expiry = document.getElementById('ocrDateInput').value;
+  if (!expiry) { toast('유통기한을 확인해주세요', 'warn'); return; }
+
+  if (!barcode) {
+    toast('바코드를 입력하거나 스캔해주세요', 'warn');
+    return;
+  }
+
+  const products = useFirebase ? allProducts : localProducts;
+  const prod = products.find(p => p.barcode === barcode);
+  if (!prod) { toast('등록된 상품을 찾을 수 없습니다', 'warn'); return; }
+
+  await updateProductField(prod.id, { expiry });
+  toast(`${prod.name} 유통기한 업데이트됨`, 'success');
+  document.getElementById('ocrRegisterCard').style.display = 'none';
+}
+
+// ─── Products ─────────────────────────────────────────────────────────────────
+let allProducts = [];
+
+function subscribeProducts() {
+  db.collection('inv_products').orderBy('createdAt','desc').onSnapshot(snap => {
+    allProducts = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    renderProducts();
+    renderStats();
+  });
+}
+
+function subscribeHistory() {
+  db.collection('inv_history').orderBy('ts','desc').limit(100).onSnapshot(snap => {
+    localHistory = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    renderHistory();
+  });
+}
+
+function setFilter(f) {
+  filterMode = f;
+  document.querySelectorAll('.filter-chip').forEach(c => c.classList.remove('active'));
+  document.getElementById('filter-' + f).classList.add('active');
+  renderProducts();
+}
+
+function renderProducts() {
+  const el = document.getElementById('productList');
+  let products = useFirebase ? [...allProducts] : [...localProducts];
+
+  const q = document.getElementById('searchInput').value.toLowerCase();
+  if (q) products = products.filter(p => p.name.toLowerCase().includes(q) || (p.barcode||'').includes(q));
+
+  const now = new Date();
+  if (filterMode === 'expired') {
+    products = products.filter(p => p.expiry && new Date(p.expiry) < now);
+  } else if (filterMode === 'soon') {
+    products = products.filter(p => {
+      if (!p.expiry) return false;
+      const d = (new Date(p.expiry) - now) / 86400000;
+      return d >= 0 && d <= 30;
+    });
+  } else if (filterMode === 'low') {
+    products = products.filter(p => (p.qty||0) <= (p.minQty||5));
+  }
+
+  if (products.length === 0) {
+    el.innerHTML = `<div class="empty"><div class="empty-icon">📭</div><div class="empty-text">상품이 없습니다</div></div>`;
+    return;
+  }
+
+  el.innerHTML = products.map(p => {
+    const daysLeft = p.expiry ? Math.ceil((new Date(p.expiry) - new Date()) / 86400000) : null;
+    const isExpired = daysLeft !== null && daysLeft < 0;
+    const isSoon = daysLeft !== null && daysLeft >= 0 && daysLeft <= 30;
+    return `
+    <div class="prod-item" onclick="openProdModal('${p.id}')">
+      <div class="prod-icon">${categoryIcon(p.category)}</div>
+      <div class="prod-info">
+        <div class="prod-name">${p.name}</div>
+        <div class="prod-barcode">${p.barcode || '바코드 없음'}</div>
+        <div class="prod-meta">
+          ${expiryBadge(p.expiry)}
+          ${(p.qty||0) <= (p.minQty||5) ? '<span class="badge badge-red">재고부족</span>' : ''}
+        </div>
+        ${p.expiry ? `<div class="expiry-bar"><div class="expiry-bar-fill" style="width:${Math.max(0,Math.min(100,daysLeft/90*100))}%;background:${isExpired?'var(--red)':isSoon?'var(--yellow)':'var(--green)'}"></div></div>` : ''}
+      </div>
+      <div style="text-align:right;flex-shrink:0">
+        <div class="prod-qty">${p.qty||0}</div>
+        <div class="prod-qty-unit">${p.unit||'개'}</div>
+        <div style="display:flex;gap:4px;margin-top:4px">
+          <button class="qty-btn" onclick="event.stopPropagation();adjustQty('${p.id}',-1)">−</button>
+          <button class="qty-btn" onclick="event.stopPropagation();adjustQty('${p.id}',1)">+</button>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function categoryIcon(cat) {
+  const icons = { '식품':'🍎','음료':'🥤','생활용품':'🧴','의약품':'💊','냉장':'❄️','냉동':'🧊','기타':'📦' };
+  return icons[cat] || '📦';
+}
+
+function expiryBadge(expiry) {
+  if (!expiry) return '';
+  const d = Math.ceil((new Date(expiry) - new Date()) / 86400000);
+  if (d < 0) return `<span class="badge badge-red">만료됨</span>`;
+  if (d === 0) return `<span class="badge badge-red">오늘 만료</span>`;
+  if (d <= 7) return `<span class="badge badge-red">${d}일 남음</span>`;
+  if (d <= 30) return `<span class="badge badge-yellow">${d}일 남음</span>`;
+  return `<span class="badge badge-green">${expiry}</span>`;
+}
+
+// ─── Qty adjust ───────────────────────────────────────────────────────────────
+async function adjustQty(id, delta) {
+  const products = useFirebase ? allProducts : localProducts;
+  const prod = products.find(p => p.id === id);
+  if (!prod) return;
+
+  const newQty = Math.max(0, (prod.qty || 0) + delta);
+  await updateProductField(id, { qty: newQty });
+
+  const histItem = {
+    productId: id,
+    productName: prod.name,
+    type: delta > 0 ? 'in' : 'out',
+    qty: Math.abs(delta),
+    ts: new Date().toISOString()
+  };
+
+  if (useFirebase) {
+    await db.collection('inv_history').add(histItem);
+  } else {
+    localHistory.unshift({ id: Date.now().toString(), ...histItem });
+    if (localHistory.length > 200) localHistory.pop();
+    saveLocalData();
+  }
+
+  toast(`${prod.name} ${delta > 0 ? '입고' : '출고'} ${Math.abs(delta)}${prod.unit||'개'}`, delta > 0 ? 'success' : 'warn');
+}
+
+async function updateProductField(id, fields) {
+  if (useFirebase) {
+    await db.collection('inv_products').doc(id).update(fields);
+  } else {
+    const idx = localProducts.findIndex(p => p.id === id);
+    if (idx >= 0) Object.assign(localProducts[idx], fields);
+    saveLocalData();
+    renderProducts();
+    renderStats();
+  }
+}
+
+// ─── Add product ──────────────────────────────────────────────────────────────
+async function addProduct() {
+  const name = document.getElementById('addName').value.trim();
+  if (!name) { toast('상품명을 입력해주세요', 'warn'); return; }
+
+  const qty = parseInt(document.getElementById('addQty').value) || 0;
+  const prod = {
+    name,
+    barcode: document.getElementById('addBarcode').value.trim(),
+    category: document.getElementById('addCategory').value,
+    qty,
+    unit: document.getElementById('addUnit').value.trim() || '개',
+    expiry: document.getElementById('addExpiry').value,
+    cost: parseInt(document.getElementById('addCost').value) || 0,
+    memo: document.getElementById('addMemo').value.trim(),
+    createdAt: new Date().toISOString()
+  };
+
+  if (useFirebase) {
+    await db.collection('inv_products').add(prod);
+  } else {
+    localProducts.unshift({ id: Date.now().toString(), ...prod });
+    saveLocalData();
+    renderProducts();
+    renderStats();
+  }
+
+  // history entry
+  const histItem = { productName: name, type: 'in', qty, ts: prod.createdAt };
+  if (useFirebase) {
+    await db.collection('inv_history').add(histItem);
+  } else {
+    localHistory.unshift({ id: Date.now().toString(), ...histItem });
+    saveLocalData();
+  }
+
+  toast(`${name} 등록됨`, 'success');
+  ['addName','addBarcode','addQty','addExpiry','addCost','addMemo'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el.type === 'number') el.value = id === 'addQty' ? '1' : '';
+    else el.value = '';
+  });
+  scanAddMode = false;
+}
+
+// ─── Product modal ────────────────────────────────────────────────────────────
+function openProdModal(id) {
+  const products = useFirebase ? allProducts : localProducts;
+  const p = products.find(x => x.id === id);
+  if (!p) return;
+  editingProductId = id;
+
+  document.getElementById('prodModalTitle').textContent = p.name;
+  document.getElementById('prodModalBody').innerHTML = `
+    <div class="field"><label>상품명</label><input type="text" id="editName" value="${p.name}"></div>
+    <div class="field"><label>바코드</label><input type="text" id="editBarcode" value="${p.barcode||''}"></div>
+    <div class="field"><label>카테고리</label>
+      <select id="editCategory">
+        ${['식품','음료','생활용품','의약품','냉장','냉동','기타'].map(c=>`<option value="${c}" ${p.category===c?'selected':''}>${categoryIcon(c)} ${c}</option>`).join('')}
+      </select>
+    </div>
+    <div class="row">
+      <div class="field" style="flex:1;margin-bottom:0"><label>수량</label><input type="number" id="editQty" value="${p.qty||0}"></div>
+      <div class="field" style="flex:1;margin-bottom:0"><label>단위</label><input type="text" id="editUnit" value="${p.unit||'개'}"></div>
+    </div>
+    <div class="field mt8"><label>유통기한</label><input type="date" id="editExpiry" value="${p.expiry||''}"></div>
+    <div class="field"><label>입고가</label><input type="number" id="editCost" value="${p.cost||0}"></div>
+    <div class="field"><label>메모</label><textarea id="editMemo">${p.memo||''}</textarea></div>
+    <button class="btn btn-primary mt4" onclick="saveProductEdit()">💾 저장</button>
+  `;
+  document.getElementById('prodDeleteBtn').onclick = () => requireAdmin(() => deleteProduct(id, p.name));
+  document.getElementById('prodModal').classList.add('open');
+}
+
+async function saveProductEdit() {
+  if (!editingProductId) return;
+  const fields = {
+    name: document.getElementById('editName').value.trim(),
+    barcode: document.getElementById('editBarcode').value.trim(),
+    category: document.getElementById('editCategory').value,
+    qty: parseInt(document.getElementById('editQty').value) || 0,
+    unit: document.getElementById('editUnit').value.trim(),
+    expiry: document.getElementById('editExpiry').value,
+    cost: parseInt(document.getElementById('editCost').value) || 0,
+    memo: document.getElementById('editMemo').value.trim()
+  };
+  await updateProductField(editingProductId, fields);
+  closeProdModal();
+  toast('상품 정보 수정됨', 'success');
+}
+
+async function deleteProduct(id, name) {
+  if (useFirebase) {
+    await db.collection('inv_products').doc(id).delete();
+  } else {
+    localProducts = localProducts.filter(p => p.id !== id);
+    saveLocalData();
+    renderProducts();
+    renderStats();
+  }
+  closeProdModal();
+  toast(`${name} 삭제됨`, 'warn');
+}
+
+function closeProdModal() {
+  document.getElementById('prodModal').classList.remove('open');
+  editingProductId = null;
+}
+
+// ─── History ──────────────────────────────────────────────────────────────────
+function renderHistory() {
+  const el = document.getElementById('historyList');
+  const hist = useFirebase ? localHistory : localHistory;
+  if (hist.length === 0) {
+    el.innerHTML = `<div class="empty"><div class="empty-icon">📜</div><div class="empty-text">이력이 없습니다</div></div>`;
+    return;
+  }
+  el.innerHTML = hist.map(h => {
+    const isIn = h.type === 'in';
+    const dt = new Date(h.ts);
+    const dateStr = `${dt.getMonth()+1}/${dt.getDate()} ${dt.getHours().toString().padStart(2,'0')}:${dt.getMinutes().toString().padStart(2,'0')}`;
+    return `
+    <div class="hist-item">
+      <div class="hist-icon">${isIn ? '📥' : '📤'}</div>
+      <div class="hist-info">
+        <div class="hist-name">${h.productName}</div>
+        <div class="hist-meta">${dateStr}</div>
+      </div>
+      <div class="hist-badge" style="color:${isIn?'var(--green)':'var(--red)'}">${isIn?'+':'-'}${h.qty}</div>
+    </div>`;
+  }).join('');
+}
+
+// ─── Stats ────────────────────────────────────────────────────────────────────
+function renderStats() {
+  const products = useFirebase ? allProducts : localProducts;
+  const now = new Date();
+
+  const total = products.length;
+  const expired = products.filter(p => p.expiry && new Date(p.expiry) < now).length;
+  const soon = products.filter(p => {
+    if (!p.expiry) return false;
+    const d = (new Date(p.expiry) - now) / 86400000;
+    return d >= 0 && d <= 30;
+  }).length;
+  const lowStock = products.filter(p => (p.qty||0) <= (p.minQty||5)).length;
+
+  document.getElementById('statsGrid').innerHTML = `
+    <div class="stat-card info"><div class="stat-num">${total}</div><div class="stat-label">전체 상품</div></div>
+    <div class="stat-card ${expired>0?'danger':'ok'}"><div class="stat-num">${expired}</div><div class="stat-label">유통기한 만료</div></div>
+    <div class="stat-card ${soon>0?'warn':'ok'}"><div class="stat-num">${soon}</div><div class="stat-label">유통기한 임박 (30일)</div></div>
+    <div class="stat-card ${lowStock>0?'warn':'ok'}"><div class="stat-num">${lowStock}</div><div class="stat-label">재고부족</div></div>
+  `;
+
+  const catMap = {};
+  products.forEach(p => {
+    const c = p.category || '기타';
+    if (!catMap[c]) catMap[c] = { count:0, qty:0 };
+    catMap[c].count++;
+    catMap[c].qty += (p.qty || 0);
+  });
+  document.getElementById('categoryStats').innerHTML = Object.entries(catMap).map(([c, v]) => `
+    <div class="hist-item" style="margin-bottom:6px">
+      <div class="hist-icon">${categoryIcon(c)}</div>
+      <div class="hist-info"><div class="hist-name">${c}</div><div class="hist-meta">상품 ${v.count}종</div></div>
+      <div style="font-weight:700;color:var(--accent2)">재고 ${v.qty}</div>
+    </div>`).join('') || '<div class="empty"><div class="empty-text">데이터 없음</div></div>';
+}
+
+// ─── Export / Import ──────────────────────────────────────────────────────────
+function exportData() {
+  const products = useFirebase ? allProducts : localProducts;
+  const data = { products, history: localHistory, exportedAt: new Date().toISOString() };
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `inventory_${new Date().toISOString().slice(0,10)}.json`;
+  a.click();
+  toast('내보내기 완료', 'success');
+}
+
+async function importData(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  try {
+    const text = await file.text();
+    const data = JSON.parse(text);
+    if (!Array.isArray(data.products)) throw new Error('올바른 형식이 아닙니다');
+
+    if (useFirebase) {
+      const batch = db.batch();
+      data.products.forEach(p => {
+        const ref = db.collection('inv_products').doc(p.id || db.collection('inv_products').doc().id);
+        const { id: _, ...rest } = p;
+        batch.set(ref, rest, { merge: true });
+      });
+      await batch.commit();
+    } else {
+      localProducts = data.products.map((p,i) => ({ id: p.id || String(Date.now()+i), ...p }));
+      if (Array.isArray(data.history)) localHistory = data.history;
+      saveLocalData();
+      renderProducts();
+      renderHistory();
+      renderStats();
+    }
+    toast(`${data.products.length}개 상품 가져오기 완료`, 'success');
+  } catch(e) {
+    toast('가져오기 실패: ' + e.message, 'error');
+  }
+  event.target.value = '';
+}
+
+// ─── Toast ────────────────────────────────────────────────────────────────────
+function toast(msg, type = 'success') {
+  const wrap = document.getElementById('toastWrap');
+  const icons = { success:'✅', error:'❌', warn:'⚠️' };
+  const el = document.createElement('div');
+  el.className = `toast ${type}`;
+  el.innerHTML = `<span>${icons[type]||'ℹ️'}</span><span>${msg}</span>`;
+  wrap.appendChild(el);
+  setTimeout(() => el.remove(), 3000);
+}
+
+// ─── Init ─────────────────────────────────────────────────────────────────────
+document.getElementById('addExpiry').valueAsDate = (() => {
+  const d = new Date(); d.setMonth(d.getMonth()+6); return d;
+})();
+
+initFirebase();
+</script>
+</body>
+</html>
