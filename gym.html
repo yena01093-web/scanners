@@ -2,702 +2,1143 @@
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>GYM 회원관리 시스템</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>GYM PRO 회원관리</title>
 <style>
-  * { margin: 0; padding: 0; box-sizing: border-box; }
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --primary:#00d4ff;--bg:#0a0a0f;--card:#12121a;--border:#1e1e2e;
+  --text:#e0e0ff;--muted:#666688;--green:#00ff88;--red:#ff4466;--gold:#ffd700;
+  --orange:#ff8800;--purple:#aa44ff;
+}
+body{font-family:'Apple SD Gothic Neo','Noto Sans KR',sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
 
-  :root {
-    --primary: #00d4ff;
-    --bg: #0a0a0f;
-    --card: #12121a;
-    --border: #1e1e2e;
-    --text: #e0e0ff;
-    --muted: #666688;
-    --green: #00ff88;
-    --red: #ff4466;
-    --gold: #ffd700;
-  }
+/* ── SETUP ── */
+#setup{position:fixed;inset:0;z-index:400;background:var(--bg);display:flex;align-items:center;justify-content:center;padding:20px;overflow-y:auto}
+.setup-box{background:var(--card);border:1px solid var(--border);border-radius:20px;padding:26px 22px;max-width:440px;width:100%}
+.setup-logo{font-size:22px;font-weight:900;color:var(--primary);margin-bottom:6px}
+.setup-sub{font-size:13px;color:var(--muted);margin-bottom:20px;line-height:1.5}
+.setup-step{background:var(--bg);border-radius:9px;padding:13px;margin-bottom:10px;border:1px solid var(--border)}
+.ss-n{font-size:11px;font-weight:700;color:var(--primary);letter-spacing:1px;margin-bottom:5px}
+.ss-t{font-size:12px;color:var(--muted);line-height:1.6}
+.ss-t a{color:var(--primary);text-decoration:none}
+.ss-t code{color:var(--gold);background:rgba(255,215,0,.1);padding:1px 5px;border-radius:4px;font-family:monospace}
+.cfg-ta{width:100%;background:var(--bg);border:1px solid var(--border);color:var(--text);border-radius:8px;padding:9px 12px;font-size:12px;font-family:monospace;outline:none;resize:vertical;min-height:110px;transition:border-color .2s;margin-top:6px}
+.cfg-ta:focus{border-color:var(--primary)}
+.setup-err{color:var(--red);font-size:12px;margin-top:8px;display:none}
 
-  body {
-    font-family: 'Apple SD Gothic Neo', 'Noto Sans KR', sans-serif;
-    background: var(--bg);
-    color: var(--text);
-    min-height: 100vh;
-  }
+/* ── HEADER ── */
+header{background:var(--card);border-bottom:1px solid var(--border);padding:12px 16px;display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;z-index:100}
+.logo{font-size:17px;font-weight:900;color:var(--primary)}.logo span{color:var(--text)}
+.hdr-right{display:flex;align-items:center;gap:8px}
+.hdr-time{font-size:12px;color:var(--muted)}
+.btn-setting{background:none;border:1px solid var(--border);color:var(--muted);padding:5px 9px;border-radius:7px;cursor:pointer;font-size:12px;transition:all .2s}
+.btn-setting:hover{border-color:var(--primary);color:var(--primary)}
+.fb-dot{width:7px;height:7px;border-radius:50%;background:var(--red);margin-right:4px;display:inline-block}
+.fb-dot.ok{background:var(--green)}
 
-  /* 헤더 */
-  header {
-    background: var(--card);
-    border-bottom: 1px solid var(--border);
-    padding: 14px 20px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    position: sticky;
-    top: 0;
-    z-index: 100;
-  }
+/* ── TABS ── */
+.tabs{display:flex;background:var(--card);border-bottom:1px solid var(--border);overflow-x:auto;scrollbar-width:none}
+.tabs::-webkit-scrollbar{display:none}
+.tab{padding:11px 15px;font-size:12px;font-weight:700;color:var(--muted);border-bottom:2px solid transparent;cursor:pointer;white-space:nowrap;transition:all .2s}
+.tab.active{color:var(--primary);border-bottom-color:var(--primary)}
 
-  .logo { font-size: 18px; font-weight: 900; color: var(--primary); letter-spacing: -0.5px; }
-  .logo span { color: var(--text); }
+/* ── PAGES ── */
+.page{display:none;padding:14px}
+.page.active{display:block}
 
-  .header-time { font-size: 13px; color: var(--muted); }
+/* ── FORMS ── */
+.form-group{margin-bottom:11px}
+.form-label{font-size:12px;color:var(--muted);margin-bottom:5px;display:block}
+.form-input,.form-select{width:100%;background:var(--card);border:1px solid var(--border);border-radius:8px;padding:11px 12px;color:var(--text);font-size:14px;font-family:inherit;outline:none;transition:border-color .2s}
+.form-input:focus,.form-select:focus{border-color:var(--primary)}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 
-  /* 탭 */
-  .tabs {
-    display: flex;
-    background: var(--card);
-    border-bottom: 1px solid var(--border);
-    overflow-x: auto;
-    scrollbar-width: none;
-  }
-  .tabs::-webkit-scrollbar { display: none; }
+/* ── BUTTONS ── */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:5px;padding:9px 15px;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;border:none;transition:all .2s;font-family:inherit}
+.btn-p{background:var(--primary);color:#000}
+.btn-p:hover{background:#22e0ff}
+.btn-s{background:var(--border);color:var(--text)}
+.btn-s:hover{background:#2a2a40}
+.btn-d{background:rgba(255,68,102,.15);color:var(--red);border:1px solid rgba(255,68,102,.3)}
+.btn-d:hover{background:rgba(255,68,102,.25)}
+.btn-go{background:rgba(255,215,0,.12);color:var(--gold);border:1px solid rgba(255,215,0,.3)}
+.btn-w{width:100%}
+.btn-sm{padding:5px 10px;font-size:11px;border-radius:6px}
+.submit-btn{width:100%;background:var(--primary);color:#000;border:none;padding:13px;border-radius:10px;font-size:14px;font-weight:900;cursor:pointer;margin-top:8px}
 
-  .tab {
-    padding: 12px 18px;
-    font-size: 13px;
-    font-weight: 700;
-    color: var(--muted);
-    border-bottom: 2px solid transparent;
-    cursor: pointer;
-    white-space: nowrap;
-  }
-  .tab.active { color: var(--primary); border-bottom-color: var(--primary); }
+/* ── SECTION TITLE ── */
+.section-title{font-size:12px;font-weight:700;color:var(--muted);margin-bottom:10px;letter-spacing:1px;text-transform:uppercase}
+.sec-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
 
-  /* 페이지 */
-  .page { display: none; padding: 16px; }
-  .page.active { display: block; }
+/* ── FACE PAGE ── */
+.face-wrap{position:relative;width:100%;border-radius:12px;overflow:hidden;background:#000;margin-bottom:10px;aspect-ratio:4/3}
+.face-wrap video{width:100%;height:100%;object-fit:cover;display:block}
+.face-wrap canvas{position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none}
+.face-status-bar{position:absolute;bottom:0;left:0;right:0;padding:8px 12px;background:rgba(0,0,0,.7);backdrop-filter:blur(4px);font-size:13px;font-weight:700;text-align:center}
+.face-status-bar.detecting{color:var(--primary)}
+.face-status-bar.matched{color:var(--green)}
+.face-status-bar.cooldown{color:var(--gold)}
+.face-status-bar.loading{color:var(--muted)}
+.face-status-bar.error{color:var(--red)}
 
-  /* 출입 체크 */
-  .checkin-box {
-    background: var(--card);
-    border: 1px solid var(--border);
-    border-radius: 16px;
-    padding: 24px;
-    text-align: center;
-    margin-bottom: 16px;
-  }
+.face-controls{display:flex;gap:8px;margin-bottom:10px}
+.face-model-progress{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:13px;margin-bottom:10px}
+.fmp-title{font-size:12px;color:var(--muted);margin-bottom:8px}
+.fmp-step{font-size:12px;color:var(--text);padding:3px 0;display:flex;align-items:center;gap:6px}
+.fmp-step .dot{width:6px;height:6px;border-radius:50%;background:var(--muted)}
+.fmp-step.done .dot{background:var(--green)}
+.fmp-step.active .dot{background:var(--primary);animation:pulse 1s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
 
-  .camera-view {
-    background: #000;
-    border-radius: 12px;
-    height: 200px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    margin-bottom: 16px;
-    position: relative;
-    overflow: hidden;
-    border: 2px solid var(--border);
-  }
+/* ── MEMBER INFO CARD (face recognized overlay) ── */
+.mic-overlay{position:fixed;inset:0;z-index:300;background:rgba(0,0,0,.75);display:none;align-items:flex-end;justify-content:center;padding:0}
+.mic-overlay.visible{display:flex}
+.mic-card{background:linear-gradient(160deg,#12121a,#1a1a2e);border:1px solid var(--border);border-radius:24px 24px 0 0;padding:24px 20px 32px;width:100%;max-width:480px;position:relative;animation:slideUp .3s ease}
+@keyframes slideUp{from{transform:translateY(40px);opacity:0}to{transform:translateY(0);opacity:1}}
+.mic-photo{width:80px;height:80px;border-radius:50%;overflow:hidden;margin:0 auto 12px;border:3px solid var(--primary);background:var(--border);display:flex;align-items:center;justify-content:center;font-size:32px}
+.mic-photo img{width:100%;height:100%;object-fit:cover}
+.mic-name{font-size:24px;font-weight:900;text-align:center;margin-bottom:4px}
+.mic-id{font-size:12px;color:var(--muted);text-align:center;margin-bottom:14px}
+.mic-row{display:flex;justify-content:space-around;margin-bottom:14px}
+.mic-cell{text-align:center}
+.mic-cell-val{font-size:18px;font-weight:900;color:var(--primary)}
+.mic-cell-val.expired{color:var(--red)}
+.mic-cell-val.warning{color:var(--gold)}
+.mic-cell-lbl{font-size:11px;color:var(--muted);margin-top:2px}
+.mic-badge{display:inline-block;padding:5px 16px;border-radius:20px;font-size:13px;font-weight:700;margin:0 auto 12px;display:block;text-align:center;width:fit-content;margin:0 auto 14px}
+.mic-badge.active{background:rgba(0,255,136,.15);color:var(--green);border:1px solid rgba(0,255,136,.3)}
+.mic-badge.expired{background:rgba(255,68,102,.15);color:var(--red);border:1px solid rgba(255,68,102,.3)}
+.mic-timer{height:3px;background:var(--border);border-radius:2px;overflow:hidden;margin-top:4px}
+.mic-timer-bar{height:100%;background:var(--primary);transition:width linear}
+.mic-dismiss{position:absolute;top:14px;right:16px;background:none;border:none;color:var(--muted);font-size:20px;cursor:pointer}
+.mic-checkin-type{font-size:13px;text-align:center;margin-bottom:10px;font-weight:700}
 
-  .camera-icon { font-size: 48px; color: var(--muted); }
+/* ── STATS ── */
+.stats-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px}
+.stat-card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:14px;text-align:center}
+.stat-num{font-size:26px;font-weight:900;color:var(--primary)}
+.stat-label{font-size:11px;color:var(--muted);margin-top:3px}
 
-  .scan-line {
-    position: absolute;
-    width: 100%;
-    height: 2px;
-    background: var(--primary);
-    top: 0;
-    animation: scan 2s linear infinite;
-    box-shadow: 0 0 8px var(--primary);
-  }
+/* ── MEMBER CARDS (list) ── */
+.member-card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:13px;margin-bottom:8px;display:flex;align-items:center;gap:11px}
+.member-avatar{width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:900;flex-shrink:0;overflow:hidden}
+.member-avatar img{width:100%;height:100%;object-fit:cover}
+.member-card-info{flex:1;min-width:0}
+.member-card-name{font-size:14px;font-weight:700;margin-bottom:2px}
+.member-card-detail{font-size:12px;color:var(--muted)}
+.member-card-actions{display:flex;gap:5px}
 
-  @keyframes scan {
-    0% { top: 0; }
-    100% { top: 100%; }
-  }
+/* ── CHECKIN LIST ── */
+.checkin-item{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:11px 13px;display:flex;align-items:center;gap:11px;margin-bottom:7px}
+.checkin-info{flex:1}
+.checkin-name{font-size:14px;font-weight:700;margin-bottom:1px}
+.checkin-detail{font-size:11px;color:var(--muted)}
+.checkin-time{font-size:11px;color:var(--primary);font-weight:700}
+.status-badge{font-size:10px;font-weight:700;padding:3px 7px;border-radius:4px}
+.status-in{background:rgba(0,255,136,.13);color:var(--green)}
+.status-out{background:rgba(255,68,102,.13);color:var(--red)}
+.status-active{background:rgba(0,212,255,.13);color:var(--primary)}
+.status-expired{background:rgba(255,68,102,.13);color:var(--red)}
+.status-face{background:rgba(170,68,255,.13);color:var(--purple)}
 
-  .checkin-input {
-    width: 100%;
-    background: var(--bg);
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    padding: 12px;
-    color: var(--text);
-    font-size: 15px;
-    margin-bottom: 10px;
-    text-align: center;
-  }
+/* ── FACE REGISTRATION ── */
+.face-reg-box{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:14px;margin-bottom:12px}
+.face-reg-preview{width:100%;border-radius:10px;overflow:hidden;background:#000;position:relative;margin-bottom:10px}
+.face-reg-preview video{width:100%;display:block;border-radius:10px}
+.face-reg-preview canvas{display:none}
+.face-reg-photo{width:80px;height:80px;border-radius:50%;object-fit:cover;border:2px solid var(--green);margin-right:12px;display:none}
+.face-reg-status{font-size:13px;font-weight:700;margin-bottom:8px}
+.face-reg-status.ok{color:var(--green)}
+.face-reg-status.none{color:var(--muted)}
+.face-reg-btns{display:flex;gap:8px;flex-wrap:wrap}
 
-  .checkin-btn {
-    width: 100%;
-    background: var(--primary);
-    color: #000;
-    border: none;
-    padding: 14px;
-    border-radius: 10px;
-    font-size: 15px;
-    font-weight: 900;
-    cursor: pointer;
-  }
+/* ── TICKET GRID ── */
+.ticket-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px}
+.ticket-option{background:var(--card);border:2px solid var(--border);border-radius:10px;padding:12px;text-align:center;cursor:pointer;transition:all .2s}
+.ticket-option.selected{border-color:var(--primary);background:rgba(0,212,255,.1)}
+.ticket-name{font-size:13px;font-weight:700;margin-bottom:3px}
+.ticket-price{font-size:15px;font-weight:900;color:var(--gold)}
+.ticket-period{font-size:11px;color:var(--muted)}
 
-  /* 최근 출입 */
-  .section-title {
-    font-size: 14px;
-    font-weight: 700;
-    color: var(--muted);
-    margin-bottom: 10px;
-    letter-spacing: 1px;
-  }
+/* ── DATA MANAGEMENT ── */
+.data-card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:16px;margin-bottom:12px}
+.data-card-title{font-size:14px;font-weight:700;margin-bottom:10px}
+.data-card-desc{font-size:12px;color:var(--muted);margin-bottom:12px;line-height:1.6}
+.data-info-row{display:flex;justify-content:space-between;font-size:12px;padding:5px 0;border-bottom:1px solid var(--border)}
+.data-info-row:last-child{border-bottom:none}
 
-  .checkin-item {
-    background: var(--card);
-    border: 1px solid var(--border);
-    border-radius: 10px;
-    padding: 12px 14px;
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    margin-bottom: 8px;
-  }
+/* ── SEARCH ── */
+.search-input{width:100%;background:var(--card);border:1px solid var(--border);border-radius:8px;padding:11px 12px;color:var(--text);font-size:14px;margin-bottom:11px;font-family:inherit;outline:none}
+.search-input:focus{border-color:var(--primary)}
 
-  .member-avatar {
-    width: 40px;
-    height: 40px;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 18px;
-    font-weight: 900;
-    flex-shrink: 0;
-  }
+/* ── MODAL ── */
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:200;align-items:flex-end}
+.modal-overlay.visible{display:flex}
+.modal{background:var(--card);width:100%;border-radius:20px 20px 0 0;padding:22px 18px;border-top:1px solid var(--border);max-height:85vh;overflow-y:auto}
+.modal h3{font-size:16px;font-weight:900;margin-bottom:14px}
 
-  .checkin-info { flex: 1; }
-  .checkin-name { font-size: 14px; font-weight: 700; margin-bottom: 2px; }
-  .checkin-detail { font-size: 12px; color: var(--muted); }
-  .checkin-time { font-size: 12px; color: var(--primary); font-weight: 700; }
+/* ── SETTINGS MODAL ── */
+.sett-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:200;align-items:flex-end}
+.sett-overlay.visible{display:flex}
+.sett-modal{background:var(--card);width:100%;border-radius:20px 20px 0 0;padding:22px 18px;border-top:1px solid var(--border);max-height:85vh;overflow-y:auto}
+.sett-sec{margin-bottom:18px}
+.sett-sec-ttl{font-size:11px;font-weight:700;color:var(--muted);letter-spacing:1px;text-transform:uppercase;margin-bottom:9px}
+.fb-status{display:flex;align-items:center;gap:6px;font-size:12px;padding:7px 10px;border-radius:8px;margin-bottom:11px}
+.fb-status.on{background:rgba(0,255,136,.09);color:var(--green);border:1px solid rgba(0,255,136,.2)}
+.fb-status.off{background:rgba(255,68,102,.09);color:var(--red);border:1px solid rgba(255,68,102,.2)}
 
-  .status-badge {
-    font-size: 10px;
-    font-weight: 700;
-    padding: 3px 8px;
-    border-radius: 4px;
-  }
-  .status-in { background: rgba(0,255,136,0.15); color: var(--green); }
-  .status-out { background: rgba(255,68,102,0.15); color: var(--red); }
-  .status-active { background: rgba(0,212,255,0.15); color: var(--primary); }
-  .status-expired { background: rgba(255,68,102,0.15); color: var(--red); }
+/* ── PAYMENT ── */
+.payment-item{display:flex;justify-content:space-between;padding:7px 0;font-size:13px;border-bottom:1px solid var(--border)}
+.payment-total{display:flex;justify-content:space-between;padding:13px 0;font-size:15px;font-weight:900;color:var(--primary)}
+.pay-btn{width:100%;background:var(--primary);color:#000;border:none;padding:13px;border-radius:10px;font-size:14px;font-weight:900;cursor:pointer;margin-bottom:7px}
+.cancel-btn{width:100%;background:var(--border);color:var(--text);border:none;padding:11px;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer}
 
-  /* 통계 카드 */
-  .stats-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 10px;
-    margin-bottom: 16px;
-  }
+/* ── ALERT / TOAST ── */
+.alert{position:fixed;top:68px;left:50%;transform:translateX(-50%);background:var(--green);color:#000;padding:10px 22px;border-radius:10px;font-weight:700;font-size:13px;z-index:999;display:none;white-space:nowrap;box-shadow:0 4px 20px rgba(0,0,0,.5)}
+.alert.error{background:var(--red);color:#fff}
 
-  .stat-card {
-    background: var(--card);
-    border: 1px solid var(--border);
-    border-radius: 12px;
-    padding: 16px;
-    text-align: center;
-  }
+/* ── EMPTY ── */
+.empty{text-align:center;padding:32px 16px;color:var(--muted)}
+.empty-i{font-size:32px;margin-bottom:8px}
+.empty-t{font-size:13px}
 
-  .stat-num { font-size: 28px; font-weight: 900; color: var(--primary); }
-  .stat-label { font-size: 11px; color: var(--muted); margin-top: 4px; }
-
-  /* 회원 목록 */
-  .search-input {
-    width: 100%;
-    background: var(--card);
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    padding: 12px;
-    color: var(--text);
-    font-size: 14px;
-    margin-bottom: 12px;
-  }
-
-  .member-card {
-    background: var(--card);
-    border: 1px solid var(--border);
-    border-radius: 12px;
-    padding: 14px;
-    margin-bottom: 8px;
-    display: flex;
-    align-items: center;
-    gap: 12px;
-  }
-
-  .member-card-info { flex: 1; }
-  .member-card-name { font-size: 15px; font-weight: 700; margin-bottom: 3px; }
-  .member-card-detail { font-size: 12px; color: var(--muted); }
-
-  /* 회원 등록 */
-  .form-group { margin-bottom: 12px; }
-  .form-label { font-size: 12px; color: var(--muted); margin-bottom: 6px; display: block; }
-
-  .form-input {
-    width: 100%;
-    background: var(--card);
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    padding: 12px;
-    color: var(--text);
-    font-size: 14px;
-  }
-
-  .form-select {
-    width: 100%;
-    background: var(--card);
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    padding: 12px;
-    color: var(--text);
-    font-size: 14px;
-  }
-
-  .ticket-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 8px;
-    margin-bottom: 12px;
-  }
-
-  .ticket-option {
-    background: var(--card);
-    border: 2px solid var(--border);
-    border-radius: 10px;
-    padding: 12px;
-    text-align: center;
-    cursor: pointer;
-    transition: all 0.2s;
-  }
-
-  .ticket-option.selected {
-    border-color: var(--primary);
-    background: rgba(0,212,255,0.1);
-  }
-
-  .ticket-name { font-size: 13px; font-weight: 700; margin-bottom: 4px; }
-  .ticket-price { font-size: 15px; font-weight: 900; color: var(--gold); }
-  .ticket-period { font-size: 11px; color: var(--muted); }
-
-  .submit-btn {
-    width: 100%;
-    background: var(--primary);
-    color: #000;
-    border: none;
-    padding: 14px;
-    border-radius: 10px;
-    font-size: 15px;
-    font-weight: 900;
-    cursor: pointer;
-    margin-top: 8px;
-  }
-
-  /* 알림 */
-  .alert {
-    position: fixed;
-    top: 70px;
-    left: 50%;
-    transform: translateX(-50%);
-    background: var(--green);
-    color: #000;
-    padding: 12px 24px;
-    border-radius: 10px;
-    font-weight: 700;
-    font-size: 14px;
-    z-index: 999;
-    display: none;
-    white-space: nowrap;
-  }
-
-  .alert.error { background: var(--red); color: #fff; }
-
-  /* 결제 모달 */
-  .modal-overlay {
-    display: none;
-    position: fixed;
-    inset: 0;
-    background: rgba(0,0,0,0.85);
-    z-index: 500;
-    align-items: flex-end;
-  }
-  .modal-overlay.visible { display: flex; }
-  .modal {
-    background: var(--card);
-    width: 100%;
-    border-radius: 20px 20px 0 0;
-    padding: 24px 20px;
-    border-top: 1px solid var(--border);
-  }
-
-  .modal h3 { font-size: 17px; font-weight: 900; margin-bottom: 16px; }
-
-  .payment-item {
-    display: flex;
-    justify-content: space-between;
-    padding: 8px 0;
-    font-size: 13px;
-    border-bottom: 1px solid var(--border);
-  }
-
-  .payment-total {
-    display: flex;
-    justify-content: space-between;
-    padding: 14px 0;
-    font-size: 16px;
-    font-weight: 900;
-    color: var(--primary);
-  }
-
-  .pay-btn {
-    width: 100%;
-    background: var(--primary);
-    color: #000;
-    border: none;
-    padding: 14px;
-    border-radius: 10px;
-    font-size: 15px;
-    font-weight: 900;
-    cursor: pointer;
-    margin-bottom: 8px;
-  }
-
-  .cancel-btn {
-    width: 100%;
-    background: var(--border);
-    color: var(--text);
-    border: none;
-    padding: 12px;
-    border-radius: 10px;
-    font-size: 13px;
-    font-weight: 700;
-    cursor: pointer;
-  }
+@media(max-width:380px){.form-row{grid-template-columns:1fr}.stats-grid{gap:8px}}
 </style>
 </head>
 <body>
 
-<header>
-  <div class="logo">GYM<span>PRO</span></div>
-  <div class="header-time" id="headerTime"></div>
-</header>
-
-<div class="tabs">
-  <div class="tab active" onclick="showPage('checkin', this)">🏃 출입체크</div>
-  <div class="tab" onclick="showPage('members', this)">👥 회원목록</div>
-  <div class="tab" onclick="showPage('register', this)">➕ 회원등록</div>
-  <div class="tab" onclick="showPage('stats', this)">📊 현황</div>
+<!-- ── SETUP SCREEN ── -->
+<div id="setup" style="display:none">
+  <div class="setup-box">
+    <div class="setup-logo">🏋️ GYM PRO</div>
+    <div class="setup-sub">Firebase Firestore 연동 설정 (최초 1회)</div>
+    <div class="setup-step">
+      <div class="ss-n">STEP 1</div>
+      <div class="ss-t"><a href="https://console.firebase.google.com" target="_blank">Firebase Console</a>에서 프로젝트 생성 → Firestore Database 활성화 (테스트 모드)</div>
+    </div>
+    <div class="setup-step">
+      <div class="ss-n">STEP 2</div>
+      <div class="ss-t">프로젝트 설정(⚙) → 내 앱 → 웹 앱(<code>&lt;/&gt;</code>) 추가 → <code>firebaseConfig</code> 복사</div>
+    </div>
+    <div class="form-group" style="margin-top:14px">
+      <label class="form-label">학원/헬스장 이름</label>
+      <input class="form-input" id="s-gym" placeholder="예: 강남 GYM PRO">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Firebase Config (JSON)</label>
+      <textarea class="cfg-ta" id="s-cfg" placeholder='{
+  "apiKey": "AIza...",
+  "authDomain": "your-project.firebaseapp.com",
+  "projectId": "your-project",
+  "storageBucket": "your-project.appspot.com",
+  "messagingSenderId": "...",
+  "appId": "..."
+}'></textarea>
+      <div class="setup-err" id="s-err"></div>
+    </div>
+    <button class="btn btn-p btn-w" onclick="saveSetup()" style="margin-top:4px">저장하고 시작하기</button>
+  </div>
 </div>
 
-<!-- 출입체크 -->
-<div class="page active" id="page-checkin">
-  <div class="checkin-box">
-    <div class="camera-view">
-      <div class="scan-line"></div>
-      <div class="camera-icon">📷</div>
-    </div>
-    <p style="font-size:12px;color:#666688;margin-bottom:12px;">얼굴 인식 또는 회원번호 입력</p>
-    <input class="checkin-input" id="checkinInput" type="text" placeholder="회원번호 입력 (예: M001)">
-    <button class="checkin-btn" onclick="doCheckin()">✅ 출입 확인</button>
+<!-- ── HEADER ── -->
+<header>
+  <div class="logo">GYM<span>PRO</span> <span id="gym-name-hdr" style="font-size:12px;color:var(--muted);font-weight:400"></span></div>
+  <div class="hdr-right">
+    <span class="hdr-time" id="headerTime"></span>
+    <span id="fb-indicator"><span class="fb-dot" id="fbDot"></span></span>
+    <button class="btn-setting" onclick="openSett()">⚙</button>
+  </div>
+</header>
+
+<!-- ── TABS ── -->
+<div class="tabs">
+  <div class="tab active" onclick="showPage('face',this)">🎭 얼굴인식</div>
+  <div class="tab" onclick="showPage('checkin',this)">🏃 출입체크</div>
+  <div class="tab" onclick="showPage('members',this)">👥 회원목록</div>
+  <div class="tab" onclick="showPage('register',this)">➕ 회원등록</div>
+  <div class="tab" onclick="showPage('stats',this)">📊 현황</div>
+  <div class="tab" onclick="showPage('data',this)">💾 데이터</div>
+</div>
+
+<!-- ── PAGE: 얼굴인식 ── -->
+<div class="page active" id="page-face">
+  <div id="modelProgress" class="face-model-progress">
+    <div class="fmp-title">🧠 얼굴인식 모델 로딩 중...</div>
+    <div class="fmp-step" id="mp1"><span class="dot"></span> SSD MobileNet (얼굴 감지)</div>
+    <div class="fmp-step" id="mp2"><span class="dot"></span> Face Landmarks (특징점)</div>
+    <div class="fmp-step" id="mp3"><span class="dot"></span> Face Recognition (인식)</div>
+  </div>
+
+  <div class="face-wrap" id="faceWrap">
+    <video id="faceVideo" autoplay playsinline muted></video>
+    <canvas id="faceCanvas"></canvas>
+    <div class="face-status-bar loading" id="faceStatus">모델 로딩 중...</div>
+  </div>
+
+  <div class="face-controls">
+    <button class="btn btn-s" style="flex:1" onclick="flipCamera()">🔄 카메라 전환</button>
+    <button class="btn btn-s" style="flex:1" id="btnToggleFace" onclick="toggleFaceRecog()">⏸ 일시정지</button>
   </div>
 
   <div class="section-title">오늘 출입 현황</div>
+  <div id="faceCheckinList"></div>
+</div>
+
+<!-- ── PAGE: 출입체크 (수동) ── -->
+<div class="page" id="page-checkin">
+  <div style="background:var(--card);border:1px solid var(--border);border-radius:14px;padding:18px;margin-bottom:14px">
+    <div class="section-title">수동 출입 확인</div>
+    <input class="form-input" id="checkinInput" placeholder="회원번호 입력 (예: M001)" style="margin-bottom:9px">
+    <button class="btn btn-p btn-w" onclick="doCheckin()">✅ 출입 확인</button>
+  </div>
+  <div class="section-title">오늘 출입 기록</div>
   <div id="checkinList"></div>
 </div>
 
-<!-- 회원목록 -->
+<!-- ── PAGE: 회원목록 ── -->
 <div class="page" id="page-members">
-  <input class="search-input" placeholder="🔍 회원 검색..." oninput="filterMembers(this.value)">
+  <input class="search-input" placeholder="🔍 이름·회원번호·연락처 검색..." oninput="filterMembers(this.value)">
   <div id="memberList"></div>
 </div>
 
-<!-- 회원등록 -->
+<!-- ── PAGE: 회원등록 ── -->
 <div class="page" id="page-register">
-  <div class="form-group">
-    <label class="form-label">이름</label>
-    <input class="form-input" id="regName" placeholder="홍길동">
-  </div>
-  <div class="form-group">
-    <label class="form-label">연락처</label>
-    <input class="form-input" id="regPhone" placeholder="010-0000-0000" type="tel">
+  <div class="form-row">
+    <div class="form-group"><label class="form-label">이름</label><input class="form-input" id="regName" placeholder="홍길동"></div>
+    <div class="form-group"><label class="form-label">연락처</label><input class="form-input" id="regPhone" placeholder="010-0000-0000" type="tel"></div>
   </div>
   <div class="form-group">
     <label class="form-label">성별</label>
-    <select class="form-select" id="regGender">
-      <option value="남">남성</option>
-      <option value="여">여성</option>
-    </select>
+    <select class="form-select" id="regGender"><option value="남">남성</option><option value="여">여성</option></select>
+  </div>
+  <div class="form-group">
+    <label class="form-label">이용권</label>
+    <div class="ticket-grid">
+      <div class="ticket-option selected" onclick="selTicket(this,'1개월',50000,30)"><div class="ticket-name">1개월권</div><div class="ticket-price">50,000원</div><div class="ticket-period">30일</div></div>
+      <div class="ticket-option" onclick="selTicket(this,'3개월',130000,90)"><div class="ticket-name">3개월권</div><div class="ticket-price">130,000원</div><div class="ticket-period">90일</div></div>
+      <div class="ticket-option" onclick="selTicket(this,'6개월',230000,180)"><div class="ticket-name">6개월권</div><div class="ticket-price">230,000원</div><div class="ticket-period">180일</div></div>
+      <div class="ticket-option" onclick="selTicket(this,'1년',400000,365)"><div class="ticket-name">1년권</div><div class="ticket-price">400,000원</div><div class="ticket-period">365일</div></div>
+    </div>
   </div>
 
-  <div class="form-group">
-    <label class="form-label">이용권 선택</label>
-    <div class="ticket-grid">
-      <div class="ticket-option selected" onclick="selectTicket(this, '1개월', 50000, 30)" id="ticket-1">
-        <div class="ticket-name">1개월권</div>
-        <div class="ticket-price">50,000원</div>
-        <div class="ticket-period">30일</div>
+  <!-- 얼굴 등록 섹션 -->
+  <div class="face-reg-box">
+    <div class="section-title" style="margin-bottom:8px">👤 얼굴 등록 (선택)</div>
+    <div class="face-reg-status none" id="regFaceStatus">얼굴 미등록 — 등록 시 얼굴인식 출입 가능</div>
+    <div style="display:flex;align-items:center;margin-bottom:10px">
+      <img id="regFaceImg" class="face-reg-photo">
+      <div class="face-reg-preview" id="regFacePreviewBox" style="display:none;flex:1">
+        <video id="regFaceVideo" autoplay playsinline muted style="width:100%;border-radius:8px"></video>
+        <canvas id="regFaceCanvas" style="display:none"></canvas>
       </div>
-      <div class="ticket-option" onclick="selectTicket(this, '3개월', 130000, 90)" id="ticket-2">
-        <div class="ticket-name">3개월권</div>
-        <div class="ticket-price">130,000원</div>
-        <div class="ticket-period">90일</div>
-      </div>
-      <div class="ticket-option" onclick="selectTicket(this, '6개월', 230000, 180)" id="ticket-3">
-        <div class="ticket-name">6개월권</div>
-        <div class="ticket-price">230,000원</div>
-        <div class="ticket-period">180일</div>
-      </div>
-      <div class="ticket-option" onclick="selectTicket(this, '1년', 400000, 365)" id="ticket-4">
-        <div class="ticket-name">1년권</div>
-        <div class="ticket-price">400,000원</div>
-        <div class="ticket-period">365일</div>
-      </div>
+    </div>
+    <div class="face-reg-btns">
+      <button class="btn btn-s btn-sm" onclick="startRegCam()">📷 카메라 촬영</button>
+      <button class="btn btn-s btn-sm" id="btnCaptureFace" onclick="captureFaceReg()" style="display:none">📸 촬영</button>
+      <label class="btn btn-s btn-sm" style="cursor:pointer">📁 파일 업로드<input type="file" accept="image/*" style="display:none" onchange="uploadFaceReg(this)"></label>
+      <button class="btn btn-d btn-sm" onclick="clearFaceReg()" id="btnClearFace" style="display:none">✕ 초기화</button>
     </div>
   </div>
 
   <button class="submit-btn" onclick="registerMember()">💳 결제 및 등록</button>
 </div>
 
-<!-- 현황 -->
+<!-- ── PAGE: 현황 ── -->
 <div class="page" id="page-stats">
   <div class="stats-grid">
-    <div class="stat-card">
-      <div class="stat-num" id="statTotal">0</div>
-      <div class="stat-label">전체 회원</div>
-    </div>
-    <div class="stat-card">
-      <div class="stat-num" style="color:var(--green)" id="statActive">0</div>
-      <div class="stat-label">이용중</div>
-    </div>
-    <div class="stat-card">
-      <div class="stat-num" style="color:var(--primary)" id="statToday">0</div>
-      <div class="stat-label">오늘 방문</div>
-    </div>
-    <div class="stat-card">
-      <div class="stat-num" style="color:var(--red)" id="statExpired">0</div>
-      <div class="stat-label">만료 임박</div>
-    </div>
+    <div class="stat-card"><div class="stat-num" id="stTotal">0</div><div class="stat-label">전체 회원</div></div>
+    <div class="stat-card"><div class="stat-num" style="color:var(--green)" id="stActive">0</div><div class="stat-label">이용중</div></div>
+    <div class="stat-card"><div class="stat-num" style="color:var(--primary)" id="stToday">0</div><div class="stat-label">오늘 방문</div></div>
+    <div class="stat-card"><div class="stat-num" style="color:var(--red)" id="stExpired">0</div><div class="stat-label">만료 임박</div></div>
   </div>
-
-  <div class="section-title">만료 임박 회원 (7일 이내)</div>
+  <div class="section-title">얼굴 등록 현황</div>
+  <div style="background:var(--card);border:1px solid var(--border);border-radius:12px;padding:13px;margin-bottom:14px">
+    <div class="data-info-row"><span>얼굴 등록 회원</span><span id="stFace" style="color:var(--primary);font-weight:700">0명</span></div>
+    <div class="data-info-row"><span>미등록 회원</span><span id="stNoFace" style="color:var(--muted)">0명</span></div>
+  </div>
+  <div class="section-title">만료 임박 (7일 이내)</div>
   <div id="expiringList"></div>
 </div>
 
-<!-- 결제 모달 -->
+<!-- ── PAGE: 데이터관리 ── -->
+<div class="page" id="page-data">
+  <div class="data-card">
+    <div class="data-card-title">⬇ 백업 (JSON 다운로드)</div>
+    <div class="data-card-desc">전체 회원 데이터(얼굴 정보 포함)를 JSON 파일로 내보냅니다.</div>
+    <div class="data-info-row" style="margin-bottom:10px"><span>전체 회원</span><span id="backupMemberCount" style="color:var(--primary);font-weight:700">0명</span></div>
+    <button class="btn btn-p btn-w" onclick="exportBackup()">⬇ 회원 데이터 백업</button>
+  </div>
+
+  <div class="data-card">
+    <div class="data-card-title">⬆ 복원 (JSON 불러오기)</div>
+    <div class="data-card-desc">백업 JSON 파일을 불러와 Firestore에 복원합니다. 기존 데이터에 병합됩니다.</div>
+    <label class="btn btn-go btn-w" style="cursor:pointer">📁 백업 파일 선택<input type="file" accept=".json" style="display:none" onchange="importBackup(this)"></label>
+  </div>
+
+  <div class="data-card">
+    <div class="data-card-title">🗑 출입기록 초기화</div>
+    <div class="data-card-desc">오늘 날짜의 출입기록을 삭제합니다. 회원 데이터는 유지됩니다.</div>
+    <button class="btn btn-d btn-w" onclick="clearTodayCheckins()">오늘 출입기록 초기화</button>
+  </div>
+
+  <div class="data-card">
+    <div class="data-card-title">ℹ Firebase 연결 정보</div>
+    <div id="dataFbInfo" style="font-size:12px;color:var(--muted);line-height:1.8"></div>
+  </div>
+</div>
+
+<!-- ── MEMBER INFO CARD (얼굴 인식 결과) ── -->
+<div class="mic-overlay" id="micOverlay" onclick="dismissMic()">
+  <div class="mic-card" onclick="event.stopPropagation()">
+    <button class="mic-dismiss" onclick="dismissMic()">✕</button>
+    <div class="mic-photo" id="micPhoto">😊</div>
+    <div class="mic-name" id="micName">—</div>
+    <div class="mic-id" id="micId">—</div>
+    <div class="mic-checkin-type" id="micType">—</div>
+    <div class="mic-badge active" id="micBadge">이용 중</div>
+    <div class="mic-row">
+      <div class="mic-cell"><div class="mic-cell-val" id="micDays">—</div><div class="mic-cell-lbl">남은 일수</div></div>
+      <div class="mic-cell"><div class="mic-cell-val" id="micTicket" style="font-size:14px">—</div><div class="mic-cell-lbl">이용권</div></div>
+      <div class="mic-cell"><div class="mic-cell-val" id="micExpiry" style="font-size:13px">—</div><div class="mic-cell-lbl">만료일</div></div>
+    </div>
+    <div class="mic-timer"><div class="mic-timer-bar" id="micTimerBar" style="width:100%"></div></div>
+  </div>
+</div>
+
+<!-- ── SETTINGS MODAL ── -->
+<div class="sett-overlay" id="settOverlay">
+  <div class="sett-modal">
+    <h3>⚙ 설정</h3>
+    <div id="settFbStatus" class="fb-status off"><span class="fb-dot" id="settFbDot"></span><span id="settFbTxt">Firebase 연결 안됨</span></div>
+    <div class="sett-sec">
+      <div class="sett-sec-ttl">헬스장 정보</div>
+      <div class="form-group"><label class="form-label">이름</label><input class="form-input" id="stGym" placeholder="GYM PRO"></div>
+    </div>
+    <div class="sett-sec">
+      <div class="sett-sec-ttl">Firebase Config</div>
+      <textarea class="cfg-ta" id="stCfg" placeholder="Firebase Config JSON"></textarea>
+    </div>
+    <button class="btn btn-p btn-w" onclick="saveSett()" style="margin-bottom:8px">저장</button>
+    <button class="btn btn-s btn-w" onclick="closeSett()">닫기</button>
+  </div>
+</div>
+
+<!-- ── PAYMENT MODAL ── -->
 <div class="modal-overlay" id="payModal">
   <div class="modal">
     <h3>💳 결제 확인</h3>
-    <div id="paymentDetail"></div>
-    <button class="pay-btn" onclick="processPayment()">토스페이먼츠로 결제</button>
+    <div id="payDetail"></div>
+    <button class="pay-btn" onclick="processPayment()">카드 결제 완료</button>
     <button class="cancel-btn" onclick="closePayModal()">취소</button>
   </div>
 </div>
 
 <div class="alert" id="alertMsg"></div>
 
-<script src="https://js.tosspayments.com/v2/standard"></script>
-
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js"></script>
 <script>
-// 샘플 데이터
-let members = [
-  { id: 'M001', name: '김철수', phone: '010-1234-5678', gender: '남', ticket: '3개월권', startDate: '2026-04-01', endDate: '2026-06-30', avatar: '💪', color: '#00d4ff' },
-  { id: 'M002', name: '이영희', phone: '010-2345-6789', gender: '여', ticket: '1개월권', startDate: '2026-05-01', endDate: '2026-05-31', avatar: '🏋️', color: '#ff4466' },
-  { id: 'M003', name: '박민준', phone: '010-3456-7890', gender: '남', ticket: '6개월권', startDate: '2026-03-01', endDate: '2026-08-31', avatar: '🔥', color: '#00ff88' },
-  { id: 'M004', name: '최수진', phone: '010-4567-8901', gender: '여', ticket: '1년권', startDate: '2026-01-01', endDate: '2026-12-31', avatar: '⚡', color: '#ffd700' },
-  { id: 'M005', name: '정태호', phone: '010-5678-9012', gender: '남', ticket: '1개월권', startDate: '2026-05-05', endDate: '2026-06-04', avatar: '🏃', color: '#ff8800' },
-];
-
-let checkins = [
-  { memberId: 'M001', name: '김철수', time: '09:23', type: 'in', avatar: '💪', color: '#00d4ff' },
-  { memberId: 'M003', name: '박민준', time: '09:45', type: 'in', avatar: '🔥', color: '#00ff88' },
-  { memberId: 'M002', name: '이영희', time: '10:12', type: 'out', avatar: '🏋️', color: '#ff4466' },
-];
-
-let selectedTicket = { name: '1개월', price: 50000, days: 30 };
+// ══════════════════════════════════════════════
+//  STATE
+// ══════════════════════════════════════════════
+let db = null, fbOk = false;
+let cfg = {};
+let members = [];
+let checkins = []; // today's
+let faceMatcher = null;
+let modelsLoaded = false;
+let modelsLoading = false;
+let faceStream = null;
+let regStream = null;
+let detectionRunning = false;
+let detectionPaused = false;
+let detectionTimer = null;
+let cooldownMap = {};        // memberId -> Date.now()
+const COOLDOWN_MS = 20000;   // 20 seconds
+const MATCH_THRESHOLD = 0.52;
+let pendingFaceDesc = null;  // registration pending descriptor
+let pendingFacePhoto = null; // registration pending photo (base64)
 let pendingMember = null;
-let memberCounter = members.length + 1;
+let selectedTicket = {name:'1개월',price:50000,days:30};
+let memberCounter = 1;
+let unsubMembers = null, unsubCheckins = null;
+let faceMode = 'environment'; // camera facing mode
+let micTimer = null;
 
-// 시간 업데이트
-function updateTime() {
-  const now = new Date();
-  document.getElementById('headerTime').textContent = now.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' });
-}
-setInterval(updateTime, 1000);
-updateTime();
+const TODAY = (()=>{const d=new Date();return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;})();
+const MODEL_URL = 'https://cdn.jsdelivr.net/gh/justadudewhohacks/face-api.js@0.22.2/weights';
 
-function showPage(id, el) {
-  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-  document.getElementById('page-' + id).classList.add('active');
-  el.classList.add('active');
-  if (id === 'members') renderMembers(members);
-  if (id === 'stats') renderStats();
-  if (id === 'checkin') renderCheckins();
-}
+// ══════════════════════════════════════════════
+//  CONFIG
+// ══════════════════════════════════════════════
+function loadCfg(){try{cfg=JSON.parse(localStorage.getItem('gymp_cfg')||'{}');}catch(e){cfg={};}}
+function saveCfg(){localStorage.setItem('gymp_cfg',JSON.stringify(cfg));}
+loadCfg();
 
-function renderCheckins() {
-  const list = document.getElementById('checkinList');
-  list.innerHTML = checkins.map(c => `
-    <div class="checkin-item">
-      <div class="member-avatar" style="background:${c.color}22;color:${c.color}">${c.avatar}</div>
-      <div class="checkin-info">
-        <div class="checkin-name">${c.name}</div>
-        <div class="checkin-detail">${c.memberId}</div>
-      </div>
-      <div style="text-align:right">
-        <div class="checkin-time">${c.time}</div>
-        <span class="status-badge ${c.type === 'in' ? 'status-in' : 'status-out'}">${c.type === 'in' ? '입장' : '퇴장'}</span>
-      </div>
-    </div>
-  `).join('');
+// ══════════════════════════════════════════════
+//  FIREBASE
+// ══════════════════════════════════════════════
+function initFb(fc){
+  try{
+    if(!firebase.apps.length) firebase.initializeApp(fc);
+    db = firebase.firestore();
+    fbOk = true;
+    updFbUI();
+    subAll();
+    return true;
+  }catch(e){
+    console.error('Firebase:',e);
+    fbOk = false; updFbUI();
+    return false;
+  }
 }
 
-function doCheckin() {
-  const input = document.getElementById('checkinInput').value.trim().toUpperCase();
-  if (!input) { showAlert('회원번호를 입력해주세요', true); return; }
-
-  const member = members.find(m => m.id === input);
-  if (!member) { showAlert('등록되지 않은 회원입니다', true); return; }
-
-  const now = new Date();
-  const timeStr = now.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' });
-  const lastCheckin = checkins.find(c => c.memberId === input);
-  const type = lastCheckin && lastCheckin.type === 'in' ? 'out' : 'in';
-
-  checkins.unshift({ memberId: input, name: member.name, time: timeStr, type, avatar: member.avatar, color: member.color });
-  renderCheckins();
-  document.getElementById('checkinInput').value = '';
-  showAlert(`${member.name}님 ${type === 'in' ? '입장' : '퇴장'} 완료! ✅`);
+function updFbUI(){
+  const dot = document.getElementById('fbDot');
+  if(dot) dot.className = fbOk ? 'fb-dot ok' : 'fb-dot';
+  const sd = document.getElementById('settFbDot');
+  const st = document.getElementById('settFbTxt');
+  const sb = document.getElementById('settFbStatus');
+  if(sd){ sd.className = fbOk ? 'fb-dot ok' : 'fb-dot'; }
+  if(st) st.textContent = fbOk ? 'Firebase 연결됨' : 'Firebase 연결 안됨';
+  if(sb) sb.className = fbOk ? 'fb-status on' : 'fb-status off';
+  if(document.getElementById('dataFbInfo') && cfg.fb){
+    document.getElementById('dataFbInfo').innerHTML =
+      `프로젝트: ${cfg.fb.projectId||'-'}<br>컬렉션: gym_members, gym_checkins<br>상태: ${fbOk?'✅ 연결됨':'❌ 연결 안됨'}`;
+  }
 }
 
-function renderMembers(list) {
+function subAll(){
+  if(!db) return;
+  if(unsubMembers) unsubMembers();
+  unsubMembers = db.collection('gym_members').orderBy('createdAt','desc').onSnapshot(snap=>{
+    members = [];
+    snap.forEach(d=>members.push({id:d.id,...d.data()}));
+    memberCounter = members.length + 1;
+    buildFaceMatcher();
+    renderMemberList();
+    renderMicFaceCheckins();
+    updateDataPage();
+    renderStats();
+  }, e=>console.error('members:',e));
+
+  if(unsubCheckins) unsubCheckins();
+  unsubCheckins = db.collection('gym_checkins').where('date','==',TODAY)
+    .orderBy('ts','desc').onSnapshot(snap=>{
+      checkins = [];
+      snap.forEach(d=>checkins.push({id:d.id,...d.data()}));
+      renderCheckinList();
+      renderMicFaceCheckins();
+      renderStats();
+    }, e=>console.error('checkins:',e));
+}
+
+// ══════════════════════════════════════════════
+//  SETUP & SETTINGS
+// ══════════════════════════════════════════════
+function checkSetup(){
+  document.getElementById('setup').style.display = cfg.fb ? 'none' : 'flex';
+  if(cfg.fb){ initFb(cfg.fb); }
+  document.getElementById('gym-name-hdr').textContent = cfg.gymName||'';
+}
+
+function saveSetup(){
+  const raw = document.getElementById('s-cfg').value.trim();
+  const err = document.getElementById('s-err');
+  err.style.display = 'none';
+  let fc;
+  try{ fc = JSON.parse(raw); }catch(e){ err.textContent='JSON 오류. 다시 복사해주세요.'; err.style.display='block'; return; }
+  if(!fc.apiKey||!fc.projectId){ err.textContent='apiKey와 projectId가 필요합니다.'; err.style.display='block'; return; }
+  cfg.fb = fc;
+  cfg.gymName = document.getElementById('s-gym').value.trim() || 'GYM PRO';
+  saveCfg();
+  document.getElementById('setup').style.display = 'none';
+  document.getElementById('gym-name-hdr').textContent = cfg.gymName;
+  if(!initFb(fc)) showAlert('Firebase 연결 실패',true);
+  else{ showAlert('설정 완료! 👋'); loadModels(); }
+}
+
+function openSett(){
+  document.getElementById('stGym').value = cfg.gymName||'';
+  document.getElementById('stCfg').value = cfg.fb ? JSON.stringify(cfg.fb,null,2) : '';
+  updFbUI();
+  document.getElementById('settOverlay').classList.add('visible');
+}
+function closeSett(){ document.getElementById('settOverlay').classList.remove('visible'); }
+function saveSett(){
+  cfg.gymName = document.getElementById('stGym').value.trim()||cfg.gymName||'GYM PRO';
+  const raw = document.getElementById('stCfg').value.trim();
+  if(raw){ try{ cfg.fb=JSON.parse(raw); }catch(e){ showAlert('Config JSON 오류',true); return; } }
+  saveCfg();
+  document.getElementById('gym-name-hdr').textContent = cfg.gymName;
+  if(cfg.fb && !fbOk) initFb(cfg.fb);
+  closeSett(); showAlert('설정 저장됨');
+}
+
+// ══════════════════════════════════════════════
+//  FACE-API MODELS
+// ══════════════════════════════════════════════
+async function loadModels(){
+  if(modelsLoaded || modelsLoading) return;
+  modelsLoading = true;
+  setFaceStatus('loading','⏳ 모델 로딩 중...');
+  try{
+    stepModel(1,'active');
+    await faceapi.nets.ssdMobilenetv1.loadFromUri(MODEL_URL);
+    stepModel(1,'done'); stepModel(2,'active');
+
+    await faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL);
+    stepModel(2,'done'); stepModel(3,'active');
+
+    await faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_URL);
+    stepModel(3,'done');
+
+    modelsLoaded = true;
+    modelsLoading = false;
+    document.getElementById('modelProgress').style.display = 'none';
+    buildFaceMatcher();
+    startFaceCam();
+  }catch(e){
+    modelsLoading = false;
+    setFaceStatus('error','❌ 모델 로드 실패: '+e.message);
+    console.error(e);
+  }
+}
+
+function stepModel(n, state){
+  const el = document.getElementById('mp'+n);
+  if(!el) return;
+  el.className = 'fmp-step ' + state;
+  el.querySelector('.dot').style.background = state==='done' ? 'var(--green)' : state==='active' ? 'var(--primary)' : 'var(--muted)';
+}
+
+// ══════════════════════════════════════════════
+//  FACE MATCHER
+// ══════════════════════════════════════════════
+function buildFaceMatcher(){
+  const withFace = members.filter(m=>m.faceDescriptor && m.faceDescriptor.length===128);
+  if(!withFace.length){ faceMatcher=null; return; }
+  const labeled = withFace.map(m=>
+    new faceapi.LabeledFaceDescriptors(m.id,[new Float32Array(m.faceDescriptor)])
+  );
+  faceMatcher = new faceapi.FaceMatcher(labeled, MATCH_THRESHOLD);
+}
+
+// ══════════════════════════════════════════════
+//  FACE RECOGNITION CAMERA
+// ══════════════════════════════════════════════
+async function startFaceCam(){
+  if(!modelsLoaded){ loadModels(); return; }
+  stopFaceCam();
+  try{
+    faceStream = await navigator.mediaDevices.getUserMedia({
+      video:{ facingMode: faceMode, width:{ideal:640}, height:{ideal:480} }
+    });
+    const vid = document.getElementById('faceVideo');
+    vid.srcObject = faceStream;
+    vid.play();
+    detectionPaused = false;
+    detectionRunning = true;
+    document.getElementById('btnToggleFace').textContent = '⏸ 일시정지';
+    setFaceStatus('detecting','🔍 얼굴 탐색 중...');
+    scheduleDetection();
+  }catch(e){
+    setFaceStatus('error','❌ 카메라 권한 오류');
+    console.error(e);
+  }
+}
+
+function stopFaceCam(){
+  detectionRunning = false;
+  if(detectionTimer){ clearTimeout(detectionTimer); detectionTimer=null; }
+  if(faceStream){ faceStream.getTracks().forEach(t=>t.stop()); faceStream=null; }
+  const vid = document.getElementById('faceVideo');
+  if(vid) vid.srcObject=null;
+}
+
+function scheduleDetection(){
+  if(!detectionRunning) return;
+  detectionTimer = setTimeout(async()=>{
+    if(!detectionPaused) await runDetection();
+    scheduleDetection();
+  }, 600);
+}
+
+async function runDetection(){
+  const vid = document.getElementById('faceVideo');
+  if(!vid || vid.readyState < 2 || !modelsLoaded) return;
+  try{
+    const opts = new faceapi.SsdMobilenetv1Options({minConfidence:0.5});
+    const det = await faceapi.detectSingleFace(vid, opts).withFaceLandmarks().withFaceDescriptor();
+    drawOverlay(det);
+    if(!det){ setFaceStatus('detecting','🔍 얼굴 탐색 중...'); return; }
+
+    if(!faceMatcher){
+      setFaceStatus('detecting','😊 얼굴 감지됨 (등록된 회원 없음)'); return;
+    }
+    const match = faceMatcher.findBestMatch(det.descriptor);
+    if(match.label === 'unknown'){
+      setFaceStatus('detecting','❓ 미등록 얼굴'); return;
+    }
+    const memberId = match.label;
+    const now = Date.now();
+    if(cooldownMap[memberId] && now - cooldownMap[memberId] < COOLDOWN_MS){
+      const rem = Math.ceil((COOLDOWN_MS - (now-cooldownMap[memberId]))/1000);
+      const m = members.find(x=>x.id===memberId);
+      setFaceStatus('cooldown',`⏱ ${m?m.name:memberId} 쿨다운 ${rem}초`);
+    } else {
+      cooldownMap[memberId] = now;
+      const m = members.find(x=>x.id===memberId);
+      if(m){ handleFaceMatch(m); }
+    }
+  }catch(e){ console.error('detect:',e); }
+}
+
+function drawOverlay(det){
+  const vid = document.getElementById('faceVideo');
+  const cvs = document.getElementById('faceCanvas');
+  if(!vid||!cvs) return;
+  const dw = vid.offsetWidth, dh = vid.offsetHeight;
+  cvs.width=dw; cvs.height=dh;
+  const ctx = cvs.getContext('2d');
+  ctx.clearRect(0,0,dw,dh);
+  if(!det) return;
+  const dim = {width:dw, height:dh};
+  faceapi.matchDimensions(cvs, dim);
+  const resized = faceapi.resizeResults(det, dim);
+  const {box} = resized.detection;
+  ctx.strokeStyle='#00d4ff'; ctx.lineWidth=2; ctx.strokeRect(box.x,box.y,box.width,box.height);
+  const cx=box.x+box.width/2, ty=box.y-8;
+  ctx.fillStyle='rgba(0,212,255,.15)';
+  ctx.strokeStyle='#00d4ff'; ctx.lineWidth=1;
+  // corner brackets
+  const s=14;
+  [[box.x,box.y,1,1],[box.x+box.width,box.y,-1,1],[box.x,box.y+box.height,1,-1],[box.x+box.width,box.y+box.height,-1,-1]].forEach(([x,y,sx,sy])=>{
+    ctx.beginPath(); ctx.moveTo(x+sx*s,y); ctx.lineTo(x,y); ctx.lineTo(x,y+sy*s);
+    ctx.strokeStyle='#00ff88'; ctx.lineWidth=3; ctx.stroke();
+  });
+}
+
+function handleFaceMatch(member){
+  const lastCk = checkins.find(c=>c.memberId===member.id);
+  const type = (!lastCk || lastCk.type==='out') ? 'in' : 'out';
+  const lbl = type==='in'?'입장':'퇴장';
+  setFaceStatus('matched',`✅ ${member.name} ${lbl}!`);
+  recordCheckin(member.id, member.name, type, true);
+  showMicCard(member, type);
+}
+
+function setFaceStatus(cls, txt){
+  const el = document.getElementById('faceStatus');
+  if(!el) return;
+  el.className = 'face-status-bar ' + cls;
+  el.textContent = txt;
+}
+
+function toggleFaceRecog(){
+  detectionPaused = !detectionPaused;
+  document.getElementById('btnToggleFace').textContent = detectionPaused ? '▶ 재개' : '⏸ 일시정지';
+  if(!detectionPaused) setFaceStatus('detecting','🔍 얼굴 탐색 중...');
+  else setFaceStatus('loading','⏸ 일시정지됨');
+}
+
+function flipCamera(){
+  faceMode = faceMode==='environment' ? 'user' : 'environment';
+  startFaceCam();
+}
+
+// ══════════════════════════════════════════════
+//  MEMBER INFO CARD
+// ══════════════════════════════════════════════
+function showMicCard(member, type){
+  clearTimeout(micTimer);
   const today = new Date();
-  document.getElementById('memberList').innerHTML = list.map(m => {
-    const end = new Date(m.endDate);
-    const daysLeft = Math.ceil((end - today) / (1000 * 60 * 60 * 24));
-    const isActive = daysLeft > 0;
-    return `
-      <div class="member-card">
-        <div class="member-avatar" style="background:${m.color}22;color:${m.color}">${m.avatar}</div>
-        <div class="member-card-info">
-          <div class="member-card-name">${m.name} <span style="font-size:11px;color:#666688">${m.id}</span></div>
-          <div class="member-card-detail">${m.ticket} · ${m.endDate}까지 · ${isActive ? daysLeft + '일 남음' : '만료'}</div>
-        </div>
-        <span class="status-badge ${isActive ? 'status-active' : 'status-expired'}">${isActive ? '이용중' : '만료'}</span>
-      </div>
-    `;
-  }).join('');
+  const end = new Date(member.endDate);
+  const days = Math.ceil((end-today)/(1000*60*60*24));
+  const active = days > 0;
+
+  document.getElementById('micName').textContent = member.name;
+  document.getElementById('micId').textContent = `${member.id} · ${member.phone||''}`;
+  document.getElementById('micType').textContent = type==='in' ? '🟢 입장 완료' : '🔵 퇴장 완료';
+  document.getElementById('micTicket').textContent = member.ticket;
+  document.getElementById('micExpiry').textContent = member.endDate;
+
+  const dEl = document.getElementById('micDays');
+  dEl.textContent = active ? `D-${days}` : '만료';
+  dEl.className = 'mic-cell-val ' + (active?days<=7?'warning':'':'expired');
+
+  const badge = document.getElementById('micBadge');
+  badge.textContent = active ? '이용 중' : '만료됨';
+  badge.className = 'mic-badge ' + (active?'active':'expired');
+
+  const photo = document.getElementById('micPhoto');
+  if(member.photoData){ photo.innerHTML=`<img src="${member.photoData}" style="width:100%;height:100%;object-fit:cover">`; }
+  else { photo.innerHTML = member.avatar||'😊'; photo.style.fontSize='36px'; }
+
+  document.getElementById('micOverlay').classList.add('visible');
+  const bar = document.getElementById('micTimerBar');
+  bar.style.transition='none'; bar.style.width='100%';
+  setTimeout(()=>{ bar.style.transition='width 5s linear'; bar.style.width='0%'; },50);
+  micTimer = setTimeout(dismissMic, 5000);
 }
 
-function filterMembers(query) {
-  const filtered = members.filter(m => m.name.includes(query) || m.id.includes(query) || m.phone.includes(query));
-  renderMembers(filtered);
+function dismissMic(){
+  clearTimeout(micTimer);
+  document.getElementById('micOverlay').classList.remove('visible');
 }
 
-function selectTicket(el, name, price, days) {
-  document.querySelectorAll('.ticket-option').forEach(t => t.classList.remove('selected'));
+// ══════════════════════════════════════════════
+//  CHECK-IN / CHECK-OUT
+// ══════════════════════════════════════════════
+async function recordCheckin(memberId, memberName, type, isFace=false){
+  if(!db){ return; }
+  try{
+    await db.collection('gym_checkins').add({
+      memberId, memberName, type, date: TODAY,
+      ts: firebase.firestore.FieldValue.serverTimestamp(),
+      method: isFace ? 'face' : 'manual'
+    });
+  }catch(e){ console.error('checkin:',e); }
+}
+
+function doCheckin(){
+  const input = document.getElementById('checkinInput').value.trim().toUpperCase();
+  if(!input){ showAlert('회원번호를 입력하세요',true); return; }
+  const m = members.find(x=>x.id===input);
+  if(!m){ showAlert('등록된 회원이 아닙니다',true); return; }
+  const lastCk = checkins.find(c=>c.memberId===input);
+  const type = (!lastCk||lastCk.type==='out')?'in':'out';
+  recordCheckin(input, m.name, type, false);
+  document.getElementById('checkinInput').value='';
+  showAlert(`${m.name}님 ${type==='in'?'입장':'퇴장'} ✅`);
+}
+
+function renderCheckinList(){
+  const el = document.getElementById('checkinList');
+  if(!checkins.length){ el.innerHTML='<div class="empty"><div class="empty-i">📋</div><div class="empty-t">오늘 출입 기록 없음</div></div>'; return; }
+  el.innerHTML = checkins.map(c=>chkItem(c)).join('');
+}
+
+function renderMicFaceCheckins(){
+  const el = document.getElementById('faceCheckinList');
+  if(!el) return;
+  if(!checkins.length){ el.innerHTML='<div class="empty"><div class="empty-i">📋</div><div class="empty-t">오늘 출입 기록 없음</div></div>'; return; }
+  el.innerHTML = checkins.slice(0,6).map(c=>chkItem(c)).join('');
+}
+
+function chkItem(c){
+  const m = members.find(x=>x.id===c.memberId);
+  const av = m?.photoData ? `<img src="${m.photoData}" style="width:100%;height:100%;object-fit:cover">` : (m?.avatar||'👤');
+  const bg = m?.color||'var(--border)';
+  const tm = c.ts?.toDate ? c.ts.toDate().toLocaleTimeString('ko-KR',{hour:'2-digit',minute:'2-digit'}) : '--:--';
+  return `<div class="checkin-item">
+    <div class="member-avatar" style="background:${bg}22;color:${bg}">${av}</div>
+    <div class="checkin-info">
+      <div class="checkin-name">${esc(c.memberName)}</div>
+      <div class="checkin-detail">${c.memberId} · ${c.method==='face'?'얼굴인식':'수동'}</div>
+    </div>
+    <div style="text-align:right">
+      <div class="checkin-time">${tm}</div>
+      <span class="status-badge ${c.type==='in'?'status-in':'status-out'}">${c.type==='in'?'입장':'퇴장'}</span>
+      ${c.method==='face'?'<span class="status-badge status-face" style="display:block;margin-top:2px">🎭 얼굴</span>':''}
+    </div>
+  </div>`;
+}
+
+// ══════════════════════════════════════════════
+//  FACE REGISTRATION
+// ══════════════════════════════════════════════
+async function startRegCam(){
+  if(!modelsLoaded){ showAlert('모델 로딩 중... 잠시 후 다시 시도하세요',true); return; }
+  if(regStream){ regStream.getTracks().forEach(t=>t.stop()); }
+  try{
+    regStream = await navigator.mediaDevices.getUserMedia({video:{facingMode:'user',width:{ideal:480}}});
+    const vid = document.getElementById('regFaceVideo');
+    vid.srcObject = regStream;
+    vid.play();
+    document.getElementById('regFacePreviewBox').style.display='block';
+    document.getElementById('btnCaptureFace').style.display='inline-flex';
+  }catch(e){ showAlert('카메라 접근 오류',true); }
+}
+
+async function captureFaceReg(){
+  const vid = document.getElementById('regFaceVideo');
+  const cvs = document.getElementById('regFaceCanvas');
+  cvs.width = vid.videoWidth; cvs.height = vid.videoHeight;
+  cvs.getContext('2d').drawImage(vid,0,0);
+  await processFaceImage(cvs);
+  if(regStream){ regStream.getTracks().forEach(t=>t.stop()); regStream=null; }
+  document.getElementById('regFacePreviewBox').style.display='none';
+  document.getElementById('btnCaptureFace').style.display='none';
+}
+
+async function uploadFaceReg(input){
+  if(!input.files[0]) return;
+  if(!modelsLoaded){ showAlert('모델 로딩 중... 잠시 후 다시 시도하세요',true); return; }
+  const img = new Image();
+  img.onload = async()=>{ await processFaceImage(img); };
+  img.src = URL.createObjectURL(input.files[0]);
+  input.value='';
+}
+
+async function processFaceImage(src){
+  try{
+    const det = await faceapi.detectSingleFace(src,new faceapi.SsdMobilenetv1Options({minConfidence:0.4}))
+      .withFaceLandmarks().withFaceDescriptor();
+    if(!det){ showAlert('얼굴을 감지하지 못했습니다. 정면을 바라봐 주세요',true); return; }
+    pendingFaceDesc = Array.from(det.descriptor);
+    // Compress photo
+    const thumb = document.createElement('canvas');
+    thumb.width=128; thumb.height=128;
+    const ctx=thumb.getContext('2d');
+    const {box}=det.detection;
+    const pad=30;
+    const sx=Math.max(0,box.x-pad), sy=Math.max(0,box.y-pad);
+    const sw=box.width+pad*2, sh=box.height+pad*2;
+    if(src.naturalWidth){ ctx.drawImage(src,sx,sy,sw,sh,0,0,128,128); }
+    else { ctx.drawImage(src,sx,sy,sw,sh,0,0,128,128); }
+    pendingFacePhoto = thumb.toDataURL('image/jpeg',0.75);
+    document.getElementById('regFaceImg').src=pendingFacePhoto;
+    document.getElementById('regFaceImg').style.display='inline-block';
+    document.getElementById('regFaceStatus').textContent='✅ 얼굴 등록됨';
+    document.getElementById('regFaceStatus').className='face-reg-status ok';
+    document.getElementById('btnClearFace').style.display='inline-flex';
+    showAlert('얼굴 등록 성공! ✅');
+  }catch(e){ showAlert('처리 오류: '+e.message,true); console.error(e); }
+}
+
+function clearFaceReg(){
+  pendingFaceDesc=null; pendingFacePhoto=null;
+  document.getElementById('regFaceImg').style.display='none';
+  document.getElementById('regFaceStatus').textContent='얼굴 미등록 — 등록 시 얼굴인식 출입 가능';
+  document.getElementById('regFaceStatus').className='face-reg-status none';
+  document.getElementById('btnClearFace').style.display='none';
+}
+
+// ══════════════════════════════════════════════
+//  MEMBER CRUD
+// ══════════════════════════════════════════════
+function selTicket(el,name,price,days){
+  document.querySelectorAll('.ticket-option').forEach(t=>t.classList.remove('selected'));
   el.classList.add('selected');
-  selectedTicket = { name, price, days };
+  selectedTicket={name,price,days};
 }
 
-function registerMember() {
-  const name = document.getElementById('regName').value.trim();
-  const phone = document.getElementById('regPhone').value.trim();
-  const gender = document.getElementById('regGender').value;
-
-  if (!name) { showAlert('이름을 입력해주세요', true); return; }
-  if (!phone) { showAlert('연락처를 입력해주세요', true); return; }
-
-  pendingMember = { name, phone, gender, ticket: selectedTicket };
-
-  document.getElementById('paymentDetail').innerHTML = `
-    <div class="payment-item"><span>회원명</span><span>${name}</span></div>
+function registerMember(){
+  const name=document.getElementById('regName').value.trim();
+  const phone=document.getElementById('regPhone').value.trim();
+  const gender=document.getElementById('regGender').value;
+  if(!name){ showAlert('이름을 입력하세요',true); return; }
+  if(!phone){ showAlert('연락처를 입력하세요',true); return; }
+  pendingMember={name,phone,gender,ticket:selectedTicket,
+    faceDescriptor:pendingFaceDesc, photoData:pendingFacePhoto};
+  document.getElementById('payDetail').innerHTML=`
+    <div class="payment-item"><span>회원명</span><span>${esc(name)}</span></div>
     <div class="payment-item"><span>이용권</span><span>${selectedTicket.name}권 (${selectedTicket.days}일)</span></div>
-    <div class="payment-item"><span>연락처</span><span>${phone}</span></div>
-    <div class="payment-total"><span>결제금액</span><span>${selectedTicket.price.toLocaleString()}원</span></div>
-  `;
-
+    <div class="payment-item"><span>얼굴 등록</span><span>${pendingFaceDesc?'✅ 등록됨':'미등록'}</span></div>
+    <div class="payment-total"><span>결제금액</span><span>${selectedTicket.price.toLocaleString()}원</span></div>`;
   document.getElementById('payModal').classList.add('visible');
 }
 
-async function processPayment() {
+async function processPayment(){
   closePayModal();
-  if (!pendingMember) return;
+  if(!pendingMember||!db) return;
+  const today=new Date();
+  const end=new Date(today); end.setDate(end.getDate()+pendingMember.ticket.days);
+  const avs=['💪','🏋️','🔥','⚡','🏃','🎯','🦾','🏆'];
+  const cls=['#00d4ff','#ff4466','#00ff88','#ffd700','#ff8800','#aa44ff'];
+  const newId='M'+String(memberCounter).padStart(3,'0');
 
-  const today = new Date();
-  const endDate = new Date(today);
-  endDate.setDate(endDate.getDate() + pendingMember.ticket.days);
+  try{
+    await db.collection('gym_members').doc(newId).set({
+      id:newId, name:pendingMember.name, phone:pendingMember.phone,
+      gender:pendingMember.gender, ticket:pendingMember.ticket.name+'권',
+      startDate:today.toISOString().split('T')[0],
+      endDate:end.toISOString().split('T')[0],
+      faceDescriptor: pendingMember.faceDescriptor||null,
+      photoData: pendingMember.photoData||null,
+      avatar:avs[Math.floor(Math.random()*avs.length)],
+      color:cls[Math.floor(Math.random()*cls.length)],
+      createdAt:firebase.firestore.FieldValue.serverTimestamp()
+    });
+    document.getElementById('regName').value='';
+    document.getElementById('regPhone').value='';
+    clearFaceReg();
+    showAlert(`${pendingMember.name}님 등록 완료! 🎉`);
+  }catch(e){ showAlert('등록 실패: '+e.message,true); }
+  pendingMember=null;
+}
 
-  const avatars = ['💪', '🏋️', '🔥', '⚡', '🏃', '🎯', '🦾'];
-  const colors = ['#00d4ff', '#ff4466', '#00ff88', '#ffd700', '#ff8800', '#aa44ff'];
-  const newId = 'M' + String(memberCounter).padStart(3, '0');
-  memberCounter++;
+function closePayModal(){ document.getElementById('payModal').classList.remove('visible'); }
 
-  const newMember = {
-    id: newId,
-    name: pendingMember.name,
-    phone: pendingMember.phone,
-    gender: pendingMember.gender,
-    ticket: pendingMember.ticket.name + '권',
-    startDate: today.toISOString().split('T')[0],
-    endDate: endDate.toISOString().split('T')[0],
-    avatar: avatars[Math.floor(Math.random() * avatars.length)],
-    color: colors[Math.floor(Math.random() * colors.length)]
+async function deleteMember(id,name){
+  if(!confirm(`"${name}" 회원을 삭제하시겠습니까?`)) return;
+  try{ await db.collection('gym_members').doc(id).delete(); showAlert(`${name} 삭제됨`); }
+  catch(e){ showAlert('삭제 실패',true); }
+}
+
+function renderMemberList(filter=''){
+  const el=document.getElementById('memberList');
+  const today=new Date();
+  const list=filter ? members.filter(m=>m.name.includes(filter)||m.id.includes(filter)||(m.phone||'').includes(filter)) : members;
+  if(!list.length){ el.innerHTML='<div class="empty"><div class="empty-i">👥</div><div class="empty-t">회원 없음</div></div>'; return; }
+  el.innerHTML=list.map(m=>{
+    const end=new Date(m.endDate);
+    const days=Math.ceil((end-today)/(1000*60*60*24));
+    const active=days>0;
+    const av=m.photoData?`<img src="${m.photoData}">`:m.avatar||'👤';
+    return `<div class="member-card">
+      <div class="member-avatar" style="background:${m.color||'var(--border)'}22;color:${m.color||'var(--primary)'}">${av}</div>
+      <div class="member-card-info">
+        <div class="member-card-name">${esc(m.name)} <span style="font-size:11px;color:var(--muted)">${m.id}</span>${m.faceDescriptor?'<span style="font-size:10px;color:var(--purple);margin-left:4px">🎭</span>':''}</div>
+        <div class="member-card-detail">${m.ticket} · ${m.endDate}까지 · ${active?days+'일 남음':'만료'}</div>
+      </div>
+      <div class="member-card-actions">
+        <span class="status-badge ${active?'status-active':'status-expired'}">${active?'이용중':'만료'}</span>
+        <button class="btn btn-d btn-sm" onclick="deleteMember('${m.id}','${esc(m.name)}')">삭제</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function filterMembers(q){ renderMemberList(q); }
+
+// ══════════════════════════════════════════════
+//  STATS
+// ══════════════════════════════════════════════
+function renderStats(){
+  const today=new Date();
+  const active=members.filter(m=>new Date(m.endDate)>today).length;
+  const expiring=members.filter(m=>{const d=Math.ceil((new Date(m.endDate)-today)/(1000*60*60*24));return d>0&&d<=7;});
+  document.getElementById('stTotal').textContent=members.length;
+  document.getElementById('stActive').textContent=active;
+  document.getElementById('stToday').textContent=checkins.filter(c=>c.type==='in').length;
+  document.getElementById('stExpired').textContent=expiring.length;
+  const withFace=members.filter(m=>m.faceDescriptor).length;
+  document.getElementById('stFace').textContent=withFace+'명';
+  document.getElementById('stNoFace').textContent=(members.length-withFace)+'명';
+  document.getElementById('expiringList').innerHTML=expiring.length===0
+    ?'<div class="empty"><div class="empty-i">✅</div><div class="empty-t">만료 임박 회원 없음</div></div>'
+    :expiring.map(m=>{
+      const d=Math.ceil((new Date(m.endDate)-today)/(1000*60*60*24));
+      return `<div class="checkin-item">
+        <div class="member-avatar" style="background:${m.color||'var(--border)'}22;color:${m.color||'var(--primary)'}">${m.avatar||'👤'}</div>
+        <div class="checkin-info"><div class="checkin-name">${esc(m.name)}</div><div class="checkin-detail">${m.ticket} · ${m.endDate}까지</div></div>
+        <span class="status-badge" style="background:rgba(255,215,0,.15);color:var(--gold)">${d}일 남음</span>
+      </div>`;
+    }).join('');
+}
+
+function updateDataPage(){
+  document.getElementById('backupMemberCount').textContent=members.length+'명';
+  updFbUI();
+}
+
+// ══════════════════════════════════════════════
+//  BACKUP / RESTORE
+// ══════════════════════════════════════════════
+function exportBackup(){
+  const data={
+    version:'2.0', exportedAt:new Date().toISOString(),
+    gymName:cfg.gymName||'GYM PRO',
+    members: members.map(m=>({...m, faceDescriptor:m.faceDescriptor?Array.from(m.faceDescriptor):null}))
   };
-
-  members.unshift(newMember);
-
-  // 폼 초기화
-  document.getElementById('regName').value = '';
-  document.getElementById('regPhone').value = '';
-
-  showAlert(`${pendingMember.name}님 등록 완료! 🎉`);
-  pendingMember = null;
+  const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  a.href=url; a.download=`gym_backup_${TODAY}.json`; a.click();
+  URL.revokeObjectURL(url);
+  showAlert(`${members.length}명 백업 완료 ✅`);
 }
 
-function closePayModal() {
-  document.getElementById('payModal').classList.remove('visible');
+async function importBackup(input){
+  const file=input.files[0]; if(!file) return;
+  if(!db){ showAlert('Firebase 연결 필요',true); return; }
+  try{
+    const text=await file.text();
+    const data=JSON.parse(text);
+    if(!Array.isArray(data.members)) throw new Error('유효하지 않은 백업 파일');
+    if(!confirm(`${data.members.length}명 데이터를 Firestore에 복원하시겠습니까?\n기존 동일 ID 데이터는 덮어씁니다.`)) return;
+    const batch=db.batch();
+    data.members.forEach(m=>{
+      const ref=db.collection('gym_members').doc(m.id);
+      const rec={...m};
+      delete rec.createdAt;
+      rec.createdAt=firebase.firestore.FieldValue.serverTimestamp();
+      batch.set(ref,rec);
+    });
+    await batch.commit();
+    showAlert(`${data.members.length}명 복원 완료 ✅`);
+  }catch(e){ showAlert('복원 실패: '+e.message,true); }
+  input.value='';
 }
 
-function renderStats() {
-  const today = new Date();
-  const total = members.length;
-  const active = members.filter(m => new Date(m.endDate) > today).length;
-  const todayVisits = checkins.length;
-  const expiring = members.filter(m => {
-    const days = Math.ceil((new Date(m.endDate) - today) / (1000 * 60 * 60 * 24));
-    return days > 0 && days <= 7;
-  });
-
-  document.getElementById('statTotal').textContent = total;
-  document.getElementById('statActive').textContent = active;
-  document.getElementById('statToday').textContent = todayVisits;
-  document.getElementById('statExpired').textContent = expiring.length;
-
-  document.getElementById('expiringList').innerHTML = expiring.length === 0
-    ? '<p style="color:#666688;font-size:13px;text-align:center;padding:20px">만료 임박 회원 없음</p>'
-    : expiring.map(m => {
-        const days = Math.ceil((new Date(m.endDate) - today) / (1000 * 60 * 60 * 24));
-        return `
-          <div class="checkin-item">
-            <div class="member-avatar" style="background:${m.color}22;color:${m.color}">${m.avatar}</div>
-            <div class="checkin-info">
-              <div class="checkin-name">${m.name}</div>
-              <div class="checkin-detail">${m.ticket} · ${m.endDate}까지</div>
-            </div>
-            <span class="status-badge" style="background:rgba(255,215,0,0.15);color:#ffd700">${days}일 남음</span>
-          </div>
-        `;
-      }).join('');
+async function clearTodayCheckins(){
+  if(!db) return;
+  if(!confirm('오늘 출입기록을 모두 삭제하시겠습니까?')) return;
+  const snap=await db.collection('gym_checkins').where('date','==',TODAY).get();
+  if(snap.empty){ showAlert('삭제할 기록 없음'); return; }
+  const batch=db.batch();
+  snap.forEach(d=>batch.delete(d.ref));
+  await batch.commit();
+  showAlert('오늘 출입기록 초기화 완료');
 }
 
-function showAlert(msg, isError = false) {
-  const el = document.getElementById('alertMsg');
-  el.textContent = msg;
-  el.className = 'alert' + (isError ? ' error' : '');
-  el.style.display = 'block';
-  setTimeout(() => el.style.display = 'none', 2500);
+// ══════════════════════════════════════════════
+//  PAGE SWITCH
+// ══════════════════════════════════════════════
+function showPage(id, el){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.getElementById('page-'+id).classList.add('active');
+  el.classList.add('active');
+  // camera management
+  if(id==='face'){
+    if(regStream){ regStream.getTracks().forEach(t=>t.stop()); regStream=null;
+      document.getElementById('regFacePreviewBox').style.display='none';
+      document.getElementById('btnCaptureFace').style.display='none'; }
+    if(!faceStream && modelsLoaded) startFaceCam();
+    else if(!modelsLoaded) loadModels();
+  } else {
+    if(id!=='register' && faceStream){ stopFaceCam(); setFaceStatus('loading','카메라 꺼짐'); }
+  }
+  if(id==='members') renderMemberList();
+  if(id==='stats') renderStats();
+  if(id==='checkin') renderCheckinList();
+  if(id==='data') updateDataPage();
 }
 
-// 초기 렌더링
-renderCheckins();
+// ══════════════════════════════════════════════
+//  UTILS
+// ══════════════════════════════════════════════
+function esc(s){if(!s)return'';return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+
+let _at;
+function showAlert(msg,err=false){
+  const el=document.getElementById('alertMsg');
+  el.textContent=msg; el.className='alert'+(err?' error':'');
+  el.style.display='block'; clearTimeout(_at); _at=setTimeout(()=>el.style.display='none',2600);
+}
+
+function updateTime(){
+  const n=new Date();
+  document.getElementById('headerTime').textContent=n.toLocaleTimeString('ko-KR',{hour:'2-digit',minute:'2-digit'});
+}
+setInterval(updateTime,1000); updateTime();
+
+// ══════════════════════════════════════════════
+//  BOOT
+// ══════════════════════════════════════════════
+(function boot(){
+  document.getElementById('gym-name-hdr').textContent=cfg.gymName||'';
+  checkSetup();
+  if(cfg.fb){
+    // Start loading models after brief delay (let Firebase init first)
+    setTimeout(loadModels, 800);
+  }
+})();
 </script>
 </body>
 </html>
