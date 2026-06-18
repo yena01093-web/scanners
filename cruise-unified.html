@@ -449,11 +449,25 @@ function subscribeDate(date) {
       const raw = snap.exists ? snap.data() : null;
       const voyages = raw?.voyages;
       console.log('[SNAP:voyage] 수신 — date:', date, '/ exists:', snap.exists, '/ voyages타입:', Array.isArray(voyages)?'array('+voyages.length+')':'없음/오류');
-      if (!snap.exists) return;
-      if (!Array.isArray(voyages)) {
-        console.warn('[SNAP:voyage] voyages 필드 없음 — 건너뜀. 실제 data:', JSON.stringify(raw));
+
+      // 문서가 없거나 voyages 필드가 없으면 기본 스케줄로 복원
+      if (!snap.exists || !Array.isArray(voyages) || voyages.length === 0) {
+        console.warn('[SNAP:voyage] voyages 데이터 없음 — 기본 스케줄 복원');
+        const defVv = Store._defVoyages(date);
+        voyageCache[date] = defVv;
+        localStorage.setItem('cruise_v_' + date, JSON.stringify(defVv));
+        db.collection('cruise_voyages').doc(date).set({
+          date, voyages: defVv,
+          updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+        }).then(() => console.log('[SNAP:voyage] 기본 스케줄 Firestore 복원 완료'))
+          .catch(e => console.error('[SNAP:voyage] 기본 스케줄 복원 실패:', e));
+        if (currentMode === 'pos' && date === Store.today()) {
+          posRenderVoyages(); posUpdateSum();
+        }
+        if (currentMode === 'admin' && admDate === date) admRenderAll();
         return;
       }
+
       const vv = voyages.map(v => ({...v}));
       voyageCache[date] = vv;
       localStorage.setItem('cruise_v_' + date, JSON.stringify(vv));
