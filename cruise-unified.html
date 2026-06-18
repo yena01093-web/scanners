@@ -445,7 +445,8 @@ function subscribeDate(date) {
   fbSubs[date].voyage = db.collection('cruise_voyages').doc(date)
     .onSnapshot(snap => {
       if (!snap.exists) return;
-      const vv = snap.data().voyages;
+      // Store a copy — never hold a direct reference to snapshot objects
+      const vv = snap.data().voyages.map(v => ({...v}));
       voyageCache[date] = vv;
       localStorage.setItem('cruise_v_' + date, JSON.stringify(vv));
       if (currentMode === 'pos' && date === Store.today()) {
@@ -577,8 +578,7 @@ const Store = {
 
   addLog(entry, date) {
     const d = date || this.today();
-    const ll = this.getLogs(d);
-    ll.push(entry);
+    const ll = [...this.getLogs(d), entry];
     localStorage.setItem('cruise_log_' + d, JSON.stringify(ll));
     logCache[d] = ll;
     if (fbOk && db) {
@@ -602,8 +602,8 @@ const Store = {
 
   async sellSeats(date, voyageTime, n) {
     const d = date || this.today();
-    // localStorage first — always succeeds, data is safe
-    const vv = this.getVoyages(d);
+    // Deep copy to avoid mutating voyageCache's snapshot objects
+    const vv = JSON.parse(JSON.stringify(this.getVoyages(d)));
     const vi = vv.findIndex(v => v.time === voyageTime);
     if (vi === -1) return {ok: false, error: '운항 정보를 찾을 수 없습니다'};
     const actual = Math.min(n, vv[vi].max - vv[vi].sold);
@@ -613,17 +613,26 @@ const Store = {
     voyageCache[d] = vv;
     const tkn = this.nextTicket();
 
-    // Firestore transaction — keeps multi-device counts consistent
     if (fbOk && db) {
       const voyRef = db.collection('cruise_voyages').doc(d);
       db.runTransaction(async t => {
         const snap = await t.get(voyRef);
-        const fvv = snap.exists ? [...snap.data().voyages] : vv;
-        const fvi = fvv.findIndex(v => v.time === voyageTime);
-        if (fvi !== -1) fvv[fvi].sold = Math.min(fvv[fvi].sold + actual, fvv[fvi].max);
+        let fvv;
+        if (snap.exists) {
+          // Firestore has prior data: add actual on top of server-side count
+          fvv = snap.data().voyages.map(v => ({...v}));
+          const fvi = fvv.findIndex(v => v.time === voyageTime);
+          if (fvi !== -1) fvv[fvi].sold = Math.min(fvv[fvi].sold + actual, fvv[fvi].max);
+        } else {
+          // First write: vv already has the correct incremented value
+          fvv = vv.map(v => ({...v}));
+        }
         t.set(voyRef, {date: d, voyages: fvv,
           updatedAt: firebase.firestore.FieldValue.serverTimestamp()});
-      }).catch(e => console.error('[FB] sellSeats tx:', e));
+      }).catch(e => {
+        console.error('[FB] sellSeats tx:', e);
+        toast('⚠️ Firebase 동기화 오류: ' + (e.code || e.message || String(e)));
+      });
     }
 
     return {ok: true, voyages: vv, ticketNo: tkn, actual};
@@ -631,7 +640,7 @@ const Store = {
 
   async cancelSeats(date, voyageTime, n) {
     const d = date || this.today();
-    const vv = this.getVoyages(d);
+    const vv = JSON.parse(JSON.stringify(this.getVoyages(d)));
     const vi = vv.findIndex(v => v.time === voyageTime);
     if (vi === -1) return {ok: false, error: '운항 정보를 찾을 수 없습니다'};
     const actual = Math.min(n, vv[vi].sold);
@@ -644,12 +653,20 @@ const Store = {
       const voyRef = db.collection('cruise_voyages').doc(d);
       db.runTransaction(async t => {
         const snap = await t.get(voyRef);
-        const fvv = snap.exists ? [...snap.data().voyages] : vv;
-        const fvi = fvv.findIndex(v => v.time === voyageTime);
-        if (fvi !== -1) fvv[fvi].sold = Math.max(fvv[fvi].sold - actual, 0);
+        let fvv;
+        if (snap.exists) {
+          fvv = snap.data().voyages.map(v => ({...v}));
+          const fvi = fvv.findIndex(v => v.time === voyageTime);
+          if (fvi !== -1) fvv[fvi].sold = Math.max(fvv[fvi].sold - actual, 0);
+        } else {
+          fvv = vv.map(v => ({...v}));
+        }
         t.set(voyRef, {date: d, voyages: fvv,
           updatedAt: firebase.firestore.FieldValue.serverTimestamp()});
-      }).catch(e => console.error('[FB] cancelSeats tx:', e));
+      }).catch(e => {
+        console.error('[FB] cancelSeats tx:', e);
+        toast('⚠️ Firebase 동기화 오류: ' + (e.code || e.message || String(e)));
+      });
     }
 
     return {ok: true, voyages: vv, actual};
