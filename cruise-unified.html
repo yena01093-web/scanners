@@ -446,9 +446,15 @@ function subscribeDate(date) {
 
   fbSubs[date].voyage = db.collection('cruise_voyages').doc(date)
     .onSnapshot(snap => {
-      console.log('[SNAP:voyage] 수신 — date:', date, '/ exists:', snap.exists, '/ sold 목록:', snap.exists ? snap.data().voyages.map(v => v.time+':'+v.sold) : '없음');
+      const raw = snap.exists ? snap.data() : null;
+      const voyages = raw?.voyages;
+      console.log('[SNAP:voyage] 수신 — date:', date, '/ exists:', snap.exists, '/ voyages타입:', Array.isArray(voyages)?'array('+voyages.length+')':'없음/오류');
       if (!snap.exists) return;
-      const vv = snap.data().voyages.map(v => ({...v}));
+      if (!Array.isArray(voyages)) {
+        console.warn('[SNAP:voyage] voyages 필드 없음 — 건너뜀. 실제 data:', JSON.stringify(raw));
+        return;
+      }
+      const vv = voyages.map(v => ({...v}));
       voyageCache[date] = vv;
       localStorage.setItem('cruise_v_' + date, JSON.stringify(vv));
       console.log('[SNAP:voyage] voyageCache 갱신 완료 — sold 목록:', vv.map(v => v.time+':'+v.sold));
@@ -641,16 +647,17 @@ const Store = {
       db.runTransaction(async t => {
         console.log('[TX] t.get 호출 중...');
         const snap = await t.get(voyRef);
-        console.log('[TX] snap.exists:', snap.exists, '/ FB sold:', snap.exists ? snap.data().voyages.find(v=>v.time===voyageTime)?.sold : '없음');
+        const rawVv = snap.exists ? snap.data()?.voyages : undefined;
+        console.log('[TX] snap.exists:', snap.exists, '/ voyages타입:', Array.isArray(rawVv)?'array('+rawVv.length+')':'없음', '/ FB sold:', Array.isArray(rawVv) ? rawVv.find(v=>v.time===voyageTime)?.sold : '없음');
         let fvv;
-        if (snap.exists) {
-          fvv = snap.data().voyages.map(v => ({...v}));
+        if (snap.exists && Array.isArray(rawVv)) {
+          fvv = rawVv.map(v => ({...v}));
           const fvi = fvv.findIndex(v => v.time === voyageTime);
           if (fvi !== -1) fvv[fvi].sold = Math.min(fvv[fvi].sold + actual, fvv[fvi].max);
           console.log('[TX] 갱신 후 FB sold 예정값:', fvv.find(v=>v.time===voyageTime)?.sold);
         } else {
           fvv = vv.map(v => ({...v}));
-          console.log('[TX] 신규 문서 생성 — sold:', fvv.find(v=>v.time===voyageTime)?.sold);
+          console.log('[TX] 문서 없음/voyages필드없음 — sold:', fvv.find(v=>v.time===voyageTime)?.sold);
         }
         t.set(voyRef, {date: d, voyages: fvv,
           updatedAt: firebase.firestore.FieldValue.serverTimestamp()});
@@ -684,9 +691,10 @@ const Store = {
       const voyRef = db.collection('cruise_voyages').doc(d);
       db.runTransaction(async t => {
         const snap = await t.get(voyRef);
+        const rawVv = snap.exists ? snap.data()?.voyages : undefined;
         let fvv;
-        if (snap.exists) {
-          fvv = snap.data().voyages.map(v => ({...v}));
+        if (snap.exists && Array.isArray(rawVv)) {
+          fvv = rawVv.map(v => ({...v}));
           const fvi = fvv.findIndex(v => v.time === voyageTime);
           if (fvi !== -1) fvv[fvi].sold = Math.max(fvv[fvi].sold - actual, 0);
         } else {
