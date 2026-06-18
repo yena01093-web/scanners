@@ -439,25 +439,29 @@ function normalizeEntry(data) {
 
 // ─── FIRESTORE SUBSCRIPTIONS ───
 function subscribeDate(date) {
+  console.log('[SUB] subscribeDate 요청 — date:', date, '/ fbOk:', fbOk, '/ db:', !!db, '/ 이미구독:', !!fbSubs[date]);
   if (!fbOk || !db || fbSubs[date]) return;
   fbSubs[date] = {};
+  console.log('[SUB] 구독 시작 — date:', date);
 
   fbSubs[date].voyage = db.collection('cruise_voyages').doc(date)
     .onSnapshot(snap => {
+      console.log('[SNAP:voyage] 수신 — date:', date, '/ exists:', snap.exists, '/ sold 목록:', snap.exists ? snap.data().voyages.map(v => v.time+':'+v.sold) : '없음');
       if (!snap.exists) return;
-      // Store a copy — never hold a direct reference to snapshot objects
       const vv = snap.data().voyages.map(v => ({...v}));
       voyageCache[date] = vv;
       localStorage.setItem('cruise_v_' + date, JSON.stringify(vv));
+      console.log('[SNAP:voyage] voyageCache 갱신 완료 — sold 목록:', vv.map(v => v.time+':'+v.sold));
       if (currentMode === 'pos' && date === Store.today()) {
         posRenderVoyages(); posUpdateSum();
       }
       if (currentMode === 'admin' && admDate === date) admRenderAll();
-    }, e => console.error('[FB] voyage snap error:', e));
+    }, e => console.error('[SNAP:voyage] 오류:', e));
 
   fbSubs[date].logs = db.collection('cruise_logs').doc(date)
     .collection('entries')
     .onSnapshot(snap => {
+      console.log('[SNAP:logs] 수신 — date:', date, '/ 건수:', snap.docs.length);
       const entries = snap.docs
         .map(d => normalizeEntry(d.data()))
         .sort((a, b) => (a.savedAt || '').localeCompare(b.savedAt || ''));
@@ -466,7 +470,7 @@ function subscribeDate(date) {
         localStorage.setItem('cruise_log_' + date, JSON.stringify(entries));
       } catch(e) {}
       if (currentMode === 'admin' && admDate === date) admRenderLog();
-    }, e => console.error('[FB] log snap error:', e));
+    }, e => console.error('[SNAP:logs] 오류:', e));
 }
 
 async function setupConnect() {
@@ -581,11 +585,20 @@ const Store = {
     const ll = [...this.getLogs(d), entry];
     localStorage.setItem('cruise_log_' + d, JSON.stringify(ll));
     logCache[d] = ll;
+    console.log('[LOG] addLog — date:', d, '/ desc:', entry.desc, '/ fbOk:', fbOk, '/ 누적건수:', ll.length);
     if (fbOk && db) {
+      const path = 'cruise_logs/' + d + '/entries';
+      console.log('[LOG] Firestore add → ' + path);
       db.collection('cruise_logs').doc(d).collection('entries').add({
         ...entry,
         savedAt: firebase.firestore.FieldValue.serverTimestamp()
-      }).catch(e => console.error('[FB] addLog:', e));
+      }).then(() => {
+        console.log('[LOG] ✅ Firestore add 성공 → ' + path);
+      }).catch(e => {
+        console.error('[LOG] ✗ Firestore add 실패:', e.code, e.message);
+      });
+    } else {
+      console.warn('[LOG] Firestore 건너뜀 — fbOk:', fbOk, '/ db:', !!db);
     }
   },
 
@@ -602,39 +615,57 @@ const Store = {
 
   async sellSeats(date, voyageTime, n) {
     const d = date || this.today();
-    // Deep copy to avoid mutating voyageCache's snapshot objects
+    console.log('[SELL] ▶ sellSeats 진입 — date:', d, '/ voyageTime:', voyageTime, '/ n:', n);
+    console.log('[SELL] fbOk:', fbOk, '/ db:', !!db);
+    console.log('[SELL] voyageCache[d]:', voyageCache[d] ? voyageCache[d].map(v=>v.time+':'+v.sold) : '없음(LS사용)');
+
     const vv = JSON.parse(JSON.stringify(this.getVoyages(d)));
     const vi = vv.findIndex(v => v.time === voyageTime);
-    if (vi === -1) return {ok: false, error: '운항 정보를 찾을 수 없습니다'};
+    console.log('[SELL] vi:', vi, '/ before sold:', vi>=0 ? vv[vi].sold : 'N/A', '/ max:', vi>=0 ? vv[vi].max : 'N/A');
+
+    if (vi === -1) { console.warn('[SELL] ✗ 운항 없음'); return {ok: false, error: '운항 정보를 찾을 수 없습니다'}; }
     const actual = Math.min(n, vv[vi].max - vv[vi].sold);
-    if (actual <= 0) return {ok: false, error: '정원이 초과됩니다'};
+    console.log('[SELL] actual:', actual, '(요청:', n, '/ 잔여:', vv[vi].max - vv[vi].sold, ')');
+    if (actual <= 0) { console.warn('[SELL] ✗ 정원 초과'); return {ok: false, error: '정원이 초과됩니다'}; }
+
     vv[vi].sold += actual;
     localStorage.setItem('cruise_v_' + d, JSON.stringify(vv));
     voyageCache[d] = vv;
+    console.log('[SELL] LS/cache 저장 완료 — 갱신 후 sold:', vv[vi].sold);
+
     const tkn = this.nextTicket();
 
     if (fbOk && db) {
+      console.log('[SELL] Firestore 트랜잭션 시작...');
       const voyRef = db.collection('cruise_voyages').doc(d);
       db.runTransaction(async t => {
+        console.log('[TX] t.get 호출 중...');
         const snap = await t.get(voyRef);
+        console.log('[TX] snap.exists:', snap.exists, '/ FB sold:', snap.exists ? snap.data().voyages.find(v=>v.time===voyageTime)?.sold : '없음');
         let fvv;
         if (snap.exists) {
-          // Firestore has prior data: add actual on top of server-side count
           fvv = snap.data().voyages.map(v => ({...v}));
           const fvi = fvv.findIndex(v => v.time === voyageTime);
           if (fvi !== -1) fvv[fvi].sold = Math.min(fvv[fvi].sold + actual, fvv[fvi].max);
+          console.log('[TX] 갱신 후 FB sold 예정값:', fvv.find(v=>v.time===voyageTime)?.sold);
         } else {
-          // First write: vv already has the correct incremented value
           fvv = vv.map(v => ({...v}));
+          console.log('[TX] 신규 문서 생성 — sold:', fvv.find(v=>v.time===voyageTime)?.sold);
         }
         t.set(voyRef, {date: d, voyages: fvv,
           updatedAt: firebase.firestore.FieldValue.serverTimestamp()});
+        console.log('[TX] t.set 완료');
+      }).then(() => {
+        console.log('[TX] ✅ 트랜잭션 성공 — date:', d, '/ voyage:', voyageTime);
       }).catch(e => {
-        console.error('[FB] sellSeats tx:', e);
+        console.error('[TX] ✗ 트랜잭션 실패:', e.code, e.message);
         toast('⚠️ Firebase 동기화 오류: ' + (e.code || e.message || String(e)));
       });
+    } else {
+      console.warn('[SELL] Firestore 건너뜀 — fbOk:', fbOk, '/ db:', !!db);
     }
 
+    console.log('[SELL] ■ sellSeats 완료 — actual:', actual, '/ tkn:', tkn);
     return {ok: true, voyages: vv, ticketNo: tkn, actual};
   },
 
@@ -835,7 +866,9 @@ function posPayCard() {
 }
 
 async function posCompleteSale(sale, method) {
+  console.log('[POS] posCompleteSale 진입 — voyage:', sale.voyage, '/ people:', sale.people, '/ method:', method, '/ date:', sale.date);
   const result = await Store.sellSeats(sale.date, sale.voyage, sale.people);
+  console.log('[POS] sellSeats 결과 — ok:', result.ok, '/ actual:', result.actual, '/ error:', result.error);
   if (!result.ok) { toast('오류: ' + result.error); return; }
 
   const ts = new Date().toLocaleTimeString('ko-KR', {hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false});
@@ -1036,13 +1069,17 @@ function admRenderLog() {
 async function admSell(i) {
   const n = parseInt(document.getElementById('aqi-' + i).value) || 1;
   const vv = Store.getVoyages(admDate), v = vv[i];
+  console.log('[ADM] admSell 진입 — i:', i, '/ voyage:', v?.time, '/ n:', n, '/ admDate:', admDate);
   const result = await Store.sellSeats(admDate, v.time, n);
+  console.log('[ADM] sellSeats 결과 — ok:', result.ok, '/ actual:', result.actual, '/ error:', result.error);
   if (!result.ok) { toast('오류: ' + result.error); return; }
 
   const ts = new Date().toLocaleTimeString('ko-KR', {hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false});
   const rv = result.voyages.find(x => x.time === v.time) || v;
   Store.addLog({ts, time:v.time, desc:'판매', method:'현장', change:result.actual, remain:rv.max-rv.sold, amount:0}, admDate);
+  console.log('[ADM] admRenderAll 호출 직전');
   admRenderAll();
+  console.log('[ADM] admRenderAll 완료');
   if (rv.sold >= rv.max) {
     document.getElementById('soVoyText').textContent = rv.ampm + ' ' + rv.time + ' 출발';
     document.getElementById('soModal').classList.add('show');
