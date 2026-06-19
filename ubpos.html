@@ -484,6 +484,10 @@ h1,h2,h3,h4 { font-weight: 700; line-height: 1.25; }
 }
 @media (max-width: 768px) {
   .sol-grid { grid-template-columns: 1fr; }
+  /* 데스크톱 전용 "마지막 카드 가운데 정렬" 규칙 해제 — 모바일 1열에서 implicit column 생성 방지 */
+  .sol-card:last-child:nth-child(3n+1) { grid-column: auto; }
+  .sol-card { min-width: 0; overflow: visible; }
+  .section-h2 { font-weight: 500; }
   .case-grid { grid-template-columns: 1fr; }
   .nav-links, .nav-cta { display: none; }
   .nav-burger { display: flex; }
