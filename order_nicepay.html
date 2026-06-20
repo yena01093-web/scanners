@@ -711,7 +711,7 @@ async function startPayment() {
   const items=cart.map(i=>({name:i.name,price:i.price,qty:i.qty,opts:i.opts||'',subtotal:i.price*i.qty}));
   const total=items.reduce((s,i)=>s+i.subtotal,0);
   const request=document.getElementById('cart-req').value;
-  const orderId='SC_'+Date.now();
+  const orderId='SC'+Date.now();
   const orderName=items.length===1?items[0].name:items[0].name+' 외 '+(items.length-1)+'건';
   const typeLabel=orderType==='hall'?'홀':orderType==='reserve'?'예약':'포장';
 
@@ -723,6 +723,11 @@ async function startPayment() {
   const fsId = window.saveOrder ? await window.saveOrder({...info,items,total,request,orderId,orderTime:new Date().toLocaleString('ko-KR')}) : null;
   if (fsId) sessionStorage.setItem('lastFsId',fsId);
 
+  if (typeof AUTHNICE === 'undefined') {
+    alert('결제 모듈을 불러오지 못했습니다. 페이지를 새로고침 후 다시 시도해주세요.');
+    return;
+  }
+
   try {
     AUTHNICE.requestPay({
       clientId:'weaqHgKedW3agP8qYgBjlYvbRckIE457WuNeqCz9C/QKMOHexbDveHyBT5dNaF4EUjuJaiwOBreFgJXdAxfI6g==',
@@ -731,9 +736,20 @@ async function startPayment() {
       amount:total,
       goodsName:orderName,
       returnUrl:window.location.origin+window.location.pathname+'?success=true',
-      fnError:function(r){alert('결제 오류: '+(r.errorMsg||'다시 시도해주세요'));}
+      fnSuccess:function(r){
+        console.log('NICEPAY success:', r);
+        sessionStorage.setItem('lastFsId', fsId||'');
+        showTrack();
+      },
+      fnError:function(r){
+        console.error('NICEPAY error:', r);
+        alert('결제 오류 ['+( r.resultCode||r.errorCode||'?')+']\n'+(r.resultMsg||r.errorMsg||JSON.stringify(r)));
+      }
     });
-  } catch(e) { alert('결제 중 오류가 발생했습니다.'); }
+  } catch(e) {
+    console.error('Payment exception:', e);
+    alert('결제 오류: '+e.message);
+  }
 }
 
 /* ═══════ TRACK ═══════ */
