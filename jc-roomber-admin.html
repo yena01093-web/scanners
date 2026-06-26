@@ -1,1 +1,475 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>JC Hotel RoomBar - 메뉴 관리자</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700&display=swap');
+  :root {
+    --navy: #0B1120; --navy2: #131C2E; --navy3: #1C2840;
+    --gold: #F0A500; --gold2: #C8860A; --white: #F5F7FA;
+    --gray: #8A97AA; --red: #FF4D4D; --green: #22C55E;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Noto Sans KR', sans-serif; background: var(--navy); color: var(--white); min-height: 100vh; }
+
+  .top-bar {
+    background: #060C18; border-bottom: 1px solid var(--navy3);
+    padding: 14px 24px; display: flex; align-items: center; justify-content: space-between;
+    position: sticky; top: 0; z-index: 100;
+  }
+  .brand { font-size: 0.85rem; color: var(--gray); letter-spacing: 1px; }
+  .brand span { color: var(--gold); font-weight: 700; }
+  .admin-badge { background: rgba(240,165,0,0.15); color: var(--gold); border: 1px solid rgba(240,165,0,0.3);
+    font-size: 0.72rem; padding: 3px 10px; border-radius: 4px; font-weight: 700; }
+
+  .main { max-width: 860px; margin: 0 auto; padding: 28px 20px 80px; }
+
+  .section-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; }
+  .section-title { font-size: 1.1rem; font-weight: 700; }
+  .add-btn {
+    background: var(--gold); color: #000; border: none; padding: 10px 20px;
+    border-radius: 10px; font-size: 0.85rem; font-weight: 700; cursor: pointer; font-family: inherit;
+    display: flex; align-items: center; gap: 6px;
+  }
+
+  /* 메뉴 카드 그리드 */
+  .menu-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 14px; }
+
+  .menu-card {
+    background: var(--navy2); border: 1px solid var(--navy3); border-radius: 14px; overflow: hidden;
+    transition: border-color 0.2s;
+  }
+  .menu-card:hover { border-color: var(--gold2); }
+  .menu-card-img {
+    width: 100%; height: 140px; object-fit: cover; background: var(--navy3);
+    display: flex; align-items: center; justify-content: center; font-size: 3rem;
+  }
+  .menu-card-img img { width: 100%; height: 100%; object-fit: cover; }
+  .menu-card-body { padding: 14px; }
+  .menu-card-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; }
+  .menu-card-name { font-size: 0.95rem; font-weight: 700; flex: 1; }
+  .sold-out-badge { background: rgba(255,77,77,0.2); color: #FF8080; border: 1px solid rgba(255,77,77,0.3);
+    font-size: 0.65rem; padding: 2px 8px; border-radius: 4px; font-weight: 700; white-space: nowrap; }
+  .menu-card-desc { font-size: 0.78rem; color: var(--gray); margin: 6px 0 10px; line-height: 1.4; }
+  .menu-card-meta { display: flex; align-items: center; justify-content: space-between; }
+  .menu-price { color: var(--gold); font-weight: 700; font-size: 0.95rem; }
+  .cat-tag { font-size: 0.65rem; padding: 2px 8px; border-radius: 4px; font-weight: 700; }
+  .cat-drink { background: rgba(59,130,246,0.2); color: #60A5FA; border: 1px solid rgba(59,130,246,0.3); }
+  .cat-food { background: rgba(34,197,94,0.2); color: #4ADE80; border: 1px solid rgba(34,197,94,0.3); }
+
+  .menu-card-actions { display: flex; gap: 6px; margin-top: 12px; }
+  .btn-edit { flex: 1; background: var(--navy3); color: var(--white); border: none; padding: 8px;
+    border-radius: 8px; cursor: pointer; font-family: inherit; font-size: 0.8rem; }
+  .btn-soldout { flex: 1; background: rgba(255,77,77,0.1); color: #FF8080; border: 1px solid rgba(255,77,77,0.3);
+    padding: 8px; border-radius: 8px; cursor: pointer; font-family: inherit; font-size: 0.8rem; }
+  .btn-soldout.active { background: rgba(34,197,94,0.1); color: #4ADE80; border-color: rgba(34,197,94,0.3); }
+  .btn-del { background: transparent; color: var(--gray); border: 1px solid var(--navy3);
+    padding: 8px 10px; border-radius: 8px; cursor: pointer; font-size: 0.8rem; }
+
+  /* 모달 */
+  .modal-overlay {
+    display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.85);
+    z-index: 2000; align-items: center; justify-content: center; padding: 20px;
+  }
+  .modal-overlay.show { display: flex; }
+  .modal {
+    background: var(--navy2); border: 1px solid var(--navy3); border-radius: 20px;
+    padding: 28px 24px; width: 100%; max-width: 480px; max-height: 90vh; overflow-y: auto;
+  }
+  .modal-title { font-size: 1.1rem; font-weight: 700; margin-bottom: 20px; }
+
+  .form-group { margin-bottom: 16px; }
+  .form-label { font-size: 0.8rem; color: var(--gray); margin-bottom: 6px; display: block; }
+  .form-input, .form-select, .form-textarea {
+    width: 100%; background: var(--navy3); border: 1px solid #2A3F5F; color: var(--white);
+    border-radius: 10px; padding: 11px 14px; font-size: 0.9rem; font-family: inherit; outline: none;
+  }
+  .form-input:focus, .form-select:focus, .form-textarea:focus { border-color: var(--gold); }
+  .form-textarea { height: 70px; resize: none; }
+  .form-select option { background: var(--navy2); }
+
+  /* 이미지 업로드 */
+  .img-upload-area {
+    border: 2px dashed #2A3F5F; border-radius: 12px; padding: 24px;
+    text-align: center; cursor: pointer; transition: border-color 0.2s; position: relative;
+  }
+  .img-upload-area:hover { border-color: var(--gold2); }
+  .img-upload-area input { position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%; }
+  .img-preview { width: 100%; height: 160px; object-fit: cover; border-radius: 8px; margin-top: 10px; display: none; }
+  .img-placeholder { color: var(--gray); font-size: 0.85rem; }
+  .img-placeholder .icon { font-size: 2rem; margin-bottom: 8px; }
+  .upload-progress { height: 4px; background: var(--navy3); border-radius: 2px; margin-top: 10px; display: none; }
+  .upload-progress-bar { height: 100%; background: var(--gold); border-radius: 2px; width: 0; transition: width 0.3s; }
+
+  /* 태그 체크박스 */
+  .tags-grid { display: flex; gap: 8px; flex-wrap: wrap; }
+  .tag-check { display: none; }
+  .tag-label {
+    padding: 5px 12px; border-radius: 20px; font-size: 0.78rem; font-weight: 700;
+    cursor: pointer; border: 1px solid #2A3F5F; color: var(--gray); transition: all 0.2s;
+  }
+  .tag-check:checked + .tag-label { border-color: var(--gold); color: var(--gold); background: rgba(240,165,0,0.1); }
+
+  .modal-btns { display: flex; gap: 10px; margin-top: 20px; }
+  .btn-cancel { flex: 1; background: var(--navy3); color: var(--gray); border: none;
+    padding: 12px; border-radius: 10px; cursor: pointer; font-family: inherit; font-size: 0.9rem; }
+  .btn-save { flex: 2; background: var(--gold); color: #000; border: none;
+    padding: 12px; border-radius: 10px; cursor: pointer; font-family: inherit; font-size: 0.9rem; font-weight: 700; }
+  .btn-save:disabled { opacity: 0.5; cursor: not-allowed; }
+
+  /* 빈 상태 */
+  .empty-state { text-align: center; padding: 60px 20px; color: var(--gray); }
+  .empty-state .emoji { font-size: 3rem; margin-bottom: 12px; }
+
+  /* 토스트 */
+  .toast {
+    position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%);
+    background: var(--navy2); border: 1px solid var(--gold2); color: var(--white);
+    padding: 12px 24px; border-radius: 12px; font-size: 0.85rem; font-weight: 500;
+    z-index: 3000; opacity: 0; transition: opacity 0.3s; pointer-events: none; white-space: nowrap;
+  }
+  .toast.show { opacity: 1; }
+
+  /* 삭제 확인 */
+  .confirm-overlay {
+    display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.85);
+    z-index: 3000; align-items: center; justify-content: center;
+  }
+  .confirm-overlay.show { display: flex; }
+  .confirm-box { background: var(--navy2); border: 1px solid #FF4D4D; border-radius: 16px; padding: 24px; width: 300px; text-align: center; }
+  .confirm-box h3 { font-size: 1rem; margin-bottom: 8px; }
+  .confirm-box p { font-size: 0.85rem; color: var(--gray); margin-bottom: 20px; }
+  .confirm-btns { display: flex; gap: 10px; }
+  .btn-no { flex: 1; background: var(--navy3); color: var(--gray); border: none; padding: 11px; border-radius: 10px; cursor: pointer; font-family: inherit; }
+  .btn-yes { flex: 1; background: var(--red); color: white; border: none; padding: 11px; border-radius: 10px; cursor: pointer; font-family: inherit; font-weight: 700; }
+
+  .loading { text-align: center; padding: 40px; color: var(--gray); font-size: 0.9rem; }
+</style>
+</head>
+<body>
+
+<div class="top-bar">
+  <div class="brand">JC HOTEL <span>ROOM BAR</span></div>
+  <span class="admin-badge">🔧 관리자 모드</span>
+</div>
+
+<div class="main">
+  <div class="section-header">
+    <div class="section-title">메뉴 관리 <span id="menu-count" style="color:var(--gray);font-weight:400;font-size:0.9rem;"></span></div>
+    <button class="add-btn" onclick="openModal()">＋ 메뉴 추가</button>
+  </div>
+
+  <div id="menu-grid" class="menu-grid">
+    <div class="loading">메뉴 불러오는 중...</div>
+  </div>
+</div>
+
+<!-- 메뉴 추가/수정 모달 -->
+<div class="modal-overlay" id="menu-modal">
+  <div class="modal">
+    <div class="modal-title" id="modal-title">메뉴 추가</div>
+
+    <div class="form-group">
+      <label class="form-label">메뉴 이미지</label>
+      <div class="img-upload-area" id="upload-area">
+        <input type="file" id="img-file" accept="image/*" onchange="handleImageSelect(event)">
+        <div class="img-placeholder" id="img-placeholder">
+          <div class="icon">📷</div>
+          <div>클릭해서 이미지 업로드</div>
+          <div style="font-size:0.75rem;margin-top:4px;color:#5A6A7A">JPG, PNG, WEBP 지원</div>
+        </div>
+        <img id="img-preview" class="img-preview">
+      </div>
+      <div class="upload-progress" id="upload-progress">
+        <div class="upload-progress-bar" id="upload-bar"></div>
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">메뉴명 *</label>
+      <input type="text" class="form-input" id="f-name" placeholder="예: 제천 수제 크래프트 맥주">
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">설명</label>
+      <textarea class="form-textarea" id="f-desc" placeholder="예: 캔 500ml + 짱짱한 얼음컵 제공"></textarea>
+    </div>
+
+    <div style="display:flex;gap:12px;">
+      <div class="form-group" style="flex:1">
+        <label class="form-label">가격 (원) *</label>
+        <input type="number" class="form-input" id="f-price" placeholder="8000">
+      </div>
+      <div class="form-group" style="flex:1">
+        <label class="form-label">카테고리 *</label>
+        <select class="form-select" id="f-category">
+          <option value="drink">🍷 주류 & 음료</option>
+          <option value="food">🍕 5분 퀵안주</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">태그</label>
+      <div class="tags-grid">
+        <input type="checkbox" class="tag-check" id="tag-hot" value="hot">
+        <label class="tag-label" for="tag-hot">🔥 인기</label>
+        <input type="checkbox" class="tag-check" id="tag-set" value="set">
+        <label class="tag-label" for="tag-set">🎁 세트</label>
+        <input type="checkbox" class="tag-check" id="tag-new" value="new-item">
+        <label class="tag-label" for="tag-new">✨ 신메뉴</label>
+        <input type="checkbox" class="tag-check" id="tag-rec" value="rec">
+        <label class="tag-label" for="tag-rec">👍 추천</label>
+      </div>
+    </div>
+
+    <div class="modal-btns">
+      <button class="btn-cancel" onclick="closeModal()">취소</button>
+      <button class="btn-save" id="save-btn" onclick="saveMenu()">저장하기</button>
+    </div>
+  </div>
+</div>
+
+<!-- 삭제 확인 -->
+<div class="confirm-overlay" id="confirm-overlay">
+  <div class="confirm-box">
+    <h3>메뉴 삭제</h3>
+    <p id="confirm-text">이 메뉴를 삭제할까요?</p>
+    <div class="confirm-btns">
+      <button class="btn-no" onclick="closeConfirm()">취소</button>
+      <button class="btn-yes" onclick="confirmDelete()">삭제</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+  import { getFirestore, collection, addDoc, onSnapshot, doc, updateDoc, deleteDoc, serverTimestamp, query, orderBy }
+    from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+  import { getStorage, ref, uploadBytesResumable, getDownloadURL }
+    from "https://www.gstatic.com/firebasejs/10.12.0/firebase-storage.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyDSFNwHWreQ5py9lq8fINEMAmGj_wbEqjE",
+    authDomain: "jc-hotel-roombar-27c58.firebaseapp.com",
+    projectId: "jc-hotel-roombar-27c58",
+    storageBucket: "jc-hotel-roombar-27c58.firebasestorage.app",
+    messagingSenderId: "866392617860",
+    appId: "1:866392617860:web:33d262c60779179f55e3d1"
+  };
+  const app = initializeApp(firebaseConfig);
+  const db = getFirestore(app);
+  const storage = getStorage(app);
+
+  let menus = [];
+  let editingId = null;
+  let deleteId = null;
+  let selectedImageFile = null;
+  let uploadedImageUrl = null;
+
+  // ===== 실시간 메뉴 목록 =====
+  const q = query(collection(db, 'menus'), orderBy('createdAt', 'asc'));
+  onSnapshot(q, (snapshot) => {
+    menus = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+    document.getElementById('menu-count').textContent = `(${menus.length}개)`;
+    renderMenus();
+  });
+
+  function renderMenus() {
+    const grid = document.getElementById('menu-grid');
+    if (!menus.length) {
+      grid.innerHTML = `<div class="empty-state" style="grid-column:1/-1"><div class="emoji">🍽️</div><p>등록된 메뉴가 없습니다<br>위의 메뉴 추가 버튼을 눌러주세요</p></div>`;
+      return;
+    }
+    grid.innerHTML = menus.map(m => {
+      const catTag = m.category === 'drink'
+        ? '<span class="cat-tag cat-drink">주류</span>'
+        : '<span class="cat-tag cat-food">간편식</span>';
+      const imgEl = m.imageUrl
+        ? `<div class="menu-card-img"><img src="${m.imageUrl}" alt="${m.name}" onerror="this.parentElement.innerHTML='🍽️'"></div>`
+        : `<div class="menu-card-img">${m.emoji || '🍽️'}</div>`;
+      const soldOutBadge = m.soldOut ? '<span class="sold-out-badge">품절</span>' : '';
+      return `
+        <div class="menu-card ${m.soldOut ? 'opacity: 0.6' : ''}">
+          ${imgEl}
+          <div class="menu-card-body">
+            <div class="menu-card-top">
+              <div class="menu-card-name">${m.name}</div>
+              ${soldOutBadge}
+            </div>
+            <div class="menu-card-desc">${m.desc || ''}</div>
+            <div class="menu-card-meta">
+              <div class="menu-price">₩${Number(m.price).toLocaleString()}</div>
+              ${catTag}
+            </div>
+            <div class="menu-card-actions">
+              <button class="btn-edit" onclick="openModal('${m.id}')">✏️ 수정</button>
+              <button class="btn-soldout ${m.soldOut ? 'active' : ''}" onclick="toggleSoldOut('${m.id}', ${!!m.soldOut})">
+                ${m.soldOut ? '✅ 판매재개' : '❌ 품절처리'}
+              </button>
+              <button class="btn-del" onclick="askDelete('${m.id}', '${m.name.replace(/'/g,"\\'")}')">🗑</button>
+            </div>
+          </div>
+        </div>`;
+    }).join('');
+  }
+
+  // ===== 모달 =====
+  window.openModal = (id) => {
+    editingId = id || null;
+    selectedImageFile = null;
+    uploadedImageUrl = null;
+    document.getElementById('modal-title').textContent = id ? '메뉴 수정' : '메뉴 추가';
+    document.getElementById('img-preview').style.display = 'none';
+    document.getElementById('img-placeholder').style.display = 'block';
+    document.getElementById('img-file').value = '';
+    document.getElementById('upload-progress').style.display = 'none';
+
+    if (id) {
+      const m = menus.find(m => m.id === id);
+      if (!m) return;
+      document.getElementById('f-name').value = m.name;
+      document.getElementById('f-desc').value = m.desc || '';
+      document.getElementById('f-price').value = m.price;
+      document.getElementById('f-category').value = m.category;
+      ['hot','set','new-item','rec'].forEach(t => {
+        document.getElementById('tag-' + (t === 'new-item' ? 'new' : t === 'rec' ? 'rec' : t)).checked = (m.tags || []).includes(t);
+      });
+      if (m.imageUrl) {
+        uploadedImageUrl = m.imageUrl;
+        const prev = document.getElementById('img-preview');
+        prev.src = m.imageUrl; prev.style.display = 'block';
+        document.getElementById('img-placeholder').style.display = 'none';
+      }
+    } else {
+      document.getElementById('f-name').value = '';
+      document.getElementById('f-desc').value = '';
+      document.getElementById('f-price').value = '';
+      document.getElementById('f-category').value = 'drink';
+      ['hot','set','new','rec'].forEach(t => document.getElementById('tag-'+t).checked = false);
+    }
+    document.getElementById('menu-modal').classList.add('show');
+  };
+
+  window.closeModal = () => document.getElementById('menu-modal').classList.remove('show');
+
+  // ===== 이미지 선택 =====
+  window.handleImageSelect = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    selectedImageFile = file;
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      const prev = document.getElementById('img-preview');
+      prev.src = ev.target.result; prev.style.display = 'block';
+      document.getElementById('img-placeholder').style.display = 'none';
+    };
+    reader.readAsDataURL(file);
+  };
+
+  // ===== 이미지 업로드 =====
+  async function uploadImage(file) {
+    return new Promise((resolve, reject) => {
+      const fileName = `menus/${Date.now()}_${file.name}`;
+      const storageRef = ref(storage, fileName);
+      const uploadTask = uploadBytesResumable(storageRef, file);
+      document.getElementById('upload-progress').style.display = 'block';
+      uploadTask.on('state_changed',
+        (snap) => {
+          const pct = (snap.bytesTransferred / snap.totalBytes) * 100;
+          document.getElementById('upload-bar').style.width = pct + '%';
+        },
+        reject,
+        async () => {
+          const url = await getDownloadURL(uploadTask.snapshot.ref);
+          resolve(url);
+        }
+      );
+    });
+  }
+
+  // ===== 저장 =====
+  window.saveMenu = async () => {
+    const name = document.getElementById('f-name').value.trim();
+    const price = document.getElementById('f-price').value;
+    if (!name || !price) { showToast('메뉴명과 가격은 필수입니다'); return; }
+
+    const saveBtn = document.getElementById('save-btn');
+    saveBtn.disabled = true; saveBtn.textContent = '저장 중...';
+
+    try {
+      let imageUrl = uploadedImageUrl || '';
+      if (selectedImageFile) {
+        showToast('이미지 업로드 중...');
+        imageUrl = await uploadImage(selectedImageFile);
+      }
+
+      const tags = [];
+      if (document.getElementById('tag-hot').checked) tags.push('hot');
+      if (document.getElementById('tag-set').checked) tags.push('set');
+      if (document.getElementById('tag-new').checked) tags.push('new-item');
+      if (document.getElementById('tag-rec').checked) tags.push('rec');
+      tags.push(document.getElementById('f-category').value);
+
+      const data = {
+        name,
+        desc: document.getElementById('f-desc').value.trim(),
+        price: Number(price),
+        category: document.getElementById('f-category').value,
+        tags,
+        imageUrl,
+        updatedAt: serverTimestamp(),
+      };
+
+      if (editingId) {
+        await updateDoc(doc(db, 'menus', editingId), data);
+        showToast('✅ 메뉴가 수정되었습니다');
+      } else {
+        data.createdAt = serverTimestamp();
+        data.soldOut = false;
+        await addDoc(collection(db, 'menus'), data);
+        showToast('✅ 메뉴가 추가되었습니다');
+      }
+      closeModal();
+    } catch(e) {
+      showToast('오류: ' + e.message);
+    } finally {
+      saveBtn.disabled = false; saveBtn.textContent = '저장하기';
+      document.getElementById('upload-progress').style.display = 'none';
+    }
+  };
+
+  // ===== 품절 토글 =====
+  window.toggleSoldOut = async (id, current) => {
+    await updateDoc(doc(db, 'menus', id), { soldOut: !current });
+    showToast(!current ? '❌ 품절 처리되었습니다' : '✅ 판매 재개되었습니다');
+  };
+
+  // ===== 삭제 =====
+  window.askDelete = (id, name) => {
+    deleteId = id;
+    document.getElementById('confirm-text').textContent = `"${name}" 메뉴를 삭제할까요?`;
+    document.getElementById('confirm-overlay').classList.add('show');
+  };
+  window.closeConfirm = () => document.getElementById('confirm-overlay').classList.remove('show');
+  window.confirmDelete = async () => {
+    if (!deleteId) return;
+    await deleteDoc(doc(db, 'menus', deleteId));
+    deleteId = null;
+    closeConfirm();
+    showToast('🗑 메뉴가 삭제되었습니다');
+  };
+
+  function showToast(msg) {
+    const t = document.getElementById('toast');
+    t.textContent = msg; t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 2500);
+  }
+</script>
+</body>
+</html>
 
