@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>JC Hotel - 프론트 주문 대시보드</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700&display=swap');
+  :root {
+    --navy: #0B1120; --navy2: #131C2E; --navy3: #1C2840;
+    --gold: #F0A500; --gold2: #C8860A; --white: #F5F7FA;
+    --gray: #8A97AA; --red: #FF4D4D; --green: #22C55E; --blue: #3B82F6;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Noto Sans KR', sans-serif; background: var(--navy); color: var(--white); min-height: 100vh; }
+
+  .top-bar {
+    background: #060C18; border-bottom: 1px solid var(--navy3);
+    padding: 14px 24px; display: flex; align-items: center; justify-content: space-between;
+    position: sticky; top: 0; z-index: 100;
+  }
+  .top-brand { font-size: 0.8rem; color: var(--gray); letter-spacing: 1px; }
+  .top-brand span { color: var(--gold); font-weight: 700; }
+  .live-dot { display: flex; align-items: center; gap: 6px; font-size: 0.8rem; color: var(--green); }
+  .live-dot::before { content:''; width:8px; height:8px; background:var(--green); border-radius:50%; animation: pulse 1.5s infinite; }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
+
+  .dash-header {
+    background: #0A1628; border-bottom: 1px solid var(--navy3);
+    padding: 16px 24px; display: flex; align-items: center; justify-content: space-between;
+  }
+  .dash-title { font-size: 1.15rem; font-weight: 700; }
+  .dash-title .count { color: var(--gold); margin-left: 8px; }
+  .refresh-btn {
+    background: var(--navy3); color: var(--gray); border: none; padding: 7px 14px;
+    border-radius: 8px; cursor: pointer; font-family: inherit; font-size: 0.8rem;
+  }
+
+  .orders-container { padding: 20px 24px; display: flex; flex-direction: column; gap: 16px; max-width: 900px; }
+
+  .order-card {
+    background: var(--navy2); border: 1px solid var(--navy3); border-radius: 16px;
+    padding: 20px; position: relative; transition: border-color 0.3s;
+  }
+  .order-card.new { border-color: var(--gold); animation: newOrder 0.4s ease; }
+  .order-card.heating { border-color: var(--red); }
+  .order-card.delivering { border-color: var(--blue); }
+  @keyframes newOrder { 0%{transform:scale(0.97);opacity:0.5} 100%{transform:scale(1);opacity:1} }
+
+  .order-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
+  .room-tag { background: var(--gold); color: #000; font-size: 0.75rem; font-weight: 700; padding: 4px 12px; border-radius: 6px; }
+  .guest-name { font-size: 1.1rem; font-weight: 700; margin-left: 10px; }
+  .payment-badge { font-size: 0.7rem; padding: 3px 10px; border-radius: 4px; font-weight: 700; }
+  .payment-badge.prepaid { background: rgba(59,130,246,0.2); color: #60A5FA; border: 1px solid rgba(59,130,246,0.3); }
+  .payment-badge.room { background: rgba(240,165,0,0.2); color: var(--gold); border: 1px solid rgba(240,165,0,0.3); }
+
+  .order-items { margin-bottom: 14px; }
+  .order-item { display: flex; align-items: baseline; gap: 8px; padding: 5px 0; border-bottom: 1px solid var(--navy3); font-size: 0.9rem; }
+  .order-item:last-child { border-bottom: none; }
+  .item-name { flex: 1; }
+  .item-qty { color: var(--gold); font-weight: 700; white-space: nowrap; }
+  .item-note { font-size: 0.75rem; color: var(--gray); }
+
+  .order-memo { background: var(--navy3); border-radius: 8px; padding: 10px 14px; font-size: 0.82rem; color: var(--gray); margin-bottom: 14px; }
+  .order-memo span { color: var(--white); }
+
+  .order-footer { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px; }
+  .order-meta { font-size: 0.78rem; color: var(--gray); }
+  .order-total { font-size: 1rem; font-weight: 700; color: var(--gold); margin-top: 2px; }
+  .order-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+
+  .action-btn {
+    border: none; padding: 9px 15px; border-radius: 8px; font-size: 0.8rem; font-weight: 700;
+    cursor: pointer; font-family: inherit; display: flex; align-items: center; gap: 5px; transition: opacity 0.2s;
+  }
+  .action-btn:hover { opacity: 0.8; }
+  .btn-heat { background: rgba(255,77,77,0.15); color: #FF8080; border: 1px solid rgba(255,77,77,0.4); }
+  .btn-deliver { background: rgba(59,130,246,0.15); color: #60A5FA; border: 1px solid rgba(59,130,246,0.4); }
+  .btn-done { background: var(--navy3); color: var(--gray); border: 1px solid #2A3F5F; }
+
+  .status-badge { font-size: 0.7rem; padding: 4px 12px; border-radius: 12px; font-weight: 700; display: inline-flex; align-items: center; gap: 5px; }
+  .status-new { background: rgba(240,165,0,0.15); color: var(--gold); }
+  .status-heating { background: rgba(255,77,77,0.15); color: #FF8080; }
+  .status-delivering { background: rgba(59,130,246,0.15); color: #60A5FA; }
+
+  .empty-state { text-align: center; padding: 80px 20px; color: var(--gray); }
+  .empty-state .emoji { font-size: 3rem; margin-bottom: 16px; }
+
+  .toast {
+    position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%);
+    background: var(--navy2); border: 1px solid var(--gold2); color: var(--white);
+    padding: 12px 24px; border-radius: 12px; font-size: 0.85rem; font-weight: 500;
+    z-index: 3000; opacity: 0; transition: opacity 0.3s; pointer-events: none; white-space: nowrap;
+  }
+  .toast.show { opacity: 1; }
+</style>
+</head>
+<body>
+
+<div class="top-bar">
+  <div class="top-brand">JC HOTEL <span>ROOM BAR</span> — 프론트 대시보드</div>
+  <div class="live-dot">실시간 주방 동기화 중</div>
+</div>
+
+<div class="dash-header">
+  <div class="dash-title">실시간 룸바 주문 대기열 <span class="count" id="order-count">(0)</span></div>
+  <button class="refresh-btn">↻ 새로고침</button>
+</div>
+
+<div class="orders-container" id="orders-container">
+  <div class="empty-state">
+    <div class="emoji">🍺</div>
+    <p>아직 접수된 주문이 없습니다</p>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+  import { getFirestore, collection, onSnapshot, doc, updateDoc, query, orderBy }
+    from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyDSFNwHWreQ5py9lq8fINEMAmGj_wbEqjE",
+    authDomain: "jc-hotel-roombar-27c58.firebaseapp.com",
+    projectId: "jc-hotel-roombar-27c58",
+    storageBucket: "jc-hotel-roombar-27c58.firebasestorage.app",
+    messagingSenderId: "866392617860",
+    appId: "1:866392617860:web:33d262c60779179f55e3d1"
+  };
+  const app = initializeApp(firebaseConfig);
+  const db = getFirestore(app);
+
+  let orders = [];
+
+  const q = query(collection(db, 'orders'), orderBy('createdAt', 'desc'));
+  onSnapshot(q, (snapshot) => {
+    orders = snapshot.docs.map(d => ({ id: d.id, ...d.data() })).filter(o => o.status !== 'done');
+    document.getElementById('order-count').textContent = `(${orders.length})`;
+    renderOrders();
+  });
+
+  function renderOrders() {
+    const container = document.getElementById('orders-container');
+    if (!orders.length) {
+      container.innerHTML = `<div class="empty-state"><div class="emoji">🍺</div><p>아직 접수된 주문이 없습니다</p></div>`;
+      return;
+    }
+    const statusMap = {
+      new: '<span class="status-badge status-new">🟡 신규 접수</span>',
+      heating: '<span class="status-badge status-heating">🔴 오븐 히팅 중</span>',
+      delivering: '<span class="status-badge status-delivering">🔵 배달 중</span>',
+    };
+    container.innerHTML = orders.map(o => {
+      const payBadge = o.payment === 'prepaid'
+        ? '<span class="payment-badge prepaid">삼성페이 선결제완료</span>'
+        : '<span class="payment-badge room">객실 후불청구</span>';
+      const itemsHTML = o.items.map(i =>
+        `<div class="order-item">
+          <span class="item-name">• ${i.name}</span>
+          <span class="item-qty">${i.qty}개</span>
+          <span class="item-note">(${i.note})</span>
+        </div>`).join('');
+      const time = o.createdAt ? timeAgo(o.createdAt.toDate()) : '방금 전';
+      return `
+        <div class="order-card ${o.status}">
+          <div style="position:absolute;top:16px;right:16px;">${payBadge}</div>
+          <div class="order-top">
+            <div style="display:flex;align-items:center;">
+              <span class="room-tag">Room ${o.room}</span>
+              <span class="guest-name">${o.guestName} 고객님</span>
+            </div>
+            ${statusMap[o.status] || ''}
+          </div>
+          <div class="order-items">${itemsHTML}</div>
+          ${o.memo ? `<div class="order-memo">고객 메모: <span>${o.memo}</span></div>` : ''}
+          <div class="order-footer">
+            <div>
+              <div class="order-meta">주문 접수시간: ${time}</div>
+              <div class="order-total">합계액: ₩${o.total.toLocaleString()}</div>
+            </div>
+            <div class="order-actions">
+              ${o.status === 'new' ? `<button class="action-btn btn-heat" onclick="updateStatus('${o.id}','heating')">🔥 오븐 히팅 시작</button>` : ''}
+              ${o.status !== 'delivering' ? `<button class="action-btn btn-deliver" onclick="updateStatus('${o.id}','delivering')">🛵 배달 시작</button>` : ''}
+              <button class="action-btn btn-done" onclick="updateStatus('${o.id}','done')">✅ 완료처리</button>
+            </div>
+          </div>
+        </div>`;
+    }).join('');
+  }
+
+  window.updateStatus = async (id, status) => {
+    await updateDoc(doc(db, 'orders', id), { status });
+    const msgs = { heating:'🔥 오븐 히팅 시작!', delivering:'🛵 배달 시작!', done:'✅ 완료 처리되었습니다' };
+    showToast(msgs[status]);
+  };
+
+  function timeAgo(date) {
+    const diff = Math.floor((Date.now() - date) / 1000);
+    if (diff < 60) return '방금 전';
+    if (diff < 3600) return `${Math.floor(diff/60)}분 전`;
+    return `${Math.floor(diff/3600)}시간 전`;
+  }
+
+  function showToast(msg) {
+    const t = document.getElementById('toast');
+    t.textContent = msg; t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 2500);
+  }
+</script>
+</body>
+</html>
