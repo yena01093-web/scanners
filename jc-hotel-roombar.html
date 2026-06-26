@@ -1,0 +1,573 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>JC Hotel Room Bar & Comfort Food</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700&display=swap');
+
+  :root {
+    --navy: #0B1120;
+    --navy2: #131C2E;
+    --navy3: #1C2840;
+    --gold: #F0A500;
+    --gold2: #C8860A;
+    --white: #F5F7FA;
+    --gray: #8A97AA;
+    --red: #FF4D4D;
+    --green: #22C55E;
+    --blue: #3B82F6;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Noto Sans KR', sans-serif; background: var(--navy); color: var(--white); min-height: 100vh; }
+
+  /* ===== SCREEN SWITCHER ===== */
+  .screen-switcher {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 1000;
+    background: #060C18; border-bottom: 1px solid #1C2840;
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 10px 20px;
+  }
+  .brand { font-size: 0.75rem; color: var(--gray); letter-spacing: 1px; }
+  .brand span { color: var(--gold); font-weight: 700; }
+  .switcher-tabs { display: flex; gap: 8px; }
+  .switcher-tab {
+    padding: 6px 16px; border-radius: 20px; border: 1px solid #1C2840;
+    background: transparent; color: var(--gray); font-size: 0.8rem; cursor: pointer;
+    font-family: inherit; transition: all 0.2s;
+  }
+  .switcher-tab.active { background: var(--gold); color: #000; border-color: var(--gold); font-weight: 700; }
+  .live-dot { display: flex; align-items: center; gap: 6px; font-size: 0.75rem; color: var(--green); }
+  .live-dot::before { content: ''; width: 8px; height: 8px; background: var(--green); border-radius: 50%; animation: pulse 1.5s infinite; }
+  @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.3; } }
+
+  /* ===== SCREENS ===== */
+  .screen { display: none; padding-top: 52px; min-height: 100vh; }
+  .screen.active { display: block; }
+
+  /* ===== GUEST APP ===== */
+  #guest-app { background: var(--navy); max-width: 420px; margin: 0 auto; }
+
+  .guest-header {
+    background: linear-gradient(180deg, #060C18 0%, var(--navy) 100%);
+    padding: 24px 20px 20px; text-align: center; position: sticky; top: 52px; z-index: 100;
+    border-bottom: 1px solid var(--navy3);
+  }
+  .hotel-name { font-size: 1.6rem; font-weight: 700; letter-spacing: -0.5px; }
+  .hotel-name span { color: var(--gold); }
+  .room-badge {
+    display: inline-flex; align-items: center; gap: 6px;
+    background: var(--navy3); border: 1px solid var(--gold2);
+    color: var(--gold); padding: 5px 14px; border-radius: 20px;
+    font-size: 0.85rem; font-weight: 700; margin-top: 10px;
+  }
+
+  .tabs { display: flex; gap: 0; padding: 0 16px; margin: 16px 0 0;
+    background: var(--navy); border-bottom: 1px solid var(--navy3); }
+  .tab {
+    flex: 1; padding: 12px 4px; text-align: center; font-size: 0.8rem; color: var(--gray);
+    cursor: pointer; border-bottom: 2px solid transparent; transition: all 0.2s; white-space: nowrap;
+  }
+  .tab.active { color: var(--gold); border-bottom-color: var(--gold); font-weight: 700; }
+
+  .hot-banner {
+    margin: 16px; background: linear-gradient(135deg, var(--navy3), #0F1E35);
+    border: 1px solid #2A3F5F; border-radius: 12px; padding: 14px 16px;
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .hot-tag { background: var(--red); color: white; font-size: 0.65rem; font-weight: 700;
+    padding: 2px 8px; border-radius: 4px; letter-spacing: 1px; margin-bottom: 6px; display: inline-block; }
+  .hot-text { font-size: 0.9rem; font-weight: 500; }
+  .lightning { font-size: 1.8rem; }
+
+  .menu-section { padding: 0 16px 120px; }
+  .menu-card {
+    background: var(--navy2); border: 1px solid var(--navy3); border-radius: 14px;
+    overflow: hidden; margin-bottom: 14px; display: flex; align-items: stretch;
+    transition: border-color 0.2s;
+  }
+  .menu-card:hover { border-color: var(--gold2); }
+  .menu-img { width: 110px; height: 110px; object-fit: cover; flex-shrink: 0; }
+  .menu-img-placeholder { width: 110px; height: 110px; background: var(--navy3); flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center; font-size: 2rem; }
+  .menu-body { padding: 14px; flex: 1; display: flex; flex-direction: column; justify-content: space-between; }
+  .menu-tags { display: flex; gap: 5px; margin-bottom: 6px; flex-wrap: wrap; }
+  .tag {
+    font-size: 0.65rem; padding: 2px 8px; border-radius: 4px; font-weight: 700; letter-spacing: 0.5px;
+  }
+  .tag-drink { background: rgba(59,130,246,0.2); color: #60A5FA; border: 1px solid rgba(59,130,246,0.3); }
+  .tag-food { background: rgba(34,197,94,0.2); color: #4ADE80; border: 1px solid rgba(34,197,94,0.3); }
+  .tag-hot { background: rgba(255,77,77,0.2); color: #FF8080; border: 1px solid rgba(255,77,77,0.3); }
+  .tag-set { background: rgba(168,85,247,0.2); color: #C084FC; border: 1px solid rgba(168,85,247,0.3); }
+  .menu-name { font-size: 1rem; font-weight: 700; margin-bottom: 4px; }
+  .menu-desc { font-size: 0.78rem; color: var(--gray); line-height: 1.4; margin-bottom: 10px; }
+  .menu-bottom { display: flex; align-items: center; justify-content: space-between; }
+  .menu-price { color: var(--gold); font-weight: 700; font-size: 1rem; }
+  .add-btn {
+    background: var(--gold); color: #000; border: none; padding: 7px 16px;
+    border-radius: 20px; font-size: 0.82rem; font-weight: 700; cursor: pointer;
+    font-family: inherit; transition: background 0.2s;
+  }
+  .add-btn:hover { background: #D4900A; }
+
+  .cart-bar {
+    position: fixed; bottom: 0; left: 50%; transform: translateX(-50%);
+    width: 100%; max-width: 420px; background: #060C18;
+    border-top: 1px solid var(--navy3); padding: 14px 20px;
+  }
+  .cart-label { font-size: 0.7rem; color: var(--gray); letter-spacing: 1px; margin-bottom: 6px; }
+  .cart-bottom { display: flex; align-items: center; justify-content: space-between; }
+  .cart-total { font-size: 1.2rem; font-weight: 700; color: var(--gold); }
+  .cart-items-preview { font-size: 0.75rem; color: var(--gray); margin-top: 2px; }
+  .order-btn {
+    background: var(--gold); color: #000; border: none; padding: 12px 24px;
+    border-radius: 12px; font-size: 0.9rem; font-weight: 700; cursor: pointer;
+    font-family: inherit; display: flex; align-items: center; gap: 8px;
+    transition: background 0.2s;
+  }
+  .order-btn:hover { background: #D4900A; }
+
+  /* name modal */
+  .modal-overlay {
+    display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.8);
+    z-index: 2000; align-items: center; justify-content: center;
+  }
+  .modal-overlay.show { display: flex; }
+  .modal {
+    background: var(--navy2); border: 1px solid var(--navy3); border-radius: 20px;
+    padding: 28px 24px; width: 340px; max-width: 90vw;
+  }
+  .modal h3 { font-size: 1.1rem; font-weight: 700; margin-bottom: 8px; }
+  .modal p { font-size: 0.85rem; color: var(--gray); margin-bottom: 20px; }
+  .modal input, .modal textarea {
+    width: 100%; background: var(--navy3); border: 1px solid #2A3F5F; color: var(--white);
+    border-radius: 10px; padding: 12px 14px; font-size: 0.9rem; font-family: inherit;
+    margin-bottom: 12px; outline: none;
+  }
+  .modal input:focus, .modal textarea:focus { border-color: var(--gold); }
+  .modal textarea { height: 80px; resize: none; }
+  .modal-btns { display: flex; gap: 10px; }
+  .btn-cancel { flex: 1; background: var(--navy3); color: var(--gray); border: none;
+    padding: 12px; border-radius: 10px; cursor: pointer; font-family: inherit; font-size: 0.9rem; }
+  .btn-confirm { flex: 2; background: var(--gold); color: #000; border: none;
+    padding: 12px; border-radius: 10px; cursor: pointer; font-family: inherit;
+    font-size: 0.9rem; font-weight: 700; }
+
+  /* ===== FRONT DASHBOARD ===== */
+  #front-dashboard { background: var(--navy); padding-top: 52px; min-height: 100vh; }
+
+  .dash-header {
+    background: #060C18; border-bottom: 1px solid var(--navy3);
+    padding: 16px 24px; display: flex; align-items: center; justify-content: space-between;
+    position: sticky; top: 52px; z-index: 100;
+  }
+  .dash-title { font-size: 1.1rem; font-weight: 700; }
+  .dash-title .count { color: var(--gold); margin-left: 8px; }
+  .refresh-btn {
+    background: var(--navy3); color: var(--gray); border: none; padding: 7px 14px;
+    border-radius: 8px; cursor: pointer; font-family: inherit; font-size: 0.8rem;
+    display: flex; align-items: center; gap: 5px;
+  }
+
+  .orders-container { padding: 20px 24px; display: flex; flex-direction: column; gap: 16px; max-width: 900px; }
+
+  .order-card {
+    background: var(--navy2); border: 1px solid var(--navy3); border-radius: 16px;
+    padding: 20px; position: relative; transition: border-color 0.3s;
+  }
+  .order-card.new { border-color: var(--gold); animation: newOrder 0.5s ease; }
+  @keyframes newOrder { 0% { transform: scale(0.97); opacity: 0.5; } 100% { transform: scale(1); opacity: 1; } }
+  .order-card.heating { border-color: var(--red); }
+  .order-card.delivering { border-color: var(--blue); }
+
+  .order-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
+  .room-tag2 {
+    background: var(--gold); color: #000; font-size: 0.75rem; font-weight: 700;
+    padding: 4px 12px; border-radius: 6px;
+  }
+  .guest-name { font-size: 1.1rem; font-weight: 700; margin-left: 10px; }
+  .payment-badge {
+    font-size: 0.7rem; padding: 3px 10px; border-radius: 4px; font-weight: 700;
+  }
+  .payment-badge.prepaid { background: rgba(59,130,246,0.2); color: #60A5FA; border: 1px solid rgba(59,130,246,0.3); }
+  .payment-badge.room { background: rgba(240,165,0,0.2); color: var(--gold); border: 1px solid rgba(240,165,0,0.3); }
+
+  .order-items { margin-bottom: 14px; }
+  .order-item { display: flex; align-items: baseline; gap: 8px; padding: 4px 0;
+    border-bottom: 1px solid var(--navy3); font-size: 0.9rem; }
+  .order-item:last-child { border-bottom: none; }
+  .item-name { flex: 1; }
+  .item-qty { color: var(--gold); font-weight: 700; white-space: nowrap; }
+  .item-note { font-size: 0.75rem; color: var(--gray); }
+
+  .order-memo { background: var(--navy3); border-radius: 8px; padding: 10px 14px;
+    font-size: 0.82rem; color: var(--gray); margin-bottom: 14px; }
+  .order-memo span { color: var(--white); }
+
+  .order-footer { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px; }
+  .order-time { font-size: 0.78rem; color: var(--gray); }
+  .order-total { font-size: 1rem; font-weight: 700; color: var(--gold); }
+  .order-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+
+  .action-btn {
+    border: none; padding: 8px 14px; border-radius: 8px; font-size: 0.8rem; font-weight: 700;
+    cursor: pointer; font-family: inherit; display: flex; align-items: center; gap: 5px;
+    transition: opacity 0.2s;
+  }
+  .action-btn:hover { opacity: 0.85; }
+  .btn-heat { background: rgba(255,77,77,0.2); color: #FF8080; border: 1px solid rgba(255,77,77,0.4); }
+  .btn-deliver { background: rgba(59,130,246,0.2); color: #60A5FA; border: 1px solid rgba(59,130,246,0.4); }
+  .btn-done { background: var(--navy3); color: var(--gray); border: 1px solid #2A3F5F; }
+
+  .status-badge {
+    font-size: 0.7rem; padding: 4px 12px; border-radius: 12px; font-weight: 700;
+    display: inline-flex; align-items: center; gap: 5px;
+  }
+  .status-new { background: rgba(240,165,0,0.15); color: var(--gold); }
+  .status-heating { background: rgba(255,77,77,0.15); color: #FF8080; }
+  .status-delivering { background: rgba(59,130,246,0.15); color: #60A5FA; }
+
+  .empty-state { text-align: center; padding: 80px 20px; color: var(--gray); }
+  .empty-state .emoji { font-size: 3rem; margin-bottom: 16px; }
+  .empty-state p { font-size: 0.9rem; }
+
+  /* toast */
+  .toast {
+    position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%);
+    background: var(--navy2); border: 1px solid var(--gold2); color: var(--white);
+    padding: 12px 24px; border-radius: 12px; font-size: 0.85rem; font-weight: 500;
+    z-index: 3000; opacity: 0; transition: opacity 0.3s; pointer-events: none;
+    white-space: nowrap;
+  }
+  .toast.show { opacity: 1; }
+
+  /* tab content */
+  .tab-content { display: none; }
+  .tab-content.active { display: block; }
+</style>
+</head>
+<body>
+
+<!-- SWITCHER BAR -->
+<div class="screen-switcher">
+  <div class="brand">JC HOTEL <span>ROOM BAR</span></div>
+  <div class="switcher-tabs">
+    <button class="switcher-tab active" onclick="switchScreen('guest')">🛎 고객 앱</button>
+    <button class="switcher-tab" onclick="switchScreen('front')">📋 프론트</button>
+  </div>
+  <div class="live-dot">실시간 동기화 중</div>
+</div>
+
+<!-- GUEST APP -->
+<div id="guest-app" class="screen active">
+  <div class="guest-header">
+    <div class="hotel-name">JC <span>룸바</span> & 야식</div>
+    <div class="room-badge">🛎 Room 501호</div>
+    <div class="tabs" id="menu-tabs">
+      <div class="tab active" onclick="switchTab('all', this)">전체</div>
+      <div class="tab" onclick="switchTab('drink', this)">🍷 주류 & 음료</div>
+      <div class="tab" onclick="switchTab('food', this)">🍕 5분 퀵안주</div>
+    </div>
+  </div>
+
+  <div style="padding: 0 0 0 0;">
+    <div class="hot-banner">
+      <div>
+        <div class="hot-tag">HOT ISSUE</div>
+        <div class="hot-text">미니바 전 품목 주문 즉시 5분 데우기 달리버리</div>
+      </div>
+      <div class="lightning">⚡</div>
+    </div>
+
+    <div class="menu-section" id="menu-list"></div>
+  </div>
+
+  <div class="cart-bar">
+    <div class="cart-label">SHOPPING CART</div>
+    <div class="cart-bottom">
+      <div>
+        <div class="cart-total" id="cart-total">₩0</div>
+        <div class="cart-items-preview" id="cart-preview">메뉴를 선택해 주세요</div>
+      </div>
+      <button class="order-btn" onclick="openOrderModal()">🛒 바로 주문하기</button>
+    </div>
+  </div>
+</div>
+
+<!-- FRONT DASHBOARD -->
+<div id="front-dashboard" class="screen">
+  <div class="dash-header">
+    <div>
+      <div class="dash-title">실시간 룸바 주문 대기열 <span class="count" id="order-count">(0)</span></div>
+    </div>
+    <button class="refresh-btn" onclick="loadOrders()">↻ 초기화</button>
+  </div>
+  <div class="orders-container" id="orders-container">
+    <div class="empty-state">
+      <div class="emoji">🍺</div>
+      <p>아직 접수된 주문이 없습니다</p>
+    </div>
+  </div>
+</div>
+
+<!-- ORDER MODAL -->
+<div class="modal-overlay" id="order-modal">
+  <div class="modal">
+    <h3>주문 확인</h3>
+    <p>성함과 요청사항을 입력해 주세요</p>
+    <input type="text" id="guest-name-input" placeholder="성함 (예: 김○○)" maxlength="10">
+    <textarea id="guest-memo-input" placeholder="요청사항 (예: 얼음컵 2개 더 챙겨주세요)"></textarea>
+    <div style="margin-bottom: 12px;">
+      <div style="font-size: 0.8rem; color: var(--gray); margin-bottom: 8px;">결제 방식</div>
+      <div style="display: flex; gap: 8px;">
+        <label style="flex:1; display:flex; align-items:center; gap:6px; background:var(--navy3); padding:10px 12px; border-radius:8px; cursor:pointer; font-size:0.85rem;">
+          <input type="radio" name="payment" value="room" checked> 객실 후불청구
+        </label>
+        <label style="flex:1; display:flex; align-items:center; gap:6px; background:var(--navy3); padding:10px 12px; border-radius:8px; cursor:pointer; font-size:0.85rem;">
+          <input type="radio" name="payment" value="prepaid"> 삼성페이 선결제
+        </label>
+      </div>
+    </div>
+    <div class="modal-btns">
+      <button class="btn-cancel" onclick="closeOrderModal()">취소</button>
+      <button class="btn-confirm" onclick="submitOrder()">주문 접수</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<!-- Firebase -->
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+  import { getFirestore, collection, addDoc, onSnapshot, doc, updateDoc, query, orderBy, serverTimestamp }
+    from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyDSFNwHWreQ5py9lq8fINEMAmGj_wbEqjE",
+    authDomain: "jc-hotel-roombar-27c58.firebaseapp.com",
+    projectId: "jc-hotel-roombar-27c58",
+    storageBucket: "jc-hotel-roombar-27c58.firebasestorage.app",
+    messagingSenderId: "866392617860",
+    appId: "1:866392617860:web:33d262c60779179f55e3d1"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const db = getFirestore(app);
+
+  // ===== MENU DATA =====
+  const menus = [
+    { id: 1, name: '엄선된 하우스 와인 (하프)', desc: '375ml 캐주얼 보름 와인', price: 25000, category: 'drink', tags: ['drink', 'hot'], emoji: '🍷' },
+    { id: 2, name: '제천 수제 크래프트 맥주', desc: '캔 500ml + 짱짱한 얼음컵 제공', price: 8000, category: 'drink', tags: ['drink', 'set'], emoji: '🍺' },
+    { id: 3, name: '프리미엄 하이볼 세트', desc: '산토리 위스키 + 탄산수 + 레몬', price: 18000, category: 'drink', tags: ['drink'], emoji: '🥃' },
+    { id: 4, name: '고메 치즈 조각 피자 (2P)', desc: '전자레인지 3분 급속 조리', price: 12000, category: 'food', tags: ['food', 'hot'], emoji: '🍕' },
+    { id: 5, name: '버팔로 윙 & 감자 믹스', desc: '마이크로 오븐 조리 | 매콤달콤', price: 15000, category: 'food', tags: ['food', 'set'], emoji: '🍗' },
+    { id: 6, name: '야식 라면 세트', desc: '신라면 + 계란 + 참기름 키트', price: 7000, category: 'food', tags: ['food'], emoji: '🍜' },
+    { id: 7, name: '에너지 드링크 믹스팩', desc: '레드불 2캔 + 몬스터 1캔', price: 14000, category: 'drink', tags: ['drink'], emoji: '⚡' },
+    { id: 8, name: '한우 육포 & 견과류 세트', desc: '안주용 프리미엄 건조육 + 믹스넛', price: 22000, category: 'food', tags: ['food', 'hot'], emoji: '🥩' },
+  ];
+
+  let cart = {};
+  let currentTab = 'all';
+  let orders = [];
+
+  // ===== RENDER MENU =====
+  function renderMenu() {
+    const filtered = currentTab === 'all' ? menus : menus.filter(m => m.category === currentTab);
+    const container = document.getElementById('menu-list');
+    container.innerHTML = filtered.map(m => {
+      const tagHTML = m.tags.map(t => {
+        const map = { drink: ['tag-drink','주류'], food: ['tag-food','간편식'], hot: ['tag-hot','인기'], set: ['tag-set','세트'] };
+        return `<span class="tag ${map[t][0]}">${map[t][1]}</span>`;
+      }).join('');
+      const qty = cart[m.id] ? cart[m.id].qty : 0;
+      return `
+        <div class="menu-card">
+          <div class="menu-img-placeholder">${m.emoji}</div>
+          <div class="menu-body">
+            <div>
+              <div class="menu-tags">${tagHTML}</div>
+              <div class="menu-name">${m.name}</div>
+              <div class="menu-desc">${m.desc}</div>
+            </div>
+            <div class="menu-bottom">
+              <div class="menu-price">₩${m.price.toLocaleString()}</div>
+              <button class="add-btn" onclick="addToCart(${m.id})">
+                ${qty > 0 ? `담기 (${qty})` : '+ 담기'}
+              </button>
+            </div>
+          </div>
+        </div>`;
+    }).join('');
+  }
+
+  window.addToCart = function(id) {
+    const menu = menus.find(m => m.id === id);
+    if (!cart[id]) cart[id] = { ...menu, qty: 0 };
+    cart[id].qty++;
+    updateCartBar();
+    renderMenu();
+    showToast(`${menu.name} 담겼습니다 🛒`);
+  };
+
+  function updateCartBar() {
+    const items = Object.values(cart).filter(i => i.qty > 0);
+    const total = items.reduce((s, i) => s + i.price * i.qty, 0);
+    document.getElementById('cart-total').textContent = '₩' + total.toLocaleString();
+    document.getElementById('cart-preview').textContent = items.length
+      ? items.map(i => `${i.name} ${i.qty}개`).join(', ')
+      : '메뉴를 선택해 주세요';
+  }
+
+  window.switchTab = function(tab, el) {
+    currentTab = tab;
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    el.classList.add('active');
+    renderMenu();
+  };
+
+  // ===== ORDER MODAL =====
+  window.openOrderModal = function() {
+    const items = Object.values(cart).filter(i => i.qty > 0);
+    if (!items.length) { showToast('메뉴를 먼저 선택해 주세요'); return; }
+    document.getElementById('order-modal').classList.add('show');
+  };
+  window.closeOrderModal = function() {
+    document.getElementById('order-modal').classList.remove('show');
+  };
+
+  window.submitOrder = async function() {
+    const name = document.getElementById('guest-name-input').value.trim();
+    const memo = document.getElementById('guest-memo-input').value.trim();
+    const payment = document.querySelector('input[name="payment"]:checked').value;
+    if (!name) { showToast('성함을 입력해 주세요'); return; }
+
+    const items = Object.values(cart).filter(i => i.qty > 0).map(i => ({
+      name: i.name, qty: i.qty, price: i.price, note: i.desc
+    }));
+    const total = items.reduce((s, i) => s + i.price * i.qty, 0);
+
+    try {
+      await addDoc(collection(db, 'orders'), {
+        room: '501',
+        guestName: name,
+        memo,
+        payment,
+        items,
+        total,
+        status: 'new',
+        createdAt: serverTimestamp()
+      });
+      cart = {};
+      updateCartBar();
+      renderMenu();
+      closeOrderModal();
+      document.getElementById('guest-name-input').value = '';
+      document.getElementById('guest-memo-input').value = '';
+      showToast('✅ 주문이 접수되었습니다! 곧 배달해드립니다.');
+    } catch (e) {
+      showToast('오류가 발생했습니다: ' + e.message);
+    }
+  };
+
+  // ===== FRONT DASHBOARD =====
+  function loadOrders() {
+    const q = query(collection(db, 'orders'), orderBy('createdAt', 'desc'));
+    onSnapshot(q, (snapshot) => {
+      orders = snapshot.docs
+        .map(d => ({ id: d.id, ...d.data() }))
+        .filter(o => o.status !== 'done');
+
+      document.getElementById('order-count').textContent = `(${orders.length})`;
+      renderOrders();
+    });
+  }
+
+  function renderOrders() {
+    const container = document.getElementById('orders-container');
+    if (!orders.length) {
+      container.innerHTML = `<div class="empty-state"><div class="emoji">🍺</div><p>아직 접수된 주문이 없습니다</p></div>`;
+      return;
+    }
+    container.innerHTML = orders.map(o => {
+      const statusMap = {
+        new: '<span class="status-badge status-new">🟡 신규 접수</span>',
+        heating: '<span class="status-badge status-heating">🔴 오븐 히팅 중</span>',
+        delivering: '<span class="status-badge status-delivering">🔵 배달 중</span>',
+      };
+      const payBadge = o.payment === 'prepaid'
+        ? '<span class="payment-badge prepaid">삼성페이 선결제완료</span>'
+        : '<span class="payment-badge room">객실 후불청구</span>';
+      const itemsHTML = o.items.map(i =>
+        `<div class="order-item">
+          <span class="item-name">${i.name}</span>
+          <span class="item-qty">${i.qty}개</span>
+          <span class="item-note">${i.note}</span>
+        </div>`).join('');
+      const time = o.createdAt ? timeAgo(o.createdAt.toDate()) : '방금 전';
+
+      return `
+        <div class="order-card ${o.status}" id="card-${o.id}">
+          <div style="position:absolute;top:14px;right:14px;">${payBadge}</div>
+          <div class="order-top">
+            <div style="display:flex;align-items:center;">
+              <span class="room-tag2">Room ${o.room}</span>
+              <span class="guest-name">${o.guestName} 고객님</span>
+            </div>
+            ${statusMap[o.status] || ''}
+          </div>
+          <div class="order-items">${itemsHTML}</div>
+          ${o.memo ? `<div class="order-memo">고객 메모: <span>${o.memo}</span></div>` : ''}
+          <div class="order-footer">
+            <div>
+              <div class="order-time">주문 접수시간: ${time}</div>
+              <div class="order-total">합계액: ₩${o.total.toLocaleString()}</div>
+            </div>
+            <div class="order-actions">
+              ${o.status === 'new' ? `<button class="action-btn btn-heat" onclick="updateStatus('${o.id}','heating')">🔥 오븐 히팅 시작</button>` : ''}
+              ${o.status !== 'delivering' ? `<button class="action-btn btn-deliver" onclick="updateStatus('${o.id}','delivering')">🛵 배달 시작</button>` : ''}
+              <button class="action-btn btn-done" onclick="updateStatus('${o.id}','done')">✅ 완료처리</button>
+            </div>
+          </div>
+        </div>`;
+    }).join('');
+  }
+
+  window.updateStatus = async function(id, status) {
+    await updateDoc(doc(db, 'orders', id), { status });
+    showToast(status === 'done' ? '✅ 주문 완료 처리되었습니다' : status === 'heating' ? '🔥 오븐 히팅 시작!' : '🛵 배달 시작!');
+  };
+
+  window.loadOrders = loadOrders;
+
+  function timeAgo(date) {
+    const diff = Math.floor((Date.now() - date) / 1000);
+    if (diff < 60) return '방금 전';
+    if (diff < 3600) return `${Math.floor(diff/60)}분 전`;
+    return `${Math.floor(diff/3600)}시간 전`;
+  }
+
+  // ===== UTILS =====
+  window.switchScreen = function(screen) {
+    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+    document.querySelectorAll('.switcher-tab').forEach(t => t.classList.remove('active'));
+    document.getElementById(screen === 'guest' ? 'guest-app' : 'front-dashboard').classList.add('active');
+    event.target.classList.add('active');
+    if (screen === 'front') loadOrders();
+  };
+
+  function showToast(msg) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 2500);
+  }
+  window.showToast = showToast;
+
+  // INIT
+  renderMenu();
+</script>
+</body>
+</html>
