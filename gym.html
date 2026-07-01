@@ -500,6 +500,16 @@ header{background:var(--card);border-bottom:1px solid var(--border);padding:12px
   </div>
 </div>
 
+<!-- ── REWARDS MODAL ── -->
+<div class="modal-overlay" id="rewardsModal">
+  <div class="modal">
+    <h3>🎁 포인트 혜택 교환</h3>
+    <div id="rewardsMemberInfo" style="margin-bottom:14px"></div>
+    <div id="rewardsList"></div>
+    <button class="cancel-btn" style="margin-top:8px" onclick="closeRewardsModal()">닫기</button>
+  </div>
+</div>
+
 <!-- ── MEMO MODAL ── -->
 <div class="modal-overlay" id="memoModal">
   <div class="modal">
@@ -1260,6 +1270,63 @@ function closeRenewModal(){
 }
 
 // ══════════════════════════════════════════════
+//  REWARDS
+// ══════════════════════════════════════════════
+const REWARDS = [
+  {emoji:'🥤', name:'스포츠음료',     points:10},
+  {emoji:'🧴', name:'샤워용품 세트', points:20},
+  {emoji:'👕', name:'운동복 대여',   points:15},
+  {emoji:'☕', name:'단백질 쉐이크', points:25},
+  {emoji:'🏊', name:'1일 이용권',    points:30},
+  {emoji:'🎁', name:'1개월 연장',    points:100},
+];
+
+let rewardsMemberId = null, rewardsMemberName = null, rewardsMemberPoints = 0;
+
+function openRewards(id, name, points){
+  if(!adminAuth){ requireAdmin(()=>openRewards(id,name,points)); return; }
+  rewardsMemberId = id; rewardsMemberName = name; rewardsMemberPoints = points;
+  document.getElementById('rewardsMemberInfo').innerHTML =
+    `<div class="payment-item"><span>회원명</span><span><b>${esc(name)}</b></span></div>
+     <div class="payment-item"><span>보유 포인트</span><span style="color:var(--gold);font-weight:900">${points}P</span></div>`;
+  document.getElementById('rewardsList').innerHTML = REWARDS.map(r=>{
+    const canUse = points >= r.points;
+    return `<div style="display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border)">
+      <div style="display:flex;align-items:center;gap:10px">
+        <span style="font-size:22px">${r.emoji}</span>
+        <div>
+          <div style="font-size:14px;font-weight:700;${canUse?'':'color:var(--muted)'}">${r.name}</div>
+          <div style="font-size:12px;color:var(--gold)">${r.points}P</div>
+        </div>
+      </div>
+      <button class="btn btn-sm ${canUse?'btn-p':'btn-s'}" ${canUse?`onclick="confirmExchange('${r.name}',${r.points},'${r.emoji}')"`:'disabled'} style="${canUse?'':'opacity:.45;cursor:not-allowed'}">${canUse?'교환':'부족'}</button>
+    </div>`;
+  }).join('');
+  document.getElementById('rewardsModal').classList.add('visible');
+}
+
+async function confirmExchange(name, points, emoji){
+  if(!confirm(`${emoji} ${name} (${points}P)를 교환하시겠습니까?\n현재: ${rewardsMemberPoints}P → 교환 후: ${rewardsMemberPoints-points}P`)) return;
+  try{
+    await db.collection('gym_members').doc(rewardsMemberId).update({
+      points: firebase.firestore.FieldValue.increment(-points)
+    });
+    await db.collection('gym_checkins').add({
+      memberId: rewardsMemberId, memberName: rewardsMemberName,
+      type: 'reward', rewardName: name, pointsUsed: points,
+      date: TODAY, ts: firebase.firestore.FieldValue.serverTimestamp(), method: 'manual'
+    });
+    showAlert(`${emoji} ${name} 교환 완료! -${points}P ✅`);
+    closeRewardsModal();
+  }catch(e){ showAlert('교환 실패: '+e.message, true); }
+}
+
+function closeRewardsModal(){
+  document.getElementById('rewardsModal').classList.remove('visible');
+  rewardsMemberId=null;
+}
+
+// ══════════════════════════════════════════════
 //  MEMO
 // ══════════════════════════════════════════════
 let pendingMemoId = null;
@@ -1322,6 +1389,7 @@ function renderMemberList(filter=''){
           <button class="btn-pts-adj" onclick="requireAdmin(()=>addPoint('${m.id}',-1))">−</button>
           <button class="btn-pts-adj" onclick="requireAdmin(()=>addPoint('${m.id}',+1))">+</button>
         </div>
+        <button class="btn btn-s btn-sm" onclick="openRewards('${m.id}','${esc(m.name)}',${m.points||0})">🎁</button>
         <button class="btn btn-s btn-sm" onclick="openMemo('${m.id}','${esc(m.name)}',\`${esc(m.memo||'')}\`)" style="${m.memo?'color:var(--primary);border-color:var(--primary)':''}">📝</button>
         <button class="btn btn-s btn-sm" onclick="openRenewal('${m.id}','${esc(m.name)}','${m.endDate}')">🔄 갱신</button>
         <button class="btn btn-d btn-sm" onclick="deleteMember('${m.id}','${esc(m.name)}')">삭제</button>
