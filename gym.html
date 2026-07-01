@@ -500,6 +500,17 @@ header{background:var(--card);border-bottom:1px solid var(--border);padding:12px
   </div>
 </div>
 
+<!-- ── MEMO MODAL ── -->
+<div class="modal-overlay" id="memoModal">
+  <div class="modal">
+    <h3>📝 회원 메모</h3>
+    <div id="memoMemberName" style="font-size:13px;color:var(--muted);margin-bottom:12px"></div>
+    <textarea id="memoText" class="cfg-ta" placeholder="특이사항, 부상 이력, 주의사항 등 자유롭게 입력하세요..." style="min-height:140px;font-family:inherit;font-size:14px"></textarea>
+    <button class="pay-btn" style="margin-top:10px" onclick="saveMemo()">💾 저장</button>
+    <button class="cancel-btn" onclick="closeMemoModal()">취소</button>
+  </div>
+</div>
+
 <!-- ── RENEWAL MODAL ── -->
 <div class="modal-overlay" id="renewModal">
   <div class="modal">
@@ -1248,6 +1259,34 @@ function closeRenewModal(){
   pendingRenewId=null; pendingRenewName=null; pendingRenewEndDate=null;
 }
 
+// ══════════════════════════════════════════════
+//  MEMO
+// ══════════════════════════════════════════════
+let pendingMemoId = null;
+
+function openMemo(id, name, currentMemo){
+  pendingMemoId = id;
+  document.getElementById('memoMemberName').textContent = name;
+  document.getElementById('memoText').value = currentMemo || '';
+  document.getElementById('memoModal').classList.add('visible');
+  setTimeout(()=>document.getElementById('memoText').focus(), 100);
+}
+
+async function saveMemo(){
+  if(!pendingMemoId||!db) return;
+  const memo = document.getElementById('memoText').value.trim();
+  try{
+    await db.collection('gym_members').doc(pendingMemoId).update({ memo });
+    showAlert('메모 저장됨 ✅');
+    closeMemoModal();
+  }catch(e){ showAlert('저장 실패: '+e.message, true); }
+}
+
+function closeMemoModal(){
+  document.getElementById('memoModal').classList.remove('visible');
+  pendingMemoId = null;
+}
+
 async function deleteMember(id,name){
   if(!adminAuth){ requireAdmin(()=>deleteMember(id,name)); return; }
   if(!confirm(`"${name}" 회원을 삭제하시겠습니까?`)) return;
@@ -1274,6 +1313,7 @@ function renderMemberList(filter=''){
       <div class="member-card-info">
         <div class="member-card-name">${esc(m.name)} <span style="font-size:11px;color:var(--muted)">${m.id}</span>${m.faceDescriptor?'<span style="font-size:10px;color:var(--purple);margin-left:4px">🎭</span>':''} <span class="points-badge">⭐ ${m.points||0}P</span></div>
         <div class="member-card-detail">${m.ticket} · ${m.endDate}까지 · ${active?days+'일 남음':'만료'}</div>
+        ${m.memo?`<div style="font-size:11px;color:var(--primary);margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:180px">📝 ${esc(m.memo)}</div>`:''}
       </div>
       <div class="member-card-actions">
         <span class="status-badge ${active?'status-active':'status-expired'}">${active?'이용중':'만료'}</span>
@@ -1282,6 +1322,7 @@ function renderMemberList(filter=''){
           <button class="btn-pts-adj" onclick="requireAdmin(()=>addPoint('${m.id}',-1))">−</button>
           <button class="btn-pts-adj" onclick="requireAdmin(()=>addPoint('${m.id}',+1))">+</button>
         </div>
+        <button class="btn btn-s btn-sm" onclick="openMemo('${m.id}','${esc(m.name)}',\`${esc(m.memo||'')}\`)" style="${m.memo?'color:var(--primary);border-color:var(--primary)':''}">📝</button>
         <button class="btn btn-s btn-sm" onclick="openRenewal('${m.id}','${esc(m.name)}','${m.endDate}')">🔄 갱신</button>
         <button class="btn btn-d btn-sm" onclick="deleteMember('${m.id}','${esc(m.name)}')">삭제</button>
       </div>
