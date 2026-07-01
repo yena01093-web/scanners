@@ -897,13 +897,13 @@ function drawOverlay(det){
   });
 }
 
-function handleFaceMatch(member){
+async function handleFaceMatch(member){
   const lastCk = checkins.find(c=>c.memberId===member.id);
   const type = (!lastCk || lastCk.type==='out') ? 'in' : 'out';
   const lbl = type==='in'?'입장':'퇴장';
   setFaceStatus('matched',`✅ ${member.name} ${lbl}!`);
-  recordCheckin(member.id, member.name, type, true);
-  showMicCard(member, type);
+  const earnedPoint = await recordCheckin(member.id, member.name, type, true);
+  showMicCard(member, type, earnedPoint);
   speak(`${member.name}회원님 어서오세요`);
 }
 
@@ -929,7 +929,7 @@ function flipCamera(){
 // ══════════════════════════════════════════════
 //  MEMBER INFO CARD
 // ══════════════════════════════════════════════
-function showMicCard(member, type){
+function showMicCard(member, type, earnedPoint=false){
   clearTimeout(micTimer);
   const today = new Date();
   const end = new Date(member.endDate);
@@ -942,10 +942,10 @@ function showMicCard(member, type){
   document.getElementById('micTicket').textContent = member.ticket;
   document.getElementById('micExpiry').textContent = member.endDate;
 
-  const pts = (member.points||0) + (type==='in' ? 1 : 0);
+  const pts = (member.points||0) + (earnedPoint ? 1 : 0);
   document.getElementById('micPoints').textContent = pts + 'P';
   const newEl = document.getElementById('micPointsNew');
-  if(type === 'in'){ newEl.style.display='block'; } else { newEl.style.display='none'; }
+  newEl.style.display = earnedPoint ? 'block' : 'none';
 
   const dEl = document.getElementById('micDays');
   dEl.textContent = active ? `D-${days}` : '만료';
@@ -975,7 +975,8 @@ function dismissMic(){
 //  CHECK-IN / CHECK-OUT
 // ══════════════════════════════════════════════
 async function recordCheckin(memberId, memberName, type, isFace=false){
-  if(!db){ return; }
+  if(!db){ return false; }
+  let earnedPoint = false;
   try{
     await db.collection('gym_checkins').add({
       memberId, memberName, type, date: TODAY,
@@ -983,11 +984,18 @@ async function recordCheckin(memberId, memberName, type, isFace=false){
       method: isFace ? 'face' : 'manual'
     });
     if(type === 'in'){
-      await db.collection('gym_members').doc(memberId).update({
-        points: firebase.firestore.FieldValue.increment(1)
-      });
+      const member = members.find(m => m.id === memberId);
+      const alreadyEarned = member && member.lastPointDate === TODAY;
+      if(!alreadyEarned){
+        await db.collection('gym_members').doc(memberId).update({
+          points: firebase.firestore.FieldValue.increment(1),
+          lastPointDate: TODAY
+        });
+        earnedPoint = true;
+      }
     }
   }catch(e){ console.error('checkin:',e); }
+  return earnedPoint;
 }
 
 function doCheckin(){
