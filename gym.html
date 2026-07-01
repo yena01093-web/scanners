@@ -397,6 +397,14 @@ header{background:var(--card);border-bottom:1px solid var(--border);padding:12px
     <div class="data-info-row"><span>얼굴 등록 회원</span><span id="stFace" style="color:var(--primary);font-weight:700">0명</span></div>
     <div class="data-info-row"><span>미등록 회원</span><span id="stNoFace" style="color:var(--muted)">0명</span></div>
   </div>
+  <div class="section-title">월별 방문 현황 (최근 6개월)</div>
+  <div style="background:var(--card);border:1px solid var(--border);border-radius:12px;padding:14px;margin-bottom:14px">
+    <canvas id="visitChart" height="160"></canvas>
+  </div>
+  <div class="section-title">월별 신규 등록 (최근 6개월)</div>
+  <div style="background:var(--card);border:1px solid var(--border);border-radius:12px;padding:14px;margin-bottom:14px">
+    <canvas id="memberChart" height="160"></canvas>
+  </div>
   <div class="section-title">만료 임박 (7일 이내)</div>
   <div id="expiringList"></div>
 </div>
@@ -554,6 +562,7 @@ header{background:var(--card);border-bottom:1px solid var(--border);padding:12px
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <script>
 // ══════════════════════════════════════════════
 //  ADMIN AUTH
@@ -1270,6 +1279,66 @@ function closeRenewModal(){
 }
 
 // ══════════════════════════════════════════════
+//  CHARTS
+// ══════════════════════════════════════════════
+async function renderCharts(){
+  if(!db) return;
+  const now = new Date();
+  const months = [];
+  for(let i=5; i>=0; i--){
+    const d = new Date(now.getFullYear(), now.getMonth()-i, 1);
+    months.push(`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`);
+  }
+  const labels = months.map(m=>{ const [y,mo]=m.split('-'); return `${y}.${mo}`; });
+
+  // 방문 데이터 (gym_checkins)
+  const visitsByMonth = Object.fromEntries(months.map(m=>[m,0]));
+  try{
+    const snap = await db.collection('gym_checkins')
+      .where('date','>=', months[0]+'-01')
+      .where('type','==','in').get();
+    snap.forEach(d=>{ const mo=(d.data().date||'').substring(0,7); if(mo in visitsByMonth) visitsByMonth[mo]++; });
+  }catch(e){ console.error('chart visits:',e); }
+
+  // 신규 등록 데이터 (gym_members)
+  const newByMonth = Object.fromEntries(months.map(m=>[m,0]));
+  members.forEach(m=>{
+    if(m.createdAt?.toDate){
+      const d=m.createdAt.toDate();
+      const mo=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
+      if(mo in newByMonth) newByMonth[mo]++;
+    }
+  });
+
+  drawBarChart('visitChart','월별 방문',labels,Object.values(visitsByMonth),'#03A9F4');
+  drawBarChart('memberChart','신규 등록',labels,Object.values(newByMonth),'#00966D');
+}
+
+function drawBarChart(id, label, labels, data, color){
+  const canvas = document.getElementById(id);
+  if(!canvas) return;
+  const existing = Chart.getChart(canvas);
+  if(existing) existing.destroy();
+  new Chart(canvas,{
+    type:'bar',
+    data:{ labels, datasets:[{
+      label, data,
+      backgroundColor: color+'2a',
+      borderColor: color,
+      borderWidth:2, borderRadius:6
+    }]},
+    options:{
+      responsive:true,
+      plugins:{ legend:{display:false} },
+      scales:{
+        y:{ beginAtZero:true, ticks:{stepSize:1, color:'#7A8FA6'}, grid:{color:'#DDE3EA'} },
+        x:{ ticks:{color:'#7A8FA6'}, grid:{display:false} }
+      }
+    }
+  });
+}
+
+// ══════════════════════════════════════════════
 //  REWARDS
 // ══════════════════════════════════════════════
 const REWARDS = [
@@ -1515,7 +1584,7 @@ function showPage(id, el){
     if(id!=='register' && faceStream){ stopFaceCam(); setFaceStatus('loading','카메라 꺼짐'); }
   }
   if(id==='members') renderMemberList();
-  if(id==='stats') renderStats();
+  if(id==='stats'){ renderStats(); renderCharts(); }
   if(id==='checkin') renderCheckinList();
   if(id==='data') updateDataPage();
 }
