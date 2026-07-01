@@ -454,7 +454,7 @@ header{background:var(--card);border-bottom:1px solid var(--border);padding:12px
         <canvas id="tnCamCanvas" width="120" height="90" style="display:none"></canvas>
         <div>
           <button class="btn btn-sm" id="btnTnCam" onclick="startTnCam()" style="margin-bottom:6px;display:block">📷 카메라 켜기</button>
-          <button class="btn btn-sm" id="btnTnCapture" onclick="captureTnFace()" style="display:none;margin-bottom:6px;display:block">📸 얼굴 캡처</button>
+          <button class="btn btn-sm" id="btnTnCapture" onclick="captureTnFace()" style="display:none;margin-bottom:6px">📸 얼굴 캡처</button>
           <div id="tnFaceStatus" style="font-size:12px;color:var(--muted)">미등록</div>
         </div>
       </div>
@@ -705,7 +705,7 @@ function adminLock(){
   updAdminBadge();
   // 보호 탭에 있으면 대시보드로 복귀
   const active = document.querySelector('.page.active');
-  if(active && (active.id==='page-register'||active.id==='page-data')){
+  if(active && (active.id==='page-register'||active.id==='page-data'||active.id==='page-trainer')){
     showPage('face', document.querySelector('.tab'));
   }
   showAlert('관리자 모드 잠금됨 🔒');
@@ -771,6 +771,7 @@ let selectedTicket = {name:'1개월',price:50000,days:30};
 let memberCounter = 1;
 let unsubMembers = null, unsubCheckins = null, unsubTrainers = null;
 let tnStream = null, tnFaceDescriptor = null, tnPhotoData = null;
+let trainerCardTimer = null;
 let faceMode = 'environment'; // camera facing mode
 let micTimer = null;
 
@@ -941,28 +942,31 @@ function buildTrainerMatcher(){
 
 // ── TRAINER CHECK-IN ──
 async function handleTrainerMatch(trainer){
-  // 오늘 출근 여부 확인
+  // in/out 횟수로 방향 결정 (orderBy 불필요, 순서 무관)
   const todaySnap = await db.collection('gym_trainer_checkins')
     .where('trainerId','==',trainer.id).where('date','==',TODAY).get();
   const todayCheckins = todaySnap.docs.map(d=>d.data());
-  const lastType = todayCheckins.length ? todayCheckins[todayCheckins.length-1].type : null;
-  const type = lastType==='in' ? 'out' : 'in';
+  const ins  = todayCheckins.filter(c=>c.type==='in').length;
+  const outs = todayCheckins.filter(c=>c.type==='out').length;
+  const type = ins > outs ? 'out' : 'in';
 
   await db.collection('gym_trainer_checkins').add({
     trainerId: trainer.id, trainerName: trainer.name,
     type, date: TODAY, ts: firebase.firestore.FieldValue.serverTimestamp()
   });
 
-  // 이달 수업 횟수
+  // 이달 수업 횟수 (기존 + 방금 기록)
   const ym = TODAY.slice(0,7);
   const ptSnap = await db.collection('gym_trainer_checkins')
     .where('trainerId','==',trainer.id).where('date','>=',ym+'-01').where('type','==','in').get();
 
-  showTrainerCard(trainer, type, type==='in', ptSnap.size);
+  const todayInCount = ins + (type==='in' ? 1 : 0);
+  const ptTotal = ptSnap.size + (type==='in' ? 1 : 0);
+  showTrainerCard(trainer, type==='in', ptTotal, todayInCount);
   speak(type==='in' ? `${trainer.name} 트레이너님 출근하셨습니다` : `${trainer.name} 트레이너님 수고하셨습니다`);
 }
 
-function showTrainerCard(trainer, type, isIn, ptCount){
+function showTrainerCard(trainer, isIn, ptCount, inCount){
   detectionPaused = true;
   const photo = document.getElementById('tcPhoto');
   const avatar = document.getElementById('tcAvatar');
@@ -975,16 +979,19 @@ function showTrainerCard(trainer, type, isIn, ptCount){
   badge.style.background = isIn ? 'rgba(0,150,109,.12)' : 'rgba(220,53,69,.08)';
   badge.style.color = isIn ? 'var(--green)' : 'var(--red)';
   badge.style.borderColor = isIn ? 'rgba(0,150,109,.3)' : 'rgba(220,53,69,.2)';
-  document.getElementById('tcDays').textContent = isIn ? '✓' : '-';
+  document.getElementById('tcDays').textContent = inCount || '-';
   document.getElementById('tcPtCount').textContent = ptCount || 0;
   document.getElementById('trainerCardOverlay').classList.add('visible');
-  setTimeout(closeTrainerCard, 5000, null);
+  if(trainerCardTimer) clearTimeout(trainerCardTimer);
+  trainerCardTimer = setTimeout(()=>closeTrainerCard(), 5000);
 }
 
 function closeTrainerCard(e){
-  if(e && e.target !== document.getElementById('trainerCardOverlay')) return;
+  // overlay 배경 클릭 또는 자동/버튼 닫기 시에만 처리
+  if(e && e.target && e.target !== document.getElementById('trainerCardOverlay')) return;
   document.getElementById('trainerCardOverlay').classList.remove('visible');
   detectionPaused = false;
+  if(trainerCardTimer){ clearTimeout(trainerCardTimer); trainerCardTimer=null; }
 }
 
 // ── TRAINER REGISTRATION ──
@@ -1021,6 +1028,7 @@ async function captureTnFace(){
 }
 
 async function registerTrainer(){
+  if(!adminAuth){ requireAdmin(()=>registerTrainer()); return; }
   const name = document.getElementById('tn-name').value.trim();
   const phone = document.getElementById('tn-phone').value.trim();
   const specialty = document.getElementById('tn-specialty').value;
@@ -1058,17 +1066,20 @@ function renderTrainerList(){
           </div>
         </div>
       </div>
-      <button class="btn btn-sm" style="background:rgba(220,53,69,.08);color:var(--red);border:1px solid rgba(220,53,69,.2)" onclick="deleteTrainer('${t.id}','${t.name}')">삭제</button>
+      <button class="btn btn-sm" style="background:rgba(220,53,69,.08);color:var(--red);border:1px solid rgba(220,53,69,.2)" onclick="deleteTrainer('${t.id}')">삭제</button>
     </div>
   `).join('');
 }
 
-async function deleteTrainer(id, name){
+async function deleteTrainer(id){
+  if(!adminAuth){ requireAdmin(()=>deleteTrainer(id)); return; }
+  const t = trainers.find(x=>x.id===id);
+  const name = t ? t.name : '트레이너';
   if(!confirm(`${name} 트레이너를 삭제하시겠습니까?`)) return;
   try{
     await db.collection('gym_trainers').doc(id).delete();
     showAlert(`${name} 트레이너 삭제 완료`);
-  }catch(e){ showAlert('삭제 실패',true); }
+  }catch(e){ showAlert('삭제 실패: '+e.message,true); }
 }
 
 // ══════════════════════════════════════════════
@@ -1134,9 +1145,11 @@ async function runDetection(){
           }
           cooldownMap['TR_'+trainerId] = now;
           setFaceStatus('match',`👨‍💼 ${trainer.name} 트레이너`);
-          handleTrainerMatch(trainer);
+          detectionPaused = true;
+          handleTrainerMatch(trainer).catch(e=>{ console.error('trainer:',e); detectionPaused=false; });
           return;
         }
+        return; // 매처 히트했지만 로컬 배열 갱신 대기 중 — 회원으로 낙하하지 않음
       }
     }
 
