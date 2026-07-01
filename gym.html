@@ -417,6 +417,16 @@ header{background:var(--card);border-bottom:1px solid var(--border);padding:12px
   <div style="background:var(--card);border:1px solid var(--border);border-radius:12px;padding:14px;margin-bottom:14px">
     <canvas id="memberChart" height="160"></canvas>
   </div>
+  <div class="section-title">수입 현황 (이번 달)</div>
+  <div style="background:var(--card);border:1px solid var(--border);border-radius:12px;padding:13px;margin-bottom:14px">
+    <div class="data-info-row"><span>이달 총 수입</span><span id="stMonthRevenue" style="color:var(--green);font-weight:700">0원</span></div>
+    <div class="data-info-row"><span>신규 등록</span><span id="stMonthNew" style="color:var(--primary);font-weight:700">0건 · 0원</span></div>
+    <div class="data-info-row"><span>갱신</span><span id="stMonthRenew" style="color:var(--purple);font-weight:700">0건 · 0원</span></div>
+  </div>
+  <div class="section-title">월별 수입 (최근 6개월)</div>
+  <div style="background:var(--card);border:1px solid var(--border);border-radius:12px;padding:14px;margin-bottom:14px">
+    <canvas id="revenueChart" height="160"></canvas>
+  </div>
   <div class="section-title">만료 임박 (7일 이내)</div>
   <div id="expiringList"></div>
 </div>
@@ -464,6 +474,10 @@ header{background:var(--card);border-bottom:1px solid var(--border);padding:12px
 
   <div class="section-title" style="margin-top:24px">트레이너 목록</div>
   <div id="trainerList"></div>
+
+  <!-- 오늘 PT 일정 -->
+  <div class="section-title" style="margin-top:28px">📅 오늘 PT 일정</div>
+  <div id="todayPTList" style="margin-bottom:8px"></div>
 
   <!-- PT 계약 등록 -->
   <div class="section-title" style="margin-top:28px">PT 계약 등록</div>
@@ -645,10 +659,37 @@ header{background:var(--card);border-bottom:1px solid var(--border);padding:12px
 <div class="modal-overlay" id="memoModal">
   <div class="modal">
     <h3>📝 회원 메모</h3>
-    <div id="memoMemberName" style="font-size:13px;color:var(--muted);margin-bottom:12px"></div>
-    <textarea id="memoText" class="cfg-ta" placeholder="특이사항, 부상 이력, 주의사항 등 자유롭게 입력하세요..." style="min-height:140px;font-family:inherit;font-size:14px"></textarea>
-    <button class="pay-btn" style="margin-top:10px" onclick="saveMemo()">💾 저장</button>
-    <button class="cancel-btn" onclick="closeMemoModal()">취소</button>
+    <div id="memoMemberName" style="font-size:13px;color:var(--muted);margin-bottom:8px"></div>
+    <div id="memoHistory" style="max-height:120px;overflow-y:auto;margin-bottom:10px;padding:8px;background:var(--bg);border-radius:8px;border:1px solid var(--border)"></div>
+    <textarea id="memoText" class="cfg-ta" placeholder="새 메모 추가 (날짜별로 누적 저장됩니다)..." style="min-height:80px;font-family:inherit;font-size:14px"></textarea>
+    <button class="pay-btn" style="margin-top:10px" onclick="saveMemo()">💾 추가</button>
+    <button class="cancel-btn" onclick="closeMemoModal()">닫기</button>
+  </div>
+</div>
+
+<!-- ── PT SCHEDULE MODAL ── -->
+<div class="modal-overlay" id="ptSchedModal">
+  <div class="modal">
+    <h3>📅 PT 수업 예약</h3>
+    <div id="ptSchedInfo" style="font-size:13px;color:var(--muted);margin-bottom:12px"></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px">
+      <div><label class="form-label">날짜</label><input class="form-input" id="ptSchedDate" type="date"></div>
+      <div><label class="form-label">시간</label><input class="form-input" id="ptSchedTime" type="time" value="10:00"></div>
+    </div>
+    <button class="pay-btn" onclick="savePTSchedule()">💾 예약 저장</button>
+    <button class="cancel-btn" onclick="document.getElementById('ptSchedModal').classList.remove('visible')">취소</button>
+  </div>
+</div>
+
+<!-- ── LOCKER MODAL ── -->
+<div class="modal-overlay" id="lockerModal">
+  <div class="modal">
+    <h3>🔐 락커 번호 관리</h3>
+    <div id="lockerMemberName" style="font-size:13px;color:var(--muted);margin-bottom:12px"></div>
+    <input class="form-input" id="lockerNum" placeholder="락커 번호 입력 (예: A-12)" style="margin-bottom:10px">
+    <div id="lockerListPreview" style="font-size:12px;color:var(--muted);margin-bottom:10px"></div>
+    <button class="pay-btn" style="margin-top:4px" onclick="saveLocker()">💾 저장</button>
+    <button class="cancel-btn" onclick="closeLockerModal()">취소</button>
   </div>
 </div>
 
@@ -1213,6 +1254,7 @@ function renderPTContracts(){
       </div>
       <div style="display:flex;gap:8px">
         ${isActive&&rem>0?`<button class="btn btn-sm btn-primary" style="flex:1" onclick="recordPTSession('${c.id}')">✅ 수업 완료</button>`:''}
+        ${isActive&&rem>0?`<button class="btn btn-sm" style="background:rgba(3,169,244,.08);color:var(--primary);border:1px solid rgba(3,169,244,.3)" onclick="schedulePT('${c.id}')">📅 예약</button>`:''}
         <button class="btn btn-sm" style="background:rgba(220,53,69,.08);color:var(--red);border:1px solid rgba(220,53,69,.2)" onclick="deletePTContract('${c.id}')">삭제</button>
       </div>
     </div>`;
@@ -1299,6 +1341,64 @@ async function loadSettlement(){
         </table>
       </div>`;
   }catch(e){ el.innerHTML=`<div style="text-align:center;color:var(--red);padding:12px">조회 실패: ${e.message}</div>`; }
+}
+
+// ── PT SCHEDULE ──
+let pendingSchedContractId = null;
+function schedulePT(contractId){
+  if(!adminAuth){ requireAdmin(()=>schedulePT(contractId)); return; }
+  const c = ptContracts.find(x=>x.id===contractId);
+  if(!c) return;
+  pendingSchedContractId = contractId;
+  document.getElementById('ptSchedInfo').textContent = `${c.trainerName} → ${c.memberName}`;
+  document.getElementById('ptSchedDate').value = TODAY;
+  document.getElementById('ptSchedModal').classList.add('visible');
+}
+async function savePTSchedule(){
+  if(!pendingSchedContractId||!db) return;
+  const c = ptContracts.find(x=>x.id===pendingSchedContractId);
+  const date = document.getElementById('ptSchedDate').value;
+  const time = document.getElementById('ptSchedTime').value;
+  if(!date){ showAlert('날짜를 선택해주세요.',true); return; }
+  try{
+    await db.collection('gym_pt_schedules').add({
+      contractId: pendingSchedContractId,
+      trainerId: c.trainerId, trainerName: c.trainerName,
+      memberId: c.memberId, memberName: c.memberName,
+      date, time: time||'', status: 'scheduled',
+      createdAt: firebase.firestore.FieldValue.serverTimestamp()
+    });
+    showAlert(`${date} ${time} 예약 완료!`);
+    document.getElementById('ptSchedModal').classList.remove('visible');
+    renderTodayPT();
+  }catch(e){ showAlert('예약 실패: '+e.message,true); }
+}
+async function renderTodayPT(){
+  const el = document.getElementById('todayPTList');
+  if(!el||!db) return;
+  try{
+    const snap = await db.collection('gym_pt_schedules')
+      .where('date','==',TODAY).where('status','==','scheduled').get();
+    const list = snap.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>(a.time||'').localeCompare(b.time||''));
+    if(!list.length){ el.innerHTML='<div style="text-align:center;color:var(--muted);padding:12px;font-size:13px">오늘 예약된 PT 없음</div>'; return; }
+    el.innerHTML = list.map(s=>`
+      <div class="checkin-item" style="border-left:3px solid var(--primary)">
+        <div style="width:36px;height:36px;border-radius:50%;background:rgba(3,169,244,.12);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0">🏋️</div>
+        <div class="checkin-info">
+          <div class="checkin-name">${s.trainerName} → ${s.memberName}</div>
+          <div class="checkin-detail">${s.time||'시간 미정'}</div>
+        </div>
+        <button class="btn btn-sm" style="background:rgba(0,150,109,.1);color:var(--green);border:1px solid rgba(0,150,109,.3);flex-shrink:0" onclick="completePTSchedule('${s.id}','${s.contractId}')">완료</button>
+      </div>`).join('');
+  }catch(e){ el.innerHTML=''; }
+}
+async function completePTSchedule(schedId, contractId){
+  if(!adminAuth){ requireAdmin(()=>completePTSchedule(schedId,contractId)); return; }
+  try{
+    await db.collection('gym_pt_schedules').doc(schedId).update({status:'completed'});
+    await recordPTSession(contractId);
+    renderTodayPT();
+  }catch(e){ showAlert('완료 처리 실패: '+e.message,true); }
 }
 
 // ══════════════════════════════════════════════
@@ -1693,6 +1793,12 @@ async function processPayment(){
       points: 0,
       createdAt:firebase.firestore.FieldValue.serverTimestamp()
     });
+    await db.collection('gym_payments').add({
+      memberId:newId, memberName:pendingMember.name,
+      type:'register', ticket:pendingMember.ticket.name,
+      amount:pendingMember.ticket.price,
+      date:TODAY, ts:firebase.firestore.FieldValue.serverTimestamp()
+    });
     document.getElementById('regName').value='';
     document.getElementById('regPhone').value='';
     clearFaceReg();
@@ -1753,6 +1859,12 @@ async function processRenewal(){
       endDate: newEnd.toISOString().split('T')[0],
       ticket: selectedRenewTicket.name+'권'
     });
+    await db.collection('gym_payments').add({
+      memberId:pendingRenewId, memberName:pendingRenewName,
+      type:'renew', ticket:selectedRenewTicket.name,
+      amount:selectedRenewTicket.price,
+      date:TODAY, ts:firebase.firestore.FieldValue.serverTimestamp()
+    });
     showAlert(`${pendingRenewName}님 ${selectedRenewTicket.name}권 갱신 완료! ✅`);
     closeRenewModal();
   }catch(e){ showAlert('갱신 실패: '+e.message, true); }
@@ -1797,6 +1909,31 @@ async function renderCharts(){
 
   drawBarChart('visitChart','월별 방문',labels,Object.values(visitsByMonth),'#03A9F4');
   drawBarChart('memberChart','신규 등록',labels,Object.values(newByMonth),'#00966D');
+
+  // 수입 차트 + 이달 현황
+  const revenueByMonth = Object.fromEntries(months.map(m=>[m,0]));
+  let thisMonthNew=0, thisMonthNewAmt=0, thisMonthRenew=0, thisMonthRenewAmt=0;
+  const ym = TODAY.slice(0,7);
+  try{
+    const paySnap = await db.collection('gym_payments')
+      .where('date','>=', months[0]+'-01').get();
+    paySnap.forEach(d=>{
+      const p=d.data(); const mo=(p.date||'').substring(0,7);
+      if(mo in revenueByMonth) revenueByMonth[mo]+=(p.amount||0);
+      if(mo===ym){
+        if(p.type==='register'){ thisMonthNew++; thisMonthNewAmt+=(p.amount||0); }
+        else if(p.type==='renew'){ thisMonthRenew++; thisMonthRenewAmt+=(p.amount||0); }
+      }
+    });
+  }catch(e){ console.error('chart revenue:',e); }
+  const totalRev = thisMonthNewAmt + thisMonthRenewAmt;
+  const rEl = document.getElementById('stMonthRevenue');
+  const nEl = document.getElementById('stMonthNew');
+  const rnEl = document.getElementById('stMonthRenew');
+  if(rEl) rEl.textContent = totalRev.toLocaleString()+'원';
+  if(nEl) nEl.textContent = `${thisMonthNew}건 · ${thisMonthNewAmt.toLocaleString()}원`;
+  if(rnEl) rnEl.textContent = `${thisMonthRenew}건 · ${thisMonthRenewAmt.toLocaleString()}원`;
+  drawBarChart('revenueChart','수입(원)',labels,Object.values(revenueByMonth),'#6D28D9');
 }
 
 function drawBarChart(id, label, labels, data, color){
@@ -1886,19 +2023,33 @@ function closeRewardsModal(){
 let pendingMemoId = null;
 
 function openMemo(id, name, currentMemo){
+  if(!adminAuth){ requireAdmin(()=>openMemo(id,name,currentMemo)); return; }
   pendingMemoId = id;
   document.getElementById('memoMemberName').textContent = name;
-  document.getElementById('memoText').value = currentMemo || '';
+  document.getElementById('memoText').value = '';
+  // 이력 렌더링
+  const member = members.find(m=>m.id===id);
+  const hist = member?.memoHistory || (currentMemo ? [{text:currentMemo, date:'이전'}] : []);
+  const histEl = document.getElementById('memoHistory');
+  if(histEl){
+    histEl.innerHTML = hist.length
+      ? [...hist].reverse().map(h=>`<div style="padding:6px 0;border-bottom:1px solid var(--border);font-size:12px"><span style="color:var(--muted)">${h.date}</span><br>${esc(h.text)}</div>`).join('')
+      : '<div style="color:var(--muted);font-size:12px">메모 이력 없음</div>';
+  }
   document.getElementById('memoModal').classList.add('visible');
   setTimeout(()=>document.getElementById('memoText').focus(), 100);
 }
 
 async function saveMemo(){
   if(!pendingMemoId||!db) return;
-  const memo = document.getElementById('memoText').value.trim();
+  const text = document.getElementById('memoText').value.trim();
+  if(!text){ showAlert('내용을 입력해주세요.',true); return; }
+  const member = members.find(m=>m.id===pendingMemoId);
+  const hist = member?.memoHistory ? [...member.memoHistory] : (member?.memo ? [{text:member.memo, date:'이전'}] : []);
+  hist.push({ text, date: TODAY });
   try{
-    await db.collection('gym_members').doc(pendingMemoId).update({ memo });
-    showAlert('메모 저장됨 ✅');
+    await db.collection('gym_members').doc(pendingMemoId).update({ memo: text, memoHistory: hist });
+    showAlert('메모 추가됨 ✅');
     closeMemoModal();
   }catch(e){ showAlert('저장 실패: '+e.message, true); }
 }
@@ -1906,6 +2057,34 @@ async function saveMemo(){
 function closeMemoModal(){
   document.getElementById('memoModal').classList.remove('visible');
   pendingMemoId = null;
+}
+
+let pendingLockerId = null;
+function openLocker(id, name, currentLocker){
+  if(!adminAuth){ requireAdmin(()=>openLocker(id,name,currentLocker)); return; }
+  pendingLockerId = id;
+  document.getElementById('lockerMemberName').textContent = name + '님';
+  document.getElementById('lockerNum').value = currentLocker || '';
+  // 사용 중인 락커 현황 표시
+  const used = members.filter(m=>m.locker&&m.id!==id).map(m=>`${m.locker}(${m.name})`);
+  document.getElementById('lockerListPreview').textContent = used.length ? '사용 중: '+used.join(', ') : '비어있는 락커 없음 정보 없음';
+  document.getElementById('lockerModal').classList.add('visible');
+}
+async function saveLocker(){
+  if(!pendingLockerId||!db) return;
+  const locker = document.getElementById('lockerNum').value.trim();
+  // 중복 체크
+  const dup = members.find(m=>m.locker===locker&&m.id!==pendingLockerId);
+  if(locker && dup){ showAlert(`${dup.name}님이 이미 사용 중입니다.`,true); return; }
+  try{
+    await db.collection('gym_members').doc(pendingLockerId).update({ locker: locker || null });
+    showAlert(locker ? `락커 ${locker} 배정 완료` : '락커 해제 완료');
+    closeLockerModal();
+  }catch(e){ showAlert('저장 실패: '+e.message,true); }
+}
+function closeLockerModal(){
+  document.getElementById('lockerModal').classList.remove('visible');
+  pendingLockerId = null;
 }
 
 async function deleteMember(id,name){
@@ -1934,7 +2113,10 @@ function renderMemberList(filter=''){
       <div class="member-card-info">
         <div class="member-card-name">${esc(m.name)} <span style="font-size:11px;color:var(--muted)">${m.id}</span>${m.faceDescriptor?'<span style="font-size:10px;color:var(--purple);margin-left:4px">🎭</span>':''} <span class="points-badge">⭐ ${m.points||0}P</span></div>
         <div class="member-card-detail">${m.ticket} · ${m.endDate}까지 · ${active?days+'일 남음':'만료'}</div>
-        ${m.memo?`<div style="font-size:11px;color:var(--primary);margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:180px">📝 ${esc(m.memo)}</div>`:''}
+        <div style="display:flex;gap:8px;align-items:center;margin-top:3px;flex-wrap:wrap">
+          ${m.locker?`<span style="font-size:11px;color:var(--muted)">🔐 락커 <b style="color:var(--text)">${esc(m.locker)}</b></span>`:''}
+          ${m.memo?`<div style="font-size:11px;color:var(--primary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:150px">📝 ${esc(m.memo)}</div>`:''}
+        </div>
       </div>
       <div class="member-card-actions">
         <span class="status-badge ${active?'status-active':'status-expired'}">${active?'이용중':'만료'}</span>
@@ -1945,6 +2127,7 @@ function renderMemberList(filter=''){
         </div>
         <button class="btn btn-s btn-sm" onclick="openRewards('${m.id}','${esc(m.name)}',${m.points||0})">🎁</button>
         <button class="btn btn-s btn-sm" onclick="openMemo('${m.id}','${esc(m.name)}',\`${esc(m.memo||'')}\`)" style="${m.memo?'color:var(--primary);border-color:var(--primary)':''}">📝</button>
+        <button class="btn btn-s btn-sm" onclick="openLocker('${m.id}','${esc(m.name)}','${esc(m.locker||'')}')" style="${m.locker?'color:var(--orange);border-color:var(--orange)':''}">🔐</button>
         <button class="btn btn-s btn-sm" onclick="openRenewal('${m.id}','${esc(m.name)}','${m.endDate}')">🔄 갱신</button>
         <button class="btn btn-d btn-sm" onclick="deleteMember('${m.id}','${esc(m.name)}')">삭제</button>
       </div>
@@ -1981,14 +2164,30 @@ function renderStats(){
   const totalPts=members.reduce((s,m)=>s+(m.points||0),0);
   const ptEl=document.getElementById('stTotalPoints');
   if(ptEl) ptEl.textContent=totalPts+'P';
-  document.getElementById('expiringList').innerHTML=expiring.length===0
+  const expSorted = [...expiring].sort((a,b)=>new Date(a.endDate)-new Date(b.endDate));
+  const urgCnt = [0,0,0]; // [1-2일, 3-5일, 6-7일]
+  expSorted.forEach(m=>{const d=Math.ceil((new Date(m.endDate)-today)/(1000*60*60*24)); if(d<=2)urgCnt[0]++; else if(d<=5)urgCnt[1]++; else urgCnt[2]++;});
+  document.getElementById('expiringList').innerHTML=expSorted.length===0
     ?'<div class="empty"><div class="empty-i">✅</div><div class="empty-t">만료 임박 회원 없음</div></div>'
-    :expiring.map(m=>{
+    :`<div style="display:flex;gap:8px;margin-bottom:10px;flex-wrap:wrap">
+        ${urgCnt[0]?`<span style="padding:3px 10px;border-radius:12px;font-size:12px;font-weight:700;background:rgba(220,53,69,.1);color:var(--red)">🔴 ${urgCnt[0]}명 (1-2일)</span>`:''}
+        ${urgCnt[1]?`<span style="padding:3px 10px;border-radius:12px;font-size:12px;font-weight:700;background:rgba(234,108,26,.1);color:var(--orange)">🟠 ${urgCnt[1]}명 (3-5일)</span>`:''}
+        ${urgCnt[2]?`<span style="padding:3px 10px;border-radius:12px;font-size:12px;font-weight:700;background:rgba(217,119,6,.1);color:var(--gold)">🟡 ${urgCnt[2]}명 (6-7일)</span>`:''}
+      </div>`+expSorted.map(m=>{
       const d=Math.ceil((new Date(m.endDate)-today)/(1000*60*60*24));
-      return `<div class="checkin-item">
+      const uc=d<=2?'var(--red)':d<=5?'var(--orange)':'var(--gold)';
+      const ub=d<=2?'rgba(220,53,69,.08)':d<=5?'rgba(234,108,26,.08)':'rgba(217,119,6,.08)';
+      return `<div class="checkin-item" style="border-left:3px solid ${uc}">
         <div class="member-avatar" style="background:${m.color||'var(--border)'}22;color:${m.color||'var(--primary)'}">${m.avatar||'👤'}</div>
-        <div class="checkin-info"><div class="checkin-name">${esc(m.name)}</div><div class="checkin-detail">${m.ticket} · ${m.endDate}까지</div></div>
-        <span class="status-badge" style="background:rgba(255,215,0,.15);color:var(--gold)">${d}일 남음</span>
+        <div class="checkin-info">
+          <div class="checkin-name">${esc(m.name)}</div>
+          <div class="checkin-detail">${m.ticket} · ${m.endDate}까지</div>
+          ${m.phone?`<div style="font-size:11px;color:var(--muted);margin-top:2px">📞 ${m.phone}</div>`:''}
+        </div>
+        <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px">
+          <span class="status-badge" style="background:${ub};color:${uc}">${d}일 남음</span>
+          ${m.phone?`<a href="tel:${m.phone.replace(/\D/g,'')}" style="font-size:11px;color:var(--primary);text-decoration:none;font-weight:600">📞 전화</a>`:''}
+        </div>
       </div>`;
     }).join('');
 }
@@ -2076,6 +2275,7 @@ function showPage(id, el){
     renderTrainerList();
     refreshPTSelects();
     renderPTContracts();
+    renderTodayPT();
     const sm = document.getElementById('settle-month');
     if(sm && !sm.value) sm.value = TODAY.slice(0,7);
     setPTFilter('active');
