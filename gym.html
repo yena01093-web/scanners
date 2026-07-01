@@ -464,6 +464,48 @@ header{background:var(--card);border-bottom:1px solid var(--border);padding:12px
 
   <div class="section-title" style="margin-top:24px">트레이너 목록</div>
   <div id="trainerList"></div>
+
+  <!-- PT 계약 등록 -->
+  <div class="section-title" style="margin-top:28px">PT 계약 등록</div>
+  <div class="card" style="margin-bottom:16px">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">
+      <div>
+        <label class="form-label">트레이너 *</label>
+        <select class="form-input" id="pt-trainer"><option value="">트레이너 선택</option></select>
+      </div>
+      <div>
+        <label class="form-label">회원 *</label>
+        <select class="form-input" id="pt-member"><option value="">회원 선택</option></select>
+      </div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">
+      <div>
+        <label class="form-label">총 PT 횟수</label>
+        <input class="form-input" id="pt-total" type="number" placeholder="10" min="1">
+      </div>
+      <div>
+        <label class="form-label">회당 금액 (원)</label>
+        <input class="form-input" id="pt-price" type="number" placeholder="50000" min="0">
+      </div>
+    </div>
+    <button class="btn btn-primary" onclick="createPTContract()" style="width:100%">계약 등록</button>
+  </div>
+
+  <!-- PT 진행 현황 -->
+  <div class="section-title" style="margin-top:24px">PT 진행 현황</div>
+  <div style="display:flex;gap:8px;margin-bottom:10px">
+    <button class="btn btn-sm" id="ptFilter-active" onclick="setPTFilter('active')">진행중</button>
+    <button class="btn btn-sm" id="ptFilter-all" onclick="setPTFilter('all')" style="background:transparent;color:var(--muted);border:1px solid var(--border)">전체</button>
+  </div>
+  <div id="ptContractList"></div>
+
+  <!-- 월별 정산 -->
+  <div class="section-title" style="margin-top:28px">월별 정산</div>
+  <div style="display:flex;gap:8px;align-items:center;margin-bottom:12px">
+    <input class="form-input" id="settle-month" type="month" style="max-width:160px">
+    <button class="btn btn-sm btn-primary" onclick="loadSettlement()">조회</button>
+  </div>
+  <div id="settlementTable"></div>
 </div>
 
 <!-- ── 트레이너 체크인 카드 ── -->
@@ -769,7 +811,9 @@ let pendingFacePhoto = null; // registration pending photo (base64)
 let pendingMember = null;
 let selectedTicket = {name:'1개월',price:50000,days:30};
 let memberCounter = 1;
-let unsubMembers = null, unsubCheckins = null, unsubTrainers = null;
+let unsubMembers = null, unsubCheckins = null, unsubTrainers = null, unsubPTContracts = null;
+let ptContracts = [];
+let ptFilter = 'active';
 let tnStream = null, tnFaceDescriptor = null, tnPhotoData = null;
 let trainerCardTimer = null;
 let faceMode = 'environment'; // camera facing mode
@@ -848,7 +892,15 @@ function subAll(){
     snap.forEach(d=>trainers.push({id:d.id,...d.data()}));
     buildTrainerMatcher();
     renderTrainerList();
+    refreshPTSelects();
   }, e=>console.error('trainers:',e));
+
+  if(unsubPTContracts) unsubPTContracts();
+  unsubPTContracts = db.collection('gym_pt_contracts').orderBy('createdAt','desc').onSnapshot(snap=>{
+    ptContracts = [];
+    snap.forEach(d=>ptContracts.push({id:d.id,...d.data()}));
+    renderPTContracts();
+  }, e=>console.error('ptContracts:',e));
 }
 
 // ══════════════════════════════════════════════
@@ -1080,6 +1132,173 @@ async function deleteTrainer(id){
     await db.collection('gym_trainers').doc(id).delete();
     showAlert(`${name} 트레이너 삭제 완료`);
   }catch(e){ showAlert('삭제 실패: '+e.message,true); }
+}
+
+// ══════════════════════════════════════════════
+//  PT MANAGEMENT
+// ══════════════════════════════════════════════
+function refreshPTSelects(){
+  const ts = document.getElementById('pt-trainer');
+  const ms = document.getElementById('pt-member');
+  if(!ts || !ms) return;
+  const prevT = ts.value, prevM = ms.value;
+  ts.innerHTML = '<option value="">트레이너 선택</option>' +
+    trainers.map(t=>`<option value="${t.id}"${t.id===prevT?' selected':''}>${t.name}${t.specialty?' ('+t.specialty+')':''}</option>`).join('');
+  ms.innerHTML = '<option value="">회원 선택</option>' +
+    members.filter(m=>m.status==='active'||!m.status).map(m=>`<option value="${m.id}"${m.id===prevM?' selected':''}>${m.name}</option>`).join('');
+}
+
+function setPTFilter(f){
+  ptFilter = f;
+  const active = f==='active';
+  const btnA = document.getElementById('ptFilter-active');
+  const btnAll = document.getElementById('ptFilter-all');
+  if(btnA){ btnA.style.background=active?'rgba(3,169,244,.12)':'transparent'; btnA.style.color=active?'var(--primary)':'var(--muted)'; btnA.style.border=active?'1px solid rgba(3,169,244,.3)':'1px solid var(--border)'; }
+  if(btnAll){ btnAll.style.background=!active?'rgba(3,169,244,.12)':'transparent'; btnAll.style.color=!active?'var(--primary)':'var(--muted)'; btnAll.style.border=!active?'1px solid rgba(3,169,244,.3)':'1px solid var(--border)'; }
+  renderPTContracts();
+}
+
+async function createPTContract(){
+  if(!adminAuth){ requireAdmin(()=>createPTContract()); return; }
+  const trainerId = document.getElementById('pt-trainer').value;
+  const memberId  = document.getElementById('pt-member').value;
+  const total = parseInt(document.getElementById('pt-total').value)||0;
+  const price = parseInt(document.getElementById('pt-price').value)||0;
+  if(!trainerId){ showAlert('트레이너를 선택해주세요.',true); return; }
+  if(!memberId){ showAlert('회원을 선택해주세요.',true); return; }
+  if(total < 1){ showAlert('PT 횟수를 입력해주세요.',true); return; }
+  const trainer = trainers.find(t=>t.id===trainerId);
+  const member  = members.find(m=>m.id===memberId);
+  try{
+    await db.collection('gym_pt_contracts').add({
+      trainerId, trainerName: trainer.name,
+      memberId,  memberName:  member.name,
+      totalSessions: total, usedSessions: 0,
+      pricePerSession: price, status: 'active',
+      startDate: TODAY,
+      createdAt: firebase.firestore.FieldValue.serverTimestamp()
+    });
+    showAlert(`${trainer.name} ↔ ${member.name} PT 계약 등록!`);
+    document.getElementById('pt-total').value='';
+    document.getElementById('pt-price').value='';
+  }catch(e){ showAlert('등록 실패: '+e.message,true); }
+}
+
+function renderPTContracts(){
+  const el = document.getElementById('ptContractList');
+  if(!el) return;
+  const list = ptFilter==='active' ? ptContracts.filter(c=>c.status==='active') : ptContracts;
+  if(!list.length){
+    el.innerHTML=`<div style="text-align:center;color:var(--muted);padding:20px">${ptFilter==='active'?'진행 중인':'등록된'} PT 계약이 없습니다</div>`;
+    return;
+  }
+  el.innerHTML = list.map(c=>{
+    const rem = c.totalSessions - c.usedSessions;
+    const pct = c.totalSessions ? Math.round((c.usedSessions/c.totalSessions)*100) : 0;
+    const isActive = c.status==='active';
+    return `
+    <div class="card" style="margin-bottom:10px;border-left:3px solid ${isActive?'var(--primary)':'var(--border)'}">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px">
+        <div>
+          <div style="font-weight:700;color:var(--text)">${c.trainerName} <span style="color:var(--muted);font-weight:400;font-size:12px">→</span> ${c.memberName}</div>
+          <div style="font-size:12px;color:var(--muted);margin-top:2px">${c.pricePerSession?c.pricePerSession.toLocaleString()+'원/회':'무료'} · ${c.startDate||''}</div>
+        </div>
+        <div style="text-align:right">
+          <div style="font-size:20px;font-weight:900;color:${rem>0?'var(--primary)':'var(--muted)'}">${c.usedSessions}<span style="font-size:12px;font-weight:400;color:var(--muted)">/${c.totalSessions}</span></div>
+          <div style="font-size:11px;color:var(--muted)">${isActive&&rem>0?rem+'회 남음':'완료'}</div>
+        </div>
+      </div>
+      <div style="background:var(--border);border-radius:4px;height:5px;margin-bottom:10px">
+        <div style="background:var(--primary);height:5px;border-radius:4px;width:${pct}%;transition:width .3s"></div>
+      </div>
+      <div style="display:flex;gap:8px">
+        ${isActive&&rem>0?`<button class="btn btn-sm btn-primary" style="flex:1" onclick="recordPTSession('${c.id}')">✅ 수업 완료</button>`:''}
+        <button class="btn btn-sm" style="background:rgba(220,53,69,.08);color:var(--red);border:1px solid rgba(220,53,69,.2)" onclick="deletePTContract('${c.id}')">삭제</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+async function recordPTSession(contractId){
+  if(!adminAuth){ requireAdmin(()=>recordPTSession(contractId)); return; }
+  const c = ptContracts.find(x=>x.id===contractId);
+  if(!c){ showAlert('계약을 찾을 수 없습니다.',true); return; }
+  if(c.usedSessions >= c.totalSessions){ showAlert('잔여 횟수가 없습니다.',true); return; }
+  try{
+    const newUsed = c.usedSessions + 1;
+    const newStatus = newUsed >= c.totalSessions ? 'completed' : 'active';
+    await db.collection('gym_pt_contracts').doc(contractId).update({
+      usedSessions: firebase.firestore.FieldValue.increment(1),
+      status: newStatus
+    });
+    await db.collection('gym_pt_records').add({
+      contractId,
+      trainerId: c.trainerId, trainerName: c.trainerName,
+      memberId: c.memberId,   memberName: c.memberName,
+      pricePerSession: c.pricePerSession||0,
+      date: TODAY, ts: firebase.firestore.FieldValue.serverTimestamp()
+    });
+    const rem = c.totalSessions - newUsed;
+    const msg = newStatus==='completed'
+      ? `${c.memberName} PT ${c.totalSessions}회 모두 완료! 🎉`
+      : `${c.memberName} 수업 완료 ✅ (잔여 ${rem}회)`;
+    showAlert(msg);
+  }catch(e){ showAlert('기록 실패: '+e.message,true); }
+}
+
+async function deletePTContract(id){
+  if(!adminAuth){ requireAdmin(()=>deletePTContract(id)); return; }
+  const c = ptContracts.find(x=>x.id===id);
+  if(!confirm(`${c?c.trainerName+' ↔ '+c.memberName:'이 계약'}을 삭제하시겠습니까?`)) return;
+  try{
+    await db.collection('gym_pt_contracts').doc(id).delete();
+    showAlert('계약 삭제 완료');
+  }catch(e){ showAlert('삭제 실패: '+e.message,true); }
+}
+
+async function loadSettlement(){
+  const ym = document.getElementById('settle-month').value;
+  if(!ym){ showAlert('월을 선택해주세요.',true); return; }
+  const el = document.getElementById('settlementTable');
+  el.innerHTML='<div style="text-align:center;color:var(--muted);padding:12px">조회 중...</div>';
+  try{
+    const snap = await db.collection('gym_pt_records')
+      .where('date','>=',ym+'-01').where('date','<=',ym+'-31').get();
+    const records = snap.docs.map(d=>d.data());
+    if(!records.length){ el.innerHTML='<div style="text-align:center;color:var(--muted);padding:12px">해당 월 수업 기록이 없습니다</div>'; return; }
+    const byTrainer = {};
+    records.forEach(r=>{
+      if(!byTrainer[r.trainerId]) byTrainer[r.trainerId]={name:r.trainerName, sessions:0, total:0};
+      byTrainer[r.trainerId].sessions++;
+      byTrainer[r.trainerId].total += r.pricePerSession||0;
+    });
+    const rows = Object.values(byTrainer).sort((a,b)=>b.total-a.total);
+    const grandTotal    = rows.reduce((s,r)=>s+r.total,0);
+    const totalSessions = rows.reduce((s,r)=>s+r.sessions,0);
+    el.innerHTML=`
+      <div class="card">
+        <div style="font-weight:700;color:var(--text);margin-bottom:12px">${ym} 정산 내역</div>
+        <table style="width:100%;border-collapse:collapse;font-size:13px">
+          <thead><tr style="border-bottom:1px solid var(--border)">
+            <th style="padding:6px 4px;text-align:left;color:var(--muted);font-weight:600">트레이너</th>
+            <th style="padding:6px 4px;text-align:center;color:var(--muted);font-weight:600">수업</th>
+            <th style="padding:6px 4px;text-align:right;color:var(--muted);font-weight:600">정산액</th>
+          </tr></thead>
+          <tbody>${rows.map(r=>`
+            <tr style="border-bottom:1px solid rgba(0,0,0,.04)">
+              <td style="padding:8px 4px;font-weight:600">${r.name}</td>
+              <td style="padding:8px 4px;text-align:center;color:var(--primary);font-weight:700">${r.sessions}회</td>
+              <td style="padding:8px 4px;text-align:right;font-weight:700">${r.total.toLocaleString()}원</td>
+            </tr>`).join('')}
+          </tbody>
+          <tfoot><tr style="border-top:2px solid var(--border)">
+            <td style="padding:8px 4px;font-weight:900">합계</td>
+            <td style="padding:8px 4px;text-align:center;font-weight:900;color:var(--primary)">${totalSessions}회</td>
+            <td style="padding:8px 4px;text-align:right;font-weight:900;color:var(--green)">${grandTotal.toLocaleString()}원</td>
+          </tr></tfoot>
+        </table>
+      </div>`;
+  }catch(e){ el.innerHTML=`<div style="text-align:center;color:var(--red);padding:12px">조회 실패: ${e.message}</div>`; }
 }
 
 // ══════════════════════════════════════════════
@@ -1853,7 +2072,14 @@ function showPage(id, el){
   if(id==='stats'){ renderStats(); renderCharts(); }
   if(id==='checkin') renderCheckinList();
   if(id==='data') updateDataPage();
-  if(id==='trainer') renderTrainerList();
+  if(id==='trainer'){
+    renderTrainerList();
+    refreshPTSelects();
+    renderPTContracts();
+    const sm = document.getElementById('settle-month');
+    if(sm && !sm.value) sm.value = TODAY.slice(0,7);
+    setPTFilter('active');
+  }
 }
 
 // ══════════════════════════════════════════════
