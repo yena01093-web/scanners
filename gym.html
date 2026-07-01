@@ -7,9 +7,9 @@
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
 :root{
-  --primary:#00d4ff;--bg:#0a0a0f;--card:#12121a;--border:#1e1e2e;
-  --text:#e0e0ff;--muted:#666688;--green:#00ff88;--red:#ff4466;--gold:#ffd700;
-  --orange:#ff8800;--purple:#aa44ff;
+  --primary:#03A9F4;--bg:#F0F4F8;--card:#FFFFFF;--border:#DDE3EA;
+  --text:#1A2635;--muted:#7A8FA6;--green:#00966D;--red:#DC3545;--gold:#D97706;
+  --orange:#EA6C1A;--purple:#6D28D9;
 }
 body{font-family:'Apple SD Gothic Neo','Noto Sans KR',sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
 
@@ -56,16 +56,16 @@ header{background:var(--card);border-bottom:1px solid var(--border);padding:12px
 
 /* ── BUTTONS ── */
 .btn{display:inline-flex;align-items:center;justify-content:center;gap:5px;padding:9px 15px;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;border:none;transition:all .2s;font-family:inherit}
-.btn-p{background:var(--primary);color:#000}
-.btn-p:hover{background:#22e0ff}
-.btn-s{background:var(--border);color:var(--text)}
-.btn-s:hover{background:#2a2a40}
-.btn-d{background:rgba(255,68,102,.15);color:var(--red);border:1px solid rgba(255,68,102,.3)}
-.btn-d:hover{background:rgba(255,68,102,.25)}
-.btn-go{background:rgba(255,215,0,.12);color:var(--gold);border:1px solid rgba(255,215,0,.3)}
+.btn-p{background:var(--primary);color:#fff}
+.btn-p:hover{background:#0288D1}
+.btn-s{background:#EEF2F7;color:var(--text);border:1px solid var(--border)}
+.btn-s:hover{background:#DDE3EA}
+.btn-d{background:rgba(220,53,69,.1);color:var(--red);border:1px solid rgba(220,53,69,.25)}
+.btn-d:hover{background:rgba(220,53,69,.2)}
+.btn-go{background:rgba(217,119,6,.1);color:var(--gold);border:1px solid rgba(217,119,6,.3)}
 .btn-w{width:100%}
 .btn-sm{padding:5px 10px;font-size:11px;border-radius:6px}
-.submit-btn{width:100%;background:var(--primary);color:#000;border:none;padding:13px;border-radius:10px;font-size:14px;font-weight:900;cursor:pointer;margin-top:8px}
+.submit-btn{width:100%;background:var(--primary);color:#fff;border:none;padding:13px;border-radius:10px;font-size:14px;font-weight:900;cursor:pointer;margin-top:8px}
 
 /* ── SECTION TITLE ── */
 .section-title{font-size:12px;font-weight:700;color:var(--muted);margin-bottom:10px;letter-spacing:1px;text-transform:uppercase}
@@ -94,7 +94,7 @@ header{background:var(--card);border-bottom:1px solid var(--border);padding:12px
 /* ── MEMBER INFO CARD (face recognized overlay) ── */
 .mic-overlay{position:fixed;inset:0;z-index:300;background:rgba(0,0,0,.75);display:none;align-items:flex-end;justify-content:center;padding:0}
 .mic-overlay.visible{display:flex}
-.mic-card{background:linear-gradient(160deg,#12121a,#1a1a2e);border:1px solid var(--border);border-radius:24px 24px 0 0;padding:24px 20px 32px;width:100%;max-width:480px;position:relative;animation:slideUp .3s ease}
+.mic-card{background:linear-gradient(160deg,#FFFFFF,#E8F4FD);border:1px solid var(--border);border-radius:24px 24px 0 0;padding:24px 20px 32px;width:100%;max-width:480px;position:relative;animation:slideUp .3s ease;box-shadow:0 -4px 24px rgba(3,169,244,.12)}
 @keyframes slideUp{from{transform:translateY(40px);opacity:0}to{transform:translateY(0);opacity:1}}
 .mic-photo{width:80px;height:80px;border-radius:50%;overflow:hidden;margin:0 auto 12px;border:3px solid var(--primary);background:var(--border);display:flex;align-items:center;justify-content:center;font-size:32px}
 .mic-photo img{width:100%;height:100%;object-fit:cover}
@@ -107,8 +107,8 @@ header{background:var(--card);border-bottom:1px solid var(--border);padding:12px
 .mic-cell-val.warning{color:var(--gold)}
 .mic-cell-lbl{font-size:11px;color:var(--muted);margin-top:2px}
 .mic-badge{display:inline-block;padding:5px 16px;border-radius:20px;font-size:13px;font-weight:700;margin:0 auto 12px;display:block;text-align:center;width:fit-content;margin:0 auto 14px}
-.mic-badge.active{background:rgba(0,255,136,.15);color:var(--green);border:1px solid rgba(0,255,136,.3)}
-.mic-badge.expired{background:rgba(255,68,102,.15);color:var(--red);border:1px solid rgba(255,68,102,.3)}
+.mic-badge.active{background:rgba(0,150,109,.12);color:var(--green);border:1px solid rgba(0,150,109,.3)}
+.mic-badge.expired{background:rgba(220,53,69,.12);color:var(--red);border:1px solid rgba(220,53,69,.3)}
 .mic-timer{height:3px;background:var(--border);border-radius:2px;overflow:hidden;margin-top:4px}
 .mic-timer-bar{height:100%;background:var(--primary);transition:width linear}
 .mic-dismiss{position:absolute;top:14px;right:16px;background:none;border:none;color:var(--muted);font-size:20px;cursor:pointer}
@@ -116,12 +116,12 @@ header{background:var(--card);border-bottom:1px solid var(--border);padding:12px
 
 /* ── STATS ── */
 .stats-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px}
-.stat-card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:14px;text-align:center}
+.stat-card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:14px;text-align:center;box-shadow:0 1px 4px rgba(0,0,0,.06)}
 .stat-num{font-size:26px;font-weight:900;color:var(--primary)}
 .stat-label{font-size:11px;color:var(--muted);margin-top:3px}
 
 /* ── MEMBER CARDS (list) ── */
-.member-card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:13px;margin-bottom:8px;display:flex;align-items:center;gap:11px}
+.member-card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:13px;margin-bottom:8px;display:flex;align-items:center;gap:11px;box-shadow:0 1px 4px rgba(0,0,0,.06)}
 .member-avatar{width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:900;flex-shrink:0;overflow:hidden}
 .member-avatar img{width:100%;height:100%;object-fit:cover}
 .member-card-info{flex:1;min-width:0}
@@ -130,17 +130,17 @@ header{background:var(--card);border-bottom:1px solid var(--border);padding:12px
 .member-card-actions{display:flex;gap:5px}
 
 /* ── CHECKIN LIST ── */
-.checkin-item{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:11px 13px;display:flex;align-items:center;gap:11px;margin-bottom:7px}
+.checkin-item{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:11px 13px;display:flex;align-items:center;gap:11px;margin-bottom:7px;box-shadow:0 1px 3px rgba(0,0,0,.05)}
 .checkin-info{flex:1}
 .checkin-name{font-size:14px;font-weight:700;margin-bottom:1px}
 .checkin-detail{font-size:11px;color:var(--muted)}
 .checkin-time{font-size:11px;color:var(--primary);font-weight:700}
 .status-badge{font-size:10px;font-weight:700;padding:3px 7px;border-radius:4px}
-.status-in{background:rgba(0,255,136,.13);color:var(--green)}
-.status-out{background:rgba(255,68,102,.13);color:var(--red)}
-.status-active{background:rgba(0,212,255,.13);color:var(--primary)}
-.status-expired{background:rgba(255,68,102,.13);color:var(--red)}
-.status-face{background:rgba(170,68,255,.13);color:var(--purple)}
+.status-in{background:rgba(0,150,109,.12);color:var(--green)}
+.status-out{background:rgba(220,53,69,.12);color:var(--red)}
+.status-active{background:rgba(3,169,244,.12);color:var(--primary)}
+.status-expired{background:rgba(220,53,69,.12);color:var(--red)}
+.status-face{background:rgba(109,40,217,.12);color:var(--purple)}
 
 /* ── FACE REGISTRATION ── */
 .face-reg-box{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:14px;margin-bottom:12px}
@@ -156,7 +156,7 @@ header{background:var(--card);border-bottom:1px solid var(--border);padding:12px
 /* ── TICKET GRID ── */
 .ticket-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px}
 .ticket-option{background:var(--card);border:2px solid var(--border);border-radius:10px;padding:12px;text-align:center;cursor:pointer;transition:all .2s}
-.ticket-option.selected{border-color:var(--primary);background:rgba(0,212,255,.1)}
+.ticket-option.selected{border-color:var(--primary);background:rgba(3,169,244,.08)}
 .ticket-name{font-size:13px;font-weight:700;margin-bottom:3px}
 .ticket-price{font-size:15px;font-weight:900;color:var(--gold)}
 .ticket-period{font-size:11px;color:var(--muted)}
@@ -185,13 +185,13 @@ header{background:var(--card);border-bottom:1px solid var(--border);padding:12px
 .sett-sec{margin-bottom:18px}
 .sett-sec-ttl{font-size:11px;font-weight:700;color:var(--muted);letter-spacing:1px;text-transform:uppercase;margin-bottom:9px}
 .fb-status{display:flex;align-items:center;gap:6px;font-size:12px;padding:7px 10px;border-radius:8px;margin-bottom:11px}
-.fb-status.on{background:rgba(0,255,136,.09);color:var(--green);border:1px solid rgba(0,255,136,.2)}
-.fb-status.off{background:rgba(255,68,102,.09);color:var(--red);border:1px solid rgba(255,68,102,.2)}
+.fb-status.on{background:rgba(0,150,109,.1);color:var(--green);border:1px solid rgba(0,150,109,.3)}
+.fb-status.off{background:rgba(220,53,69,.1);color:var(--red);border:1px solid rgba(220,53,69,.3)}
 
 /* ── PAYMENT ── */
 .payment-item{display:flex;justify-content:space-between;padding:7px 0;font-size:13px;border-bottom:1px solid var(--border)}
 .payment-total{display:flex;justify-content:space-between;padding:13px 0;font-size:15px;font-weight:900;color:var(--primary)}
-.pay-btn{width:100%;background:var(--primary);color:#000;border:none;padding:13px;border-radius:10px;font-size:14px;font-weight:900;cursor:pointer;margin-bottom:7px}
+.pay-btn{width:100%;background:var(--primary);color:#fff;border:none;padding:13px;border-radius:10px;font-size:14px;font-weight:900;cursor:pointer;margin-bottom:7px}
 .cancel-btn{width:100%;background:var(--border);color:var(--text);border:none;padding:11px;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer}
 
 /* ── ADMIN PASSWORD MODAL ── */
@@ -206,28 +206,28 @@ header{background:var(--card);border-bottom:1px solid var(--border);padding:12px
 .pw-error{font-size:12px;color:var(--red);margin-bottom:10px;height:16px}
 .pw-numpad{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:12px}
 .pw-key{background:var(--border);border:none;color:var(--text);border-radius:10px;padding:14px;font-size:18px;font-weight:700;cursor:pointer;transition:all .2s;font-family:inherit}
-.pw-key:hover{background:#2a2a40;color:var(--primary)}
+.pw-key:hover{background:#DDE3EA;color:var(--primary)}
 .pw-key:active{transform:scale(.94)}
 .pw-key.del{font-size:16px;color:var(--muted)}
-.pw-key.ok{background:var(--primary);color:#000;grid-column:span 2}
-.pw-key.ok:hover{background:#22e0ff}
+.pw-key.ok{background:var(--primary);color:#fff;grid-column:span 2}
+.pw-key.ok:hover{background:#0288D1}
 .pw-cancel{background:none;border:none;color:var(--muted);font-size:13px;cursor:pointer;padding:4px 8px}
 /* 관리자 상태 표시 */
 .admin-badge{display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:700;padding:4px 9px;border-radius:20px;cursor:pointer;transition:all .2s;border:none}
-.admin-badge.locked{background:rgba(255,68,102,.13);color:var(--red)}
-.admin-badge.unlocked{background:rgba(0,255,136,.13);color:var(--green)}
+.admin-badge.locked{background:rgba(220,53,69,.1);color:var(--red);border:1px solid rgba(220,53,69,.2)}
+.admin-badge.unlocked{background:rgba(0,150,109,.1);color:var(--green);border:1px solid rgba(0,150,109,.2)}
 .admin-badge:hover{opacity:.8}
 /* ── POINTS ── */
-.mic-points-row{display:flex;align-items:center;justify-content:center;gap:8px;background:rgba(255,215,0,.08);border:1px solid rgba(255,215,0,.2);border-radius:12px;padding:10px 16px;margin-bottom:14px}
+.mic-points-row{display:flex;align-items:center;justify-content:center;gap:8px;background:rgba(217,119,6,.08);border:1px solid rgba(217,119,6,.25);border-radius:12px;padding:10px 16px;margin-bottom:14px}
 .mic-points-num{font-size:28px;font-weight:900;color:var(--gold)}
 .mic-points-lbl{font-size:12px;color:var(--muted);line-height:1.3}
 .mic-points-new{font-size:11px;color:var(--green);font-weight:700}
-.points-badge{font-size:10px;font-weight:700;padding:2px 7px;border-radius:4px;background:rgba(255,215,0,.13);color:var(--gold);border:1px solid rgba(255,215,0,.25)}
-.btn-pts{background:rgba(255,215,0,.12);color:var(--gold);border:1px solid rgba(255,215,0,.25)}
-.btn-pts:hover{background:rgba(255,215,0,.22)}
+.points-badge{font-size:10px;font-weight:700;padding:2px 7px;border-radius:4px;background:rgba(217,119,6,.1);color:var(--gold);border:1px solid rgba(217,119,6,.3)}
+.btn-pts{background:rgba(217,119,6,.1);color:var(--gold);border:1px solid rgba(217,119,6,.3)}
+.btn-pts:hover{background:rgba(217,119,6,.2)}
 .pts-ctrl{display:flex;align-items:center;gap:3px}
-.btn-pts-adj{background:rgba(255,215,0,.1);color:var(--gold);border:1px solid rgba(255,215,0,.25);width:26px;height:26px;padding:0;font-size:16px;font-weight:900;border-radius:6px;cursor:pointer;font-family:inherit;line-height:1;transition:all .2s}
-.btn-pts-adj:hover{background:rgba(255,215,0,.28)}
+.btn-pts-adj{background:rgba(217,119,6,.1);color:var(--gold);border:1px solid rgba(217,119,6,.3);width:26px;height:26px;padding:0;font-size:16px;font-weight:900;border-radius:6px;cursor:pointer;font-family:inherit;line-height:1;transition:all .2s}
+.btn-pts-adj:hover{background:rgba(217,119,6,.22)}
 
 /* ── ALERT / TOAST ── */
 .alert{position:fixed;top:68px;left:50%;transform:translateX(-50%);background:var(--green);color:#000;padding:10px 22px;border-radius:10px;font-weight:700;font-size:13px;z-index:999;display:none;white-space:nowrap;box-shadow:0 4px 20px rgba(0,0,0,.5)}
